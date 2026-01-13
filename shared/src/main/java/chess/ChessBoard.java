@@ -12,12 +12,7 @@ public class ChessBoard {
 
     public ChessBoard() {
         this.Board = new ChessPiece[8][8];
-
-        for (ChessPiece[] Row : this.Board) {
-            for (ChessPiece Cell: Row) {
-                Cell = null;
-            }
-        }
+        this.resetBoard();
     }
 
     /**
