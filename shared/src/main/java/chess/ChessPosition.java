@@ -63,14 +63,4 @@ public class ChessPosition {
         return indices[0] * 8 + indices[1] - 1;
     }
 
-    /**
-     * @param row the row index
-     * @param col the column index
-     */
-    public void setPositionByIndicies(int row, int col) {
-        this.Row = row + 1;
-        this.Column = col + 1;
-    }
-
-
 }

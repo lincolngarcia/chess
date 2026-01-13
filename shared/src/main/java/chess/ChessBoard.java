@@ -58,9 +58,9 @@ public class ChessBoard {
      * (How the game of chess normally starts)
      */
     public void resetBoard() {
-        for (ChessPiece[] Row : this.Board) {
-            for (ChessPiece Cell: Row) {
-                Cell = null;
+        for (int rowIndex = 0; rowIndex < 8; rowIndex++) {
+            for (int colIndex = 0; colIndex < 8; colIndex++) {
+                this.Board[rowIndex][colIndex] = null;
             }
         }
     }

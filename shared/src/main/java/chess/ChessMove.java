@@ -33,8 +33,8 @@ public class ChessMove {
         int startIndex = startPosition.getBitBoardIndex();
         int endIndex = startIndex + offset.value();
 
-        int endRow = Math.floorDiv(startIndex, 8);
-        int endCol = startIndex % 8;
+        int endRow = Math.floorDiv(endIndex, 8);
+        int endCol = endIndex % 8;
 
         this.endPosition = new ChessPosition(endRow + 1, endCol + 1);
     }
@@ -90,7 +90,7 @@ public class ChessMove {
 
         private final int offset;
 
-        private BoardMovement(int offset) {
+        BoardMovement(int offset) {
             this.offset = offset;
         }
 
