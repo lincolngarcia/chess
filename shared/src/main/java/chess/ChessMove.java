@@ -17,6 +17,18 @@ public class ChessMove {
         this.promotionPiece = null;
     }
 
+    public ChessMove(ChessPosition startPosition, BoardMovement offset) {
+        this.startPosition = startPosition;
+
+        int startIndex = startPosition.getBitBoardIndex();
+        int endIndex = startIndex + offset.value();
+
+        int endRow = Math.floorDiv(startIndex, 8);
+        int endCol = startIndex % 8;
+
+        this.endPosition = new ChessPosition(endRow + 1, endCol + 1);
+    }
+
     public ChessMove(ChessPosition startPosition, ChessPosition endPosition, ChessPiece.PieceType promotionPiece) {
         this.startPosition = startPosition;
         this.endPosition = endPosition;
@@ -45,5 +57,35 @@ public class ChessMove {
      */
     public ChessPiece.PieceType getPromotionPiece() {
         return this.promotionPiece;
+    }
+
+    public enum BoardMovement {
+        UP_LEFT(-9),
+        UP(-8),
+        UP_RIGHT(-7),
+        LEFT(-1),
+        RIGHT(1),
+        DOWN_LEFT(1),
+        DOWN(8),
+        DOWN_RIGHT(9),
+
+        UP_LEFT_JUMP(-17),
+        UP_RIGHT_JUMP(-15),
+        LEFT_UP_JUMP(-10),
+        RIGHT_UP_JUMP(-6),
+        LEFT_DOWN_JUMP(+6),
+        DOWN_LEFT_JUMP(+15),
+        DOWN_RIGHT_JUMP(15),
+        RIGHT_DOWN_JUMP(17);
+
+        private final int offset;
+
+        private BoardMovement(int offset) {
+            this.offset = offset;
+        }
+
+        public int value() {
+            return this.offset;
+        }
     }
 }
