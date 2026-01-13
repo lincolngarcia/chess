@@ -1,5 +1,7 @@
 package chess;
 
+import java.util.Objects;
+
 /**
  * Represents moving a chess piece on a chessboard
  * <p>
@@ -7,23 +9,54 @@ package chess;
  * signature of the existing methods.
  */
 public class ChessMove {
+    ChessPosition startPosition;
+    ChessPosition endPosition;
+    ChessPiece.PieceType promotionPiece;
 
-    public ChessMove(ChessPosition startPosition, ChessPosition endPosition,
-                     ChessPiece.PieceType promotionPiece) {
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ChessMove chessMove = (ChessMove) o;
+        return Objects.equals(startPosition, chessMove.startPosition) && Objects.equals(endPosition, chessMove.endPosition) && promotionPiece == chessMove.promotionPiece;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(startPosition, endPosition, promotionPiece);
+    }
+
+    public ChessMove(ChessPosition startPosition, int offset) {
+        this.startPosition = startPosition;
+
+        int startIndex = startPosition.getBitBoardIndex();
+        int endIndex = startIndex + offset;
+
+        int endRow = Math.floorDiv(endIndex, 8);
+        int endCol = endIndex % 8;
+
+        this.endPosition = new ChessPosition(endRow + 1, endCol + 1);
+    }
+
+    public ChessMove(ChessPosition startPosition, ChessPosition endPosition, ChessPiece.PieceType promotionPiece) {
+        this.startPosition = startPosition;
+        this.endPosition = endPosition;
+        this.promotionPiece = promotionPiece;
     }
 
     /**
      * @return ChessPosition of starting location
      */
     public ChessPosition getStartPosition() {
-        throw new RuntimeException("Not implemented");
+        return this.startPosition;
     }
 
     /**
      * @return ChessPosition of ending location
      */
     public ChessPosition getEndPosition() {
-        throw new RuntimeException("Not implemented");
+        return this.endPosition;
     }
 
     /**
@@ -33,6 +66,36 @@ public class ChessMove {
      * @return Type of piece to promote a pawn to, or null if no promotion
      */
     public ChessPiece.PieceType getPromotionPiece() {
-        throw new RuntimeException("Not implemented");
+        return this.promotionPiece;
+    }
+
+    public enum BoardMovement {
+        UP_LEFT(-9),
+        UP(-8),
+        UP_RIGHT(-7),
+        LEFT(-1),
+        RIGHT(1),
+        DOWN_LEFT(1),
+        DOWN(8),
+        DOWN_RIGHT(9),
+
+        UP_LEFT_JUMP(-17),
+        UP_RIGHT_JUMP(-15),
+        LEFT_UP_JUMP(-10),
+        RIGHT_UP_JUMP(-6),
+        LEFT_DOWN_JUMP(+6),
+        DOWN_LEFT_JUMP(+15),
+        DOWN_RIGHT_JUMP(15),
+        RIGHT_DOWN_JUMP(17);
+
+        private final int offset;
+
+        BoardMovement(int offset) {
+            this.offset = offset;
+        }
+
+        public int value() {
+            return this.offset;
+        }
     }
 }
