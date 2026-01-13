@@ -8,8 +8,16 @@ package chess;
  */
 public class ChessBoard {
 
+    ChessPiece[][] Board;
+
     public ChessBoard() {
-        
+        this.Board = new ChessPiece[8][8];
+
+        for (ChessPiece[] Row : this.Board) {
+            for (ChessPiece Cell: Row) {
+                Cell = null;
+            }
+        }
     }
 
     /**
@@ -19,7 +27,8 @@ public class ChessBoard {
      * @param piece    the piece to add
      */
     public void addPiece(ChessPosition position, ChessPiece piece) {
-        throw new RuntimeException("Not implemented");
+        int[] indices = position.toIndexFormat();
+        this.Board[indices[0]][indices[1]] = piece;
     }
 
     /**
@@ -30,7 +39,8 @@ public class ChessBoard {
      * position
      */
     public ChessPiece getPiece(ChessPosition position) {
-        throw new RuntimeException("Not implemented");
+        int[] indices = position.toIndexFormat();
+        return this.Board[indices[0]][indices[1]];
     }
 
     /**
@@ -38,6 +48,10 @@ public class ChessBoard {
      * (How the game of chess normally starts)
      */
     public void resetBoard() {
-        throw new RuntimeException("Not implemented");
+        for (ChessPiece[] Row : this.Board) {
+            for (ChessPiece Cell: Row) {
+                Cell = null;
+            }
+        }
     }
 }
