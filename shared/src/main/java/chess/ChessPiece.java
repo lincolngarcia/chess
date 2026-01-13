@@ -141,8 +141,8 @@ public class ChessPiece {
                 int upper_left_attack_index = currentBitBoardIndex + ChessMove.BoardMovement.UP_LEFT.value();
                 int upper_right_attack_index = currentBitBoardIndex + ChessMove.BoardMovement.UP_RIGHT.value();
 
-                ChessPiece upper_left_attack = board.getCellByIndex(upper_left_attack_index);
-                ChessPiece upper_right_attack = board.getCellByIndex(upper_right_attack_index);
+                ChessPiece upper_left_attack = board.getPiece(upper_left_attack_index);
+                ChessPiece upper_right_attack = board.getPiece(upper_right_attack_index);
 
                 if (upper_left_attack != null) {
                     movementDirections.add(ChessMove.BoardMovement.UP_LEFT);
@@ -165,7 +165,7 @@ public class ChessPiece {
                 }
 
                 // Next, evaluate all the pieces moves
-                ChessPiece targetCell = board.getCellByIndex(endPositionIndex);
+                ChessPiece targetCell = board.getPiece(endPositionIndex);
                 if (targetCell.getTeamColor() != this.getTeamColor()) {
                     if (this.pieceType == PieceType.PAWN) {
                         // Only evaluate diagonals to 1
