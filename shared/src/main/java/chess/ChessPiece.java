@@ -17,6 +17,7 @@ public class ChessPiece {
      * The various different chess piece options
      */
     public enum PieceType {
+        None,
         KING,
         QUEEN,
         BISHOP,
