@@ -27,11 +27,11 @@ public class ChessMove {
         return Objects.hash(startPosition, endPosition, promotionPiece);
     }
 
-    public ChessMove(ChessPosition startPosition, BoardMovement offset) {
+    public ChessMove(ChessPosition startPosition, int offset) {
         this.startPosition = startPosition;
 
         int startIndex = startPosition.getBitBoardIndex();
-        int endIndex = startIndex + offset.value();
+        int endIndex = startIndex + offset;
 
         int endRow = Math.floorDiv(endIndex, 8);
         int endCol = endIndex % 8;

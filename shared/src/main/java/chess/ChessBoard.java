@@ -28,7 +28,6 @@ public class ChessBoard {
 
     public ChessBoard() {
         this.Board = new ChessPiece[8][8];
-        this.resetBoard();
     }
 
     /**
@@ -65,11 +64,15 @@ public class ChessBoard {
         int row = Math.floorDiv(index, 8) - 1;
         int col = index % 8 - 1;
 
-        if (row < 0 || row >= 8) return null;
-        if (col < 0) return null;
+        if (row < 0 || row >= 8) {
+            return null;
+        }
+        if (col < 0) {
+            return null;
+        }
 
 
-        return this.Board[row - 1][col - 1];
+        return this.Board[row][col];
     }
 
     /**
@@ -85,33 +88,30 @@ public class ChessBoard {
         }
 
         // Place black pieces
-        this.Board[0][0] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.ROOK);
-        this.Board[0][1] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.KNIGHT);
-        this.Board[0][2] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.BISHOP);
-        this.Board[0][3] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.QUEEN);
-        this.Board[0][4] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.KING);
-        this.Board[0][5] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.BISHOP);
-        this.Board[0][6] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.KNIGHT);
-        this.Board[0][7] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.ROOK);
+        this.Board[0][0] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.ROOK);
+        this.Board[0][1] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KNIGHT);
+        this.Board[0][2] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.BISHOP);
+        this.Board[0][3] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.QUEEN);
+        this.Board[0][4] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KING);
+        this.Board[0][5] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.BISHOP);
+        this.Board[0][6] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KNIGHT);
+        this.Board[0][7] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.ROOK);
         for (int col = 0; col < 8; col++) {
-            this.Board[1][col] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.PAWN);
+            this.Board[1][col] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.PAWN);
         }
 
         // Place white pieces
-        this.Board[7][0] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.ROOK);
-        this.Board[7][1] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KNIGHT);
-        this.Board[7][2] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.BISHOP);
-        this.Board[7][3] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.QUEEN);
-        this.Board[7][4] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KING);
-        this.Board[7][5] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.BISHOP);
-        this.Board[7][6] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KNIGHT);
-        this.Board[7][7] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.ROOK);
+        this.Board[7][0] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.ROOK);
+        this.Board[7][1] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.KNIGHT);
+        this.Board[7][2] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.BISHOP);
+        this.Board[7][3] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.QUEEN);
+        this.Board[7][4] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.KING);
+        this.Board[7][5] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.BISHOP);
+        this.Board[7][6] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.KNIGHT);
+        this.Board[7][7] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.ROOK);
         for (int col = 0; col < 8; col++) {
-            this.Board[6][col] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.PAWN);
+            this.Board[6][col] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.PAWN);
         }
-
-        this.printBoard();
-
     }
 
     /**
@@ -119,27 +119,28 @@ public class ChessBoard {
      */
     public void printBoard() {
         System.out.println("----------------");
-        for (int row = 0; row < 8; row++) {
+        for (int row = 7; row >= 0; row--) {
             System.out.print("|");
             for (int col = 0; col < 8; col++) {
-                char characterCode;
-                switch(this.Board[row][col].pieceType) {
-                    case KING:
-                       characterCode = 'K';
-                    case QUEEN:
-                        characterCode = 'Q';
-                    case ROOK:
-                        characterCode = 'R';
-                    case BISHOP:
-                        characterCode = 'B';
-                    case KNIGHT:
-                        characterCode = 'N';
-                    case PAWN:
-                        characterCode = 'p';
+                String characterCode = ".";
+                ChessPiece targetCell = this.getPiece(new ChessPosition(row + 1, col + 1));
+                if (targetCell != null) {
+                    characterCode = switch (targetCell.pieceType) {
+                        case KING -> "K";
+                        case QUEEN -> "Q";
+                        case ROOK -> "R";
+                        case BISHOP -> "B";
+                        case KNIGHT -> "N";
+                        case PAWN -> "P";
+                    };
+                    // White is UpperCase
+                    if (targetCell.getTeamColor() == ChessGame.TeamColor.BLACK) {
+                        characterCode = characterCode.toLowerCase();
+                    }
                 }
-                System.out.print("%c|");
+                System.out.printf("%s|", characterCode);
             }
-            System.out.println("----------------");
+            System.out.print("\n");
         }
     }
 }

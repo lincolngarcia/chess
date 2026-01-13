@@ -159,26 +159,33 @@ public class ChessPiece {
         for (ChessMove.BoardMovement offset : movementDirections) {
             for (int distance = 0; distance < maxDirectionalMovement; distance++) {
                 // First, evaluate the existence of the board position
-                int endPositionIndex = currentBitBoardIndex + offset.value();
+                int sign = Integer.signum(offset.value());
+                int trueOffset = Math.abs(offset.value()) * distance * sign;
+                int endPositionIndex = currentBitBoardIndex + trueOffset;
+
                 if (endPositionIndex < 0 || endPositionIndex >= 64) {
                     continue;
                 }
 
                 // Next, evaluate all the pieces moves
                 ChessPiece targetCell = board.getPiece(endPositionIndex);
-                if (targetCell.getTeamColor() != this.getTeamColor()) {
-                    if (this.pieceType == PieceType.PAWN) {
-                        // Only evaluate diagonals to 1
-                        if (offset == ChessMove.BoardMovement.UP_LEFT) {
-                            distance = maxDirectionalMovement;
+                if (targetCell != null) {
+                    if (targetCell.getTeamColor() != this.getTeamColor()) {
+                        if (this.pieceType == PieceType.PAWN) {
+                            // Only evaluate diagonals to 1
+                            if (offset == ChessMove.BoardMovement.UP_LEFT) {
+                                distance = maxDirectionalMovement;
+                            }
+                            if (offset == ChessMove.BoardMovement.UP_RIGHT) {
+                                distance = maxDirectionalMovement;
+                            }
                         }
-                        if (offset == ChessMove.BoardMovement.UP_RIGHT) {
-                            distance = maxDirectionalMovement;
-                        }
+                        distance = maxDirectionalMovement - 1;
+                    }else{
+                        distance = maxDirectionalMovement;
                     }
-                } else {
-                    pieceMoves.add(new ChessMove(currentPosition, offset));
                 }
+                pieceMoves.add(new ChessMove(currentPosition, trueOffset));
             }
         }
 
