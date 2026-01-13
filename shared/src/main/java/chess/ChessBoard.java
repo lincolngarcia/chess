@@ -28,6 +28,7 @@ public class ChessBoard {
 
     public ChessBoard() {
         this.Board = new ChessPiece[8][8];
+        this.resetBoard();
     }
 
     /**
@@ -54,26 +55,91 @@ public class ChessBoard {
     }
 
     /**
+     * Gets a chess piece on the chessboard
+     *
+     * @param index The index to get the piece from
+     * @return Either the piece at the position, or null if no piece is at that
+     * position
+     */
+    public ChessPiece getPiece(int index) {
+        int row = Math.floorDiv(index, 8) - 1;
+        int col = index % 8 - 1;
+
+        if (row < 0 || row >= 8) return null;
+        if (col < 0) return null;
+
+
+        return this.Board[row - 1][col - 1];
+    }
+
+    /**
      * Sets the board to the default starting board
      * (How the game of chess normally starts)
      */
     public void resetBoard() {
+        // Clear the board
         for (int rowIndex = 0; rowIndex < 8; rowIndex++) {
             for (int colIndex = 0; colIndex < 8; colIndex++) {
                 this.Board[rowIndex][colIndex] = null;
             }
         }
+
+        // Place black pieces
+        this.Board[0][0] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.ROOK);
+        this.Board[0][1] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.KNIGHT);
+        this.Board[0][2] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.BISHOP);
+        this.Board[0][3] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.QUEEN);
+        this.Board[0][4] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.KING);
+        this.Board[0][5] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.BISHOP);
+        this.Board[0][6] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.KNIGHT);
+        this.Board[0][7] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.ROOK);
+        for (int col = 0; col < 8; col++) {
+            this.Board[1][col] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.PAWN);
+        }
+
+        // Place white pieces
+        this.Board[7][0] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.ROOK);
+        this.Board[7][1] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KNIGHT);
+        this.Board[7][2] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.BISHOP);
+        this.Board[7][3] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.QUEEN);
+        this.Board[7][4] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KING);
+        this.Board[7][5] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.BISHOP);
+        this.Board[7][6] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KNIGHT);
+        this.Board[7][7] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.ROOK);
+        for (int col = 0; col < 8; col++) {
+            this.Board[6][col] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.PAWN);
+        }
+
+        this.printBoard();
+
     }
 
     /**
-     * Gets the cell associated with a specific index
-     *
-     * @return ChessPosition of the new cell
+     * Prints the board in ASCII-Characters
      */
-    public ChessPiece getCellByIndex(int index) {
-        int row = Math.floorDiv(index, 8);
-        int col = index % 8;
-
-        return this.Board[row - 1][col - 1];
+    public void printBoard() {
+        System.out.println("----------------");
+        for (int row = 0; row < 8; row++) {
+            System.out.print("|");
+            for (int col = 0; col < 8; col++) {
+                char characterCode;
+                switch(this.Board[row][col].pieceType) {
+                    case KING:
+                       characterCode = 'K';
+                    case QUEEN:
+                        characterCode = 'Q';
+                    case ROOK:
+                        characterCode = 'R';
+                    case BISHOP:
+                        characterCode = 'B';
+                    case KNIGHT:
+                        characterCode = 'N';
+                    case PAWN:
+                        characterCode = 'p';
+                }
+                System.out.print("%c|");
+            }
+            System.out.println("----------------");
+        }
     }
 }
