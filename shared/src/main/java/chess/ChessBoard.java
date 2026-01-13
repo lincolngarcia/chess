@@ -12,7 +12,6 @@ public class ChessBoard {
 
     public ChessBoard() {
         this.Board = new ChessPiece[8][8];
-        this.resetBoard();
     }
 
     /**
@@ -48,5 +47,17 @@ public class ChessBoard {
                 Cell = null;
             }
         }
+    }
+
+    /**
+     * Gets the cell associated with a specific index
+     *
+     * @return ChessPosition of the new cell
+     */
+    public ChessPiece getCellByIndex(int index) {
+        int row = Math.floorDiv(index, 8);
+        int col = index % 8;
+
+        return this.Board[row - 1][col - 1];
     }
 }
