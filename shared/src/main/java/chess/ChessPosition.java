@@ -55,6 +55,15 @@ public class ChessPosition {
     }
 
     /**
+     * Gets the bitboard position of the Position
+     * @return index of the cell on a bitboard
+     */
+    public int getBitBoardIndex() {
+        int[] indices = this.toIndexFormat();
+        return indices[0] * 8 + indices[1] - 1;
+    }
+
+    /**
      * @param row the row index
      * @param col the column index
      */
@@ -62,4 +71,6 @@ public class ChessPosition {
         this.Row = row + 1;
         this.Column = col + 1;
     }
+
+
 }
