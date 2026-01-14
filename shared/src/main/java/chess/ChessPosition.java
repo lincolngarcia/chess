@@ -34,7 +34,7 @@ public class ChessPosition {
         int[] indices = this.toIndexFormat();
 
         chessNotation.append(letters[indices[0]]);
-        chessNotation.append(indices[1]);
+        chessNotation.append(indices[1] + 1);
 
         return chessNotation.toString();
     }
@@ -73,7 +73,7 @@ public class ChessPosition {
      */
     public int getBitBoardIndex() {
         int[] indices = this.toIndexFormat();
-        return indices[0] * 8 + indices[1] - 1;
+        return indices[1] * 8 + indices[0];
     }
 
 }

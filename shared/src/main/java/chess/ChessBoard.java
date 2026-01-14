@@ -27,9 +27,10 @@ public class ChessBoard {
     @Override
     public String toString() {
         StringBuilder board = new StringBuilder();
-        board.append("----------------\n");
+        board.append("   A B C D E F G H\n");
         for (int row = 7; row >= 0; row--) {
-           board.append("|");
+            board.append(row + 1);
+            board.append(" |");
             for (int col = 0; col < 8; col++) {
                 String characterCode = ".";
                 ChessPiece targetCell = this.getPiece(new ChessPosition(row + 1, col + 1));
@@ -50,8 +51,11 @@ public class ChessBoard {
                 board.append(characterCode);
                 board.append("|");
             }
+            board.append(" ");
+            board.append(row + 1);
             board.append("\n");
         }
+        board.append("   A B C D E F G H\n");
         return board.toString();
     }
 
