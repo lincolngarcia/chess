@@ -26,6 +26,19 @@ public class ChessPosition {
         return Objects.hash(Row, Column);
     }
 
+    @Override
+    public String toString() {
+        char[] letters = {'A', 'B', 'C', 'D', 'E', 'F', 'G'};
+
+        StringBuilder chessNotation = new StringBuilder();
+        int[] indices = this.toIndexFormat();
+
+        chessNotation.append(letters[indices[0]]);
+        chessNotation.append(indices[1]);
+
+        return chessNotation.toString();
+    }
+
     public ChessPosition(int row, int col) {
         this.Row = row;
         this.Column = col;
