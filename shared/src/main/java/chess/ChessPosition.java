@@ -28,13 +28,13 @@ public class ChessPosition {
 
     @Override
     public String toString() {
-        char[] letters = {'A', 'B', 'C', 'D', 'E', 'F', 'G'};
+        char[] letters = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
 
         StringBuilder chessNotation = new StringBuilder();
         int[] indices = this.toIndexFormat();
 
-        chessNotation.append(letters[indices[0]]);
-        chessNotation.append(indices[1] + 1);
+        chessNotation.append(letters[indices[1]]);
+        chessNotation.append(indices[0] + 1);
 
         return chessNotation.toString();
     }
@@ -42,6 +42,11 @@ public class ChessPosition {
     public ChessPosition(int row, int col) {
         this.Row = row;
         this.Column = col;
+    }
+
+    public ChessPosition(int index) {
+        this.Row = Math.floorDiv(index, 8) + 1;
+        this.Column = (index % 8) + 1;
     }
 
     /**
@@ -73,7 +78,7 @@ public class ChessPosition {
      */
     public int getBitBoardIndex() {
         int[] indices = this.toIndexFormat();
-        return indices[1] * 8 + indices[0];
+        return indices[0] * 8 + indices[1];
     }
 
 }

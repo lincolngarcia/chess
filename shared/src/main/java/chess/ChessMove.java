@@ -38,10 +38,7 @@ public class ChessMove {
         int startIndex = startPosition.getBitBoardIndex();
         int endIndex = startIndex + offset;
 
-        int endRow = Math.floorDiv(endIndex, 8) + 1;
-        int endCol = (endIndex % 8) + 1;
-
-        this.endPosition = new ChessPosition(endRow, endCol);
+        this.endPosition = new ChessPosition(endIndex);
     }
 
     public ChessMove(ChessPosition startPosition, ChessPosition endPosition, ChessPiece.PieceType promotionPiece) {
@@ -85,9 +82,11 @@ public class ChessMove {
      *  8  9 10 11 12 13 14 15
      *  0  1  2  3  4  5  6  7
      * Where movement is:
-     * +7 +8 +9
-     * -1 +0 +1
-     * -9 -8 -7
+     * +13 +14 +15 +16 +17 +18 +19 +20
+     * +5  +6  +7  +8  +9 +10 +11 +12
+     * -3  -2  -1  +0  +1  +2  +3  +4
+     * -11 -10 -9  -8  -7  -6  -5  -4
+     * -19 -18 -17 -16 -15 -14 -13 -12
      */
     public enum BoardMovement {
         UP_LEFT(7),
@@ -99,15 +98,14 @@ public class ChessMove {
         DOWN(-8),
         DOWN_RIGHT(-7),
 
-        // TODO: redo these
-        UP_LEFT_JUMP(-17),
-        UP_RIGHT_JUMP(-15),
-        LEFT_UP_JUMP(-10),
-        RIGHT_UP_JUMP(-6),
-        LEFT_DOWN_JUMP(+6),
-        DOWN_LEFT_JUMP(+15),
-        DOWN_RIGHT_JUMP(15),
-        RIGHT_DOWN_JUMP(17);
+        UP_LEFT_JUMP(15),
+        UP_RIGHT_JUMP(17),
+        LEFT_UP_JUMP(6),
+        RIGHT_UP_JUMP(10),
+        LEFT_DOWN_JUMP(-10),
+        DOWN_LEFT_JUMP(-17),
+        DOWN_RIGHT_JUMP(-15),
+        RIGHT_DOWN_JUMP(-6);
 
         private final int offset;
 
