@@ -28,6 +28,11 @@ public class ChessPiece {
         return Objects.hash(pieceType, pieceColor);
     }
 
+    @Override
+    public String toString() {
+        return this.pieceColor.toString() + " " + this.pieceType.toString();
+    }
+
     public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type) {
         this.pieceType = type;
         this.pieceColor = pieceColor;
@@ -155,40 +160,73 @@ public class ChessPiece {
                 break;
         }
 
-
-        for (ChessMove.BoardMovement offset : movementDirections) {
+        // Loop through each direction until you can't
+        for (ChessMove.BoardMovement direction : movementDirections) {
             for (int distance = 0; distance < maxDirectionalMovement; distance++) {
-                // First, evaluate the existence of the board position
-                int sign = Integer.signum(offset.value());
-                int trueOffset = Math.abs(offset.value()) * distance * sign;
-                int endPositionIndex = currentBitBoardIndex + trueOffset;
+                // Get the new position
+                int sign = Integer.signum(direction.value());
+                int offset = Math.abs(direction.value()) * (distance + 1) * sign;
+                int endPositionIndex = currentPosition.getBitBoardIndex() + offset;
+                ChessPosition endPosition = new ChessPosition(endPositionIndex);
 
-                if (endPositionIndex < 0 || endPositionIndex >= 64) {
-                    continue;
-                }
+                // if it doesn't exist, break
+                if (!moveExists(currentPosition, endPosition, direction)) break;
 
-                // Next, evaluate all the pieces moves
-                ChessPiece targetCell = board.getPiece(endPositionIndex);
+                // if the new square has a piece, add the moves and break;
+                ChessPiece targetCell = board.getPiece(endPosition);
                 if (targetCell != null) {
+                    // If the targeted cell is not your teams color, add the move
                     if (targetCell.getTeamColor() != this.getTeamColor()) {
-                        if (this.pieceType == PieceType.PAWN) {
-                            // Only evaluate diagonals to 1
-                            if (offset == ChessMove.BoardMovement.UP_LEFT) {
-                                distance = maxDirectionalMovement;
-                            }
-                            if (offset == ChessMove.BoardMovement.UP_RIGHT) {
-                                distance = maxDirectionalMovement;
-                            }
-                        }
-                        distance = maxDirectionalMovement - 1;
-                    }else{
-                        distance = maxDirectionalMovement;
+                        pieceMoves.add(new ChessMove(currentPosition, offset));
                     }
+                    break;
                 }
-                pieceMoves.add(new ChessMove(currentPosition, trueOffset));
+
+                // add the move and move on
+                pieceMoves.add(new ChessMove(currentPosition, offset));
             }
         }
 
         return pieceMoves;
+    }
+
+    private boolean moveExists(ChessPosition position,
+            ChessPosition endPosition, ChessMove.BoardMovement direction) {
+
+        // See if that index exists on the board
+        int endPositionIndex = endPosition.getBitBoardIndex();
+        if (endPositionIndex < 0 || endPositionIndex >= 64) return false;
+
+        // See if we jumped from one side of the board to another
+        switch (direction) {
+            // If moving left, target cell cannot have a higher column
+            case UP_LEFT:
+            case LEFT:
+            case DOWN_LEFT:
+            case UP_LEFT_JUMP:
+            case LEFT_UP_JUMP:
+            case LEFT_DOWN_JUMP:
+            case DOWN_LEFT_JUMP:
+                if (endPosition.getColumn() >= position.getColumn()) {
+                    return false;
+                }
+                break;
+
+            // If moving right, target cell cannot have a lower column
+            case UP_RIGHT:
+            case RIGHT:
+            case DOWN_RIGHT:
+            case UP_RIGHT_JUMP:
+            case RIGHT_UP_JUMP:
+            case RIGHT_DOWN_JUMP:
+            case DOWN_RIGHT_JUMP:
+                if (endPosition.getColumn() <= position.getColumn()) {
+                    return false;
+                }
+                break;
+        }
+
+        return true;
+
     }
 }

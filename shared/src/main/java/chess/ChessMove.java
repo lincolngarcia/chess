@@ -27,16 +27,18 @@ public class ChessMove {
         return Objects.hash(startPosition, endPosition, promotionPiece);
     }
 
+    @Override
+    public String toString() {
+        return this.startPosition + " to " + this.endPosition;
+    }
+
     public ChessMove(ChessPosition startPosition, int offset) {
         this.startPosition = startPosition;
 
         int startIndex = startPosition.getBitBoardIndex();
         int endIndex = startIndex + offset;
 
-        int endRow = Math.floorDiv(endIndex, 8);
-        int endCol = endIndex % 8;
-
-        this.endPosition = new ChessPosition(endRow + 1, endCol + 1);
+        this.endPosition = new ChessPosition(endIndex);
     }
 
     public ChessMove(ChessPosition startPosition, ChessPosition endPosition, ChessPiece.PieceType promotionPiece) {
@@ -69,24 +71,41 @@ public class ChessMove {
         return this.promotionPiece;
     }
 
+    /**
+     * A board can be represented as:
+     * 56 57 58 59 60 61 62 63
+     * 48 49 50 51 52 53 54 55
+     * 40 41 42 43 44 45 46 47
+     * 32 33 34 35 36 37 38 39
+     * 24 25 26 27 28 29 30 31
+     * 16 17 18 19 20 21 22 23
+     *  8  9 10 11 12 13 14 15
+     *  0  1  2  3  4  5  6  7
+     * Where movement is:
+     * +13 +14 +15 +16 +17 +18 +19 +20
+     * +5  +6  +7  +8  +9 +10 +11 +12
+     * -3  -2  -1  +0  +1  +2  +3  +4
+     * -11 -10 -9  -8  -7  -6  -5  -4
+     * -19 -18 -17 -16 -15 -14 -13 -12
+     */
     public enum BoardMovement {
-        UP_LEFT(-9),
-        UP(-8),
-        UP_RIGHT(-7),
+        UP_LEFT(7),
+        UP(8),
+        UP_RIGHT(9),
         LEFT(-1),
         RIGHT(1),
-        DOWN_LEFT(1),
-        DOWN(8),
-        DOWN_RIGHT(9),
+        DOWN_LEFT(-9),
+        DOWN(-8),
+        DOWN_RIGHT(-7),
 
-        UP_LEFT_JUMP(-17),
-        UP_RIGHT_JUMP(-15),
-        LEFT_UP_JUMP(-10),
-        RIGHT_UP_JUMP(-6),
-        LEFT_DOWN_JUMP(+6),
-        DOWN_LEFT_JUMP(+15),
-        DOWN_RIGHT_JUMP(15),
-        RIGHT_DOWN_JUMP(17);
+        UP_LEFT_JUMP(15),
+        UP_RIGHT_JUMP(17),
+        LEFT_UP_JUMP(6),
+        RIGHT_UP_JUMP(10),
+        LEFT_DOWN_JUMP(-10),
+        DOWN_LEFT_JUMP(-17),
+        DOWN_RIGHT_JUMP(-15),
+        RIGHT_DOWN_JUMP(-6);
 
         private final int offset;
 

@@ -24,6 +24,41 @@ public class ChessBoard {
         return Arrays.deepHashCode(Board);
     }
 
+    @Override
+    public String toString() {
+        StringBuilder board = new StringBuilder();
+        board.append("   A B C D E F G H\n");
+        for (int row = 7; row >= 0; row--) {
+            board.append(row + 1);
+            board.append(" |");
+            for (int col = 0; col < 8; col++) {
+                String characterCode = ".";
+                ChessPiece targetCell = this.getPiece(new ChessPosition(row + 1, col + 1));
+                if (targetCell != null) {
+                    characterCode = switch (targetCell.pieceType) {
+                        case KING -> "K";
+                        case QUEEN -> "Q";
+                        case ROOK -> "R";
+                        case BISHOP -> "B";
+                        case KNIGHT -> "N";
+                        case PAWN -> "P";
+                    };
+                    // White is UpperCase
+                    if (targetCell.getTeamColor() == ChessGame.TeamColor.BLACK) {
+                        characterCode = characterCode.toLowerCase();
+                    }
+                }
+                board.append(characterCode);
+                board.append("|");
+            }
+            board.append(" ");
+            board.append(row + 1);
+            board.append("\n");
+        }
+        board.append("   A B C D E F G H\n");
+        return board.toString();
+    }
+
     ChessPiece[][] Board;
 
     public ChessBoard() {
@@ -111,36 +146,6 @@ public class ChessBoard {
         this.Board[7][7] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.ROOK);
         for (int col = 0; col < 8; col++) {
             this.Board[6][col] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.PAWN);
-        }
-    }
-
-    /**
-     * Prints the board in ASCII-Characters
-     */
-    public void printBoard() {
-        System.out.println("----------------");
-        for (int row = 7; row >= 0; row--) {
-            System.out.print("|");
-            for (int col = 0; col < 8; col++) {
-                String characterCode = ".";
-                ChessPiece targetCell = this.getPiece(new ChessPosition(row + 1, col + 1));
-                if (targetCell != null) {
-                    characterCode = switch (targetCell.pieceType) {
-                        case KING -> "K";
-                        case QUEEN -> "Q";
-                        case ROOK -> "R";
-                        case BISHOP -> "B";
-                        case KNIGHT -> "N";
-                        case PAWN -> "P";
-                    };
-                    // White is UpperCase
-                    if (targetCell.getTeamColor() == ChessGame.TeamColor.BLACK) {
-                        characterCode = characterCode.toLowerCase();
-                    }
-                }
-                System.out.printf("%s|", characterCode);
-            }
-            System.out.print("\n");
         }
     }
 }
