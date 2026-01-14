@@ -72,6 +72,11 @@ public class ChessPersonalTests {
 
         System.out.println(board);
         System.out.println(king.pieceMoves(board, kingPosition));
+
+        board.resetBoard();
+
+        System.out.println(board);
+        System.out.println(king.pieceMoves(board, new ChessPosition(1, 5)));
     }
 
     @Test
@@ -83,5 +88,11 @@ public class ChessPersonalTests {
 
         System.out.println(board);
         System.out.println(knight.pieceMoves(board,knightPosition));
+
+        board.resetBoard();
+
+        System.out.println(board);
+        System.out.println(knight.pieceMoves(board,new ChessPosition(1, 7)));
+
     }
 }
