@@ -170,7 +170,7 @@ public class ChessPiece {
                 ChessPosition endPosition = new ChessPosition(endPositionIndex);
 
                 // if it doesn't exist, break
-                if (!moveExists(board, currentPosition, endPosition, direction)) break;
+                if (!moveExists(currentPosition, endPosition, direction)) break;
 
                 // if the new square has a piece, add the moves and break;
                 ChessPiece targetCell = board.getPiece(endPosition);
@@ -190,7 +190,7 @@ public class ChessPiece {
         return pieceMoves;
     }
 
-    private boolean moveExists(ChessBoard board, ChessPosition position,
+    private boolean moveExists(ChessPosition position,
             ChessPosition endPosition, ChessMove.BoardMovement direction) {
 
         // See if that index exists on the board
