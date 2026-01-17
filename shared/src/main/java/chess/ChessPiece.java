@@ -1,5 +1,7 @@
 package chess;
 
+import chess.ChessPieceTypes.*;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
@@ -72,130 +74,187 @@ public class ChessPiece {
      * @return Collection of valid moves
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition currentPosition) {
-        Collection<ChessMove> pieceMoves = new ArrayList<>();
+        return switch (this.pieceType) {
+            case KING -> new King().getPieceMoves(board, currentPosition, this);
+            case QUEEN -> new Queen().getPieceMoves(board, currentPosition, this);
+            case ROOK -> new Rook().getPieceMoves(board, currentPosition, this);
+            case BISHOP -> new Bishop().getPieceMoves(board, currentPosition, this);
+            case KNIGHT -> new Knight().getPieceMoves(board, currentPosition, this);
+            case PAWN -> new Pawn().getPieceMoves(board, currentPosition, this);
+            default -> new ArrayList<ChessMove>();
+        };
 
-        int currentBitBoardIndex = currentPosition.getBitBoardIndex();
-
-        // Set the Max Directional Movement for Each Piece
-        int maxDirectionalMovement = 0; // Default distance for most pieces
-        switch (this.pieceType) {
-            case KING:
-            case KNIGHT:
-                maxDirectionalMovement = 1;
-                break;
-
-            case QUEEN:
-            case ROOK:
-            case BISHOP:
-                maxDirectionalMovement = 7;
-                break;
-
-            case PAWN:
-                // If pawn is on starting rank, it's two, if not, 1
-                if (currentPosition.getRow() == 2 || currentPosition.getRow() == 7) {
-                    maxDirectionalMovement = 2;
-                } else {
-                    maxDirectionalMovement = 1;
-                }
-        }
-
-        // Get the movement types of each piece
-        ArrayList<ChessMove.BoardMovement> movementDirections = new ArrayList<>();
-        switch (this.pieceType) {
-            case KING:
-            case QUEEN:
-                movementDirections.add(ChessMove.BoardMovement.UP_LEFT);
-                movementDirections.add(ChessMove.BoardMovement.UP);
-                movementDirections.add(ChessMove.BoardMovement.UP_RIGHT);
-                movementDirections.add(ChessMove.BoardMovement.LEFT);
-                movementDirections.add(ChessMove.BoardMovement.RIGHT);
-                movementDirections.add(ChessMove.BoardMovement.DOWN_LEFT);
-                movementDirections.add(ChessMove.BoardMovement.DOWN);
-                movementDirections.add(ChessMove.BoardMovement.DOWN_RIGHT);
-                break;
-
-            case ROOK:
-                movementDirections.add(ChessMove.BoardMovement.UP);
-                movementDirections.add(ChessMove.BoardMovement.LEFT);
-                movementDirections.add(ChessMove.BoardMovement.RIGHT);
-                movementDirections.add(ChessMove.BoardMovement.DOWN);
-                break;
-
-            case BISHOP:
-                movementDirections.add(ChessMove.BoardMovement.UP_LEFT);
-                movementDirections.add(ChessMove.BoardMovement.UP_RIGHT);
-                movementDirections.add(ChessMove.BoardMovement.DOWN_LEFT);
-                movementDirections.add(ChessMove.BoardMovement.DOWN_RIGHT);
-                break;
-
-            case KNIGHT:
-                movementDirections.add(ChessMove.BoardMovement.UP_LEFT_JUMP);
-                movementDirections.add(ChessMove.BoardMovement.UP_RIGHT_JUMP);
-                movementDirections.add(ChessMove.BoardMovement.LEFT_UP_JUMP);
-                movementDirections.add(ChessMove.BoardMovement.RIGHT_UP_JUMP);
-                movementDirections.add(ChessMove.BoardMovement.LEFT_DOWN_JUMP);
-                movementDirections.add(ChessMove.BoardMovement.DOWN_LEFT_JUMP);
-                movementDirections.add(ChessMove.BoardMovement.DOWN_RIGHT_JUMP);
-                movementDirections.add(ChessMove.BoardMovement.RIGHT_DOWN_JUMP);
-                break;
-
-            case PAWN:
-                movementDirections.add(ChessMove.BoardMovement.UP);
-
-                // Although pawns travel forwards, they capture diagonally
-                int upper_left_attack_index = currentBitBoardIndex + ChessMove.BoardMovement.UP_LEFT.value();
-                int upper_right_attack_index = currentBitBoardIndex + ChessMove.BoardMovement.UP_RIGHT.value();
-
-                ChessPiece upper_left_attack = board.getPiece(upper_left_attack_index);
-                ChessPiece upper_right_attack = board.getPiece(upper_right_attack_index);
-
-                if (upper_left_attack != null) {
-                    movementDirections.add(ChessMove.BoardMovement.UP_LEFT);
-                }
-
-                if (upper_right_attack != null) {
-                    movementDirections.add(ChessMove.BoardMovement.UP_RIGHT);
-                }
-
-                break;
-        }
-
-        // Loop through each direction until you can't
-        for (ChessMove.BoardMovement direction : movementDirections) {
-            for (int distance = 0; distance < maxDirectionalMovement; distance++) {
-                // Get the new position
-                int sign = Integer.signum(direction.value());
-                int offset = Math.abs(direction.value()) * (distance + 1) * sign;
-                int endPositionIndex = currentPosition.getBitBoardIndex() + offset;
-                ChessPosition endPosition = new ChessPosition(endPositionIndex);
-
-                // if it doesn't exist, break
-                if (!moveExists(currentPosition, endPosition, direction)) break;
-
-                // if the new square has a piece, add the moves and break;
-                ChessPiece targetCell = board.getPiece(endPosition);
-                if (targetCell != null) {
-                    // If the targeted cell is not your teams color, add the move
-                    if (targetCell.getTeamColor() != this.getTeamColor()) {
-                        pieceMoves.add(new ChessMove(currentPosition, offset));
-                    }
-                    break;
-                }
-
-                // add the move and move on
-                pieceMoves.add(new ChessMove(currentPosition, offset));
-            }
-        }
-
-        return pieceMoves;
+//
+//        int currentBitBoardIndex = currentPosition.getBitBoardIndex();
+//
+//        // Set the Max Directional Movement for Each Piece
+//        int maxDirectionalMovement = 0; // Default distance for most pieces
+//        switch (this.pieceType) {
+//            case KING:
+//            case KNIGHT:
+//                maxDirectionalMovement = 1;
+//                break;
+//
+//            case QUEEN:
+//            case ROOK:
+//            case BISHOP:
+//                maxDirectionalMovement = 7;
+//                break;
+//
+//            case PAWN:
+//                // If pawn is on starting rank, it's two, if not, 1
+//                if (currentPosition.getRow() == 2 || currentPosition.getRow() == 7) {
+//                    maxDirectionalMovement = 2;
+//                } else {
+//                    maxDirectionalMovement = 1;
+//                }
+//        }
+//
+//        // Get the movement types of each piece
+//        ArrayList<ChessMove.BoardMovement> movementDirections = new ArrayList<>();
+//        switch (this.pieceType) {
+//            case KING:
+//            case QUEEN:
+//                movementDirections.add(ChessMove.BoardMovement.UP_LEFT);
+//                movementDirections.add(ChessMove.BoardMovement.UP);
+//                movementDirections.add(ChessMove.BoardMovement.UP_RIGHT);
+//                movementDirections.add(ChessMove.BoardMovement.LEFT);
+//                movementDirections.add(ChessMove.BoardMovement.RIGHT);
+//                movementDirections.add(ChessMove.BoardMovement.DOWN_LEFT);
+//                movementDirections.add(ChessMove.BoardMovement.DOWN);
+//                movementDirections.add(ChessMove.BoardMovement.DOWN_RIGHT);
+//                break;
+//
+//            case ROOK:
+//                movementDirections.add(ChessMove.BoardMovement.UP);
+//                movementDirections.add(ChessMove.BoardMovement.LEFT);
+//                movementDirections.add(ChessMove.BoardMovement.RIGHT);
+//                movementDirections.add(ChessMove.BoardMovement.DOWN);
+//                break;
+//
+//            case BISHOP:
+//                movementDirections.add(ChessMove.BoardMovement.UP_LEFT);
+//                movementDirections.add(ChessMove.BoardMovement.UP_RIGHT);
+//                movementDirections.add(ChessMove.BoardMovement.DOWN_LEFT);
+//                movementDirections.add(ChessMove.BoardMovement.DOWN_RIGHT);
+//                break;
+//
+//            case KNIGHT:
+//                movementDirections.add(ChessMove.BoardMovement.UP_LEFT_JUMP);
+//                movementDirections.add(ChessMove.BoardMovement.UP_RIGHT_JUMP);
+//                movementDirections.add(ChessMove.BoardMovement.LEFT_UP_JUMP);
+//                movementDirections.add(ChessMove.BoardMovement.RIGHT_UP_JUMP);
+//                movementDirections.add(ChessMove.BoardMovement.LEFT_DOWN_JUMP);
+//                movementDirections.add(ChessMove.BoardMovement.DOWN_LEFT_JUMP);
+//                movementDirections.add(ChessMove.BoardMovement.DOWN_RIGHT_JUMP);
+//                movementDirections.add(ChessMove.BoardMovement.RIGHT_DOWN_JUMP);
+//                break;
+//
+//            case PAWN:
+//                if (this.getTeamColor() == ChessGame.TeamColor.WHITE) {
+//                    movementDirections.add(ChessMove.BoardMovement.UP);
+//
+//                    // Although pawns travel forwards, they capture diagonally
+//                    int upper_left_attack_index = currentBitBoardIndex + ChessMove.BoardMovement.UP_LEFT.value();
+//                    int upper_right_attack_index = currentBitBoardIndex + ChessMove.BoardMovement.UP_RIGHT.value();
+//
+//                    ChessPiece upper_left_attack = board.getPiece(upper_left_attack_index);
+//                    ChessPiece upper_right_attack = board.getPiece(upper_right_attack_index);
+//
+//                    if (upper_left_attack != null) {
+//                        movementDirections.add(ChessMove.BoardMovement.UP_LEFT);
+//                    }
+//
+//                    if (upper_right_attack != null) {
+//                        movementDirections.add(ChessMove.BoardMovement.UP_RIGHT);
+//                    }
+//                } else {
+//                    movementDirections.add(ChessMove.BoardMovement.DOWN);
+//
+//                    // Although pawns travel forwards, they capture diagonally
+//                    int upper_left_attack_index = currentBitBoardIndex + ChessMove.BoardMovement.DOWN_LEFT.value();
+//                    int upper_right_attack_index = currentBitBoardIndex + ChessMove.BoardMovement.DOWN_RIGHT.value();
+//
+//                    ChessPiece upper_left_attack = board.getPiece(upper_left_attack_index);
+//                    ChessPiece upper_right_attack = board.getPiece(upper_right_attack_index);
+//
+//                    if (upper_left_attack != null) {
+//                        movementDirections.add(ChessMove.BoardMovement.DOWN_LEFT);
+//                    }
+//
+//                    if (upper_right_attack != null) {
+//                        movementDirections.add(ChessMove.BoardMovement.DOWN_RIGHT);
+//                    }
+//                }
+//                break;
+//        }
+//
+//        // Loop through each direction until you can't
+//        for (ChessMove.BoardMovement direction : movementDirections) {
+//            for (int distance = 0; distance < maxDirectionalMovement; distance++) {
+//                // Get the new position
+//                int sign = Integer.signum(direction.value());
+//                int offset = Math.abs(direction.value()) * (distance + 1) * sign;
+//                int endPositionIndex = currentPosition.getBitBoardIndex() + offset;
+//                ChessPosition endPosition = new ChessPosition(endPositionIndex);
+//
+//                // if it doesn't exist, break
+//                if (!moveExists(currentPosition, endPosition, direction)) {
+//                    break;
+//                }
+//
+//                // if the new square has a piece, add the moves and break;
+//                ChessPiece targetCell = board.getPiece(endPosition);
+//                if (targetCell != null) {
+//                    // Pawn movement handling
+//                    if (this.pieceType == PieceType.PAWN) {
+//                        if (direction == ChessMove.BoardMovement.DOWN || direction == ChessMove.BoardMovement.UP) {
+//                            break;
+//                        }
+//                    }
+//
+//                    // If the targeted cell is not your teams color, add the move
+//                    if (targetCell.getTeamColor() != this.getTeamColor()) {
+//                        // Handle Pawn Promotion
+//                        if (this.pieceType == PieceType.PAWN) {
+//                            if (endPosition.getRow() == 1 || endPosition.getRow() == 8) {
+//                                switch (direction) {
+//                                    case UP_LEFT:
+//                                    case UP_RIGHT:
+//                                    case DOWN_LEFT:
+//                                    case DOWN_RIGHT:
+//                                        pieceMoves.add(new ChessMove(currentPosition, endPosition, PieceType.QUEEN));
+//                                        pieceMoves.add(new ChessMove(currentPosition, endPosition, PieceType.ROOK));
+//                                        pieceMoves.add(new ChessMove(currentPosition, endPosition, PieceType.BISHOP));
+//                                        pieceMoves.add(new ChessMove(currentPosition, endPosition, PieceType.KNIGHT));
+//                                        break;
+//                                }
+//                            }
+//                        } else {
+//                            pieceMoves.add(new ChessMove(currentPosition, offset));
+//                        }
+//                    }
+//                    break;
+//                }
+//
+//                // add the move and move on
+//                pieceMoves.add(new ChessMove(currentPosition, offset));
+//            }
+//        }
+//
+//        System.out.println(board);
+//        System.out.println(pieceMoves);
+//        return pieceMoves;
     }
 
     private boolean moveExists(ChessPosition position,
-            ChessPosition endPosition, ChessMove.BoardMovement direction) {
+                               ChessPosition endPosition, ChessMove.BoardMovement direction) {
 
         // See if that index exists on the board
         int endPositionIndex = endPosition.getBitBoardIndex();
-        if (endPositionIndex < 0 || endPositionIndex >= 64) return false;
+        if (endPositionIndex < 0 || endPositionIndex >= 64) {
+            return false;
+        }
 
         // See if we jumped from one side of the board to another
         switch (direction) {

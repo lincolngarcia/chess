@@ -1,6 +1,9 @@
 package passoff.chess;
 
 import chess.*;
+import chess.ChessPieceTypes.King;
+import chess.ChessPieceTypes.Pawn;
+import chess.ChessPieceTypes.Queen;
 import org.junit.jupiter.api.Test;
 
 public class ChessPersonalTests {
@@ -61,22 +64,54 @@ public class ChessPersonalTests {
     public void testKingMovement() {
         ChessBoard board = new ChessBoard();
         ChessPiece king = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KING);
-        ChessPosition kingPosition = new ChessPosition(4,5);
+        ChessPosition kingPosition = new ChessPosition(4, 5);
         board.addPiece(kingPosition, king);
 
-        System.out.println(board);
-        System.out.println(king.pieceMoves(board, kingPosition));
+        new King().printMoves(board, king, kingPosition);
 
         board.addPiece(new ChessPosition(35), new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.QUEEN));
         board.addPiece(new ChessPosition(21), new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.QUEEN));
 
-        System.out.println(board);
-        System.out.println(king.pieceMoves(board, kingPosition));
+        new King().printMoves(board, king, kingPosition);
 
         board.resetBoard();
 
-        System.out.println(board);
-        System.out.println(king.pieceMoves(board, new ChessPosition(1, 5)));
+        new King().printMoves(board, king, new ChessPosition(1, 5));
+    }
+
+    @Test
+    public void testQueenMovement() {
+        ChessBoard board = new ChessBoard();
+        ChessPiece queen = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.QUEEN);
+        ChessPosition queenPosition = new ChessPosition(4, 1);
+        board.addPiece(queenPosition, queen);
+
+        new Queen().printMoves(board, queen, queenPosition);
+
+        board.addPiece(new ChessPosition(8, 1), new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.BISHOP));
+        board.addPiece(new ChessPosition(6, 3), new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.ROOK));
+        board.addPiece(new ChessPosition(4, 4), new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.PAWN));
+        board.addPiece(new ChessPosition(1, 2), new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.PAWN));
+        board.addPiece(new ChessPosition(2, 3), new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.KNIGHT));
+
+        new Queen().printMoves(board, queen, queenPosition);
+
+        board.resetBoard();
+
+        new Queen().printMoves(board, queen, new ChessPosition(1, 5));
+    }
+
+    @Test
+    public void testPawnMovement() {
+        ChessBoard board = new ChessBoard();
+        ChessPiece pawn = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.PAWN);
+        ChessPosition pawnPosition = new ChessPosition(7, 4);
+        board.addPiece(pawnPosition, pawn);
+
+        board.addPiece(new ChessPosition(6, 3), new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.ROOK));
+        board.addPiece(new ChessPosition(5, 3), new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.ROOK));
+
+        new Pawn().printMoves(board, pawn, pawnPosition);
     }
 
     @Test
@@ -87,12 +122,12 @@ public class ChessPersonalTests {
         board.addPiece(knightPosition, knight);
 
         System.out.println(board);
-        System.out.println(knight.pieceMoves(board,knightPosition));
+        System.out.println(knight.pieceMoves(board, knightPosition));
 
         board.resetBoard();
 
         System.out.println(board);
-        System.out.println(knight.pieceMoves(board,new ChessPosition(1, 7)));
+        System.out.println(knight.pieceMoves(board, new ChessPosition(1, 7)));
 
     }
 }

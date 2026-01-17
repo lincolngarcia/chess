@@ -96,18 +96,11 @@ public class ChessBoard {
      * position
      */
     public ChessPiece getPiece(int index) {
-        int row = Math.floorDiv(index, 8) - 1;
-        int col = index % 8 - 1;
+        if (index < 0 || index >= 64) return null;
 
-        if (row < 0 || row >= 8) {
-            return null;
-        }
-        if (col < 0) {
-            return null;
-        }
+        int[] indices = new ChessPosition(index).toIndexFormat();
 
-
-        return this.Board[row][col];
+        return this.Board[indices[0]][indices[1]];
     }
 
     /**
