@@ -10,6 +10,8 @@ import java.util.Objects;
  * signature of the existing methods.
  */
 public class ChessBoard {
+    ChessPiece[][] Board;
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
@@ -59,8 +61,6 @@ public class ChessBoard {
         return board.toString();
     }
 
-    ChessPiece[][] Board;
-
     public ChessBoard() {
         this.Board = new ChessPiece[8][8];
     }
@@ -72,35 +72,18 @@ public class ChessBoard {
      * @param piece    the piece to add
      */
     public void addPiece(ChessPosition position, ChessPiece piece) {
-        int[] indices = position.toIndexFormat();
-        this.Board[indices[0]][indices[1]] = piece;
+        this.Board[position.getRow() - 1][position.getColumn() - 1] = piece;
     }
 
     /**
-     * Gets a chess piece on the chessboard
+     * Returns a chess piece on the chessboard
      *
      * @param position The position to get the piece from
      * @return Either the piece at the position, or null if no piece is at that
      * position
      */
     public ChessPiece getPiece(ChessPosition position) {
-        int[] indices = position.toIndexFormat();
-        return this.Board[indices[0]][indices[1]];
-    }
-
-    /**
-     * Gets a chess piece on the chessboard
-     *
-     * @param index The index to get the piece from
-     * @return Either the piece at the position, or null if no piece is at that
-     * position
-     */
-    public ChessPiece getPiece(int index) {
-        if (index < 0 || index >= 64) return null;
-
-        int[] indices = new ChessPosition(index).toIndexFormat();
-
-        return this.Board[indices[0]][indices[1]];
+        return this.Board[position.getRow() - 1][position.getColumn() - 1];
     }
 
     /**
