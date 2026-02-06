@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 public class PawnMoveCalculator extends ChessMoveCalculator {
+    protected int colorInverter = 0;
+
     @Override
     void setMovementDirections() {
         this.movementDirections = new ChessDirection[]{ChessDirection.UP};
@@ -20,9 +22,9 @@ public class PawnMoveCalculator extends ChessMoveCalculator {
         super(board, position);
     }
 
-    void setMovementDistance(ChessPosition position, ChessGame.TeamColor color) {
-        int startRow = color == ChessGame.TeamColor.WHITE ? 2 : 7;
-        if (position.getRow() == startRow) {
+    void setMovementDistance(ChessPosition position) {
+        // Figure out what the color's starting row is
+        if (4.5 - (2.5 * this.colorInverter) == position.getRow()) {
             this.movementDistance = 2;
         } else {
             this.movementDistance = 1;
@@ -31,86 +33,80 @@ public class PawnMoveCalculator extends ChessMoveCalculator {
 
     @Override
     public Collection<ChessMove> getPieceMoves() {
-        ChessGame.TeamColor color = this.board.getPiece(this.startPosition).getTeamColor();
+        ChessPiece piece = board.getPiece(startPosition);
+        ChessGame.TeamColor pieceColor = piece.getTeamColor();
+        this.colorInverter = pieceColor == ChessGame.TeamColor.WHITE ? 1 : -1;
+
+        ChessDirection forwardDirection = this.colorInverter == 1 ? ChessDirection.UP : ChessDirection.DOWN;
+        ChessDirection leftAttackDirection = this.colorInverter == 1 ? ChessDirection.LEFT_UP : ChessDirection.RIGHT_DOWN;
+        ChessDirection rightAttackDirection = this.colorInverter == 1 ? ChessDirection.RIGHT_UP : ChessDirection.LEFT_DOWN;
+
         this.setMovementDirections();
-        this.setMovementDistance(startPosition, color);
+        this.setMovementDistance(startPosition);
 
         ArrayList<ChessMove> pieceMoves = new ArrayList<>();
-        ChessPiece piece = board.getPiece(startPosition);
 
-        // Forward movement
-        if (piece == null) {
-            return null;
+        // front-forward
+        int startPositionIndex = this.startPosition.getBitboardIndex();
+        int forwardOffset = ChessDirection.UP.value() * colorInverter;
+        int forwardCellIndex = startPositionIndex + forwardOffset;
+        ChessPosition forwardCell = new ChessPosition(forwardCellIndex);
+        ChessMove forwardMove = new ChessMove(this.startPosition, forwardCell);
+        boolean isForwardBlocked = true;
+
+        if (!isInvalidMove(forwardMove, forwardDirection)) {
+            isForwardBlocked = this.board.getPiece(forwardCell) != null;
+            if (!isForwardBlocked) {
+                this.addPieceMove(pieceMoves, new ChessMove(startPosition, forwardCell));
+            }
         }
 
-        for (int distance = 1; distance <= this.movementDistance; distance++) {
-            ChessDirection trueMovementDirection = color == ChessGame.TeamColor.WHITE ? ChessDirection.UP : ChessDirection.DOWN;
-            int endIndex = startPosition.getBitboardIndex() + (distance * trueMovementDirection.value());
-            ChessPosition endPosition = new ChessPosition(endIndex);
-            ChessMove movement = new ChessMove(startPosition, endPosition);
+        // front-forward-jump
+        if (!isForwardBlocked && movementDistance == 2) {
+            this.movementDistance = 1;
+            int forwardJumpOffset = forwardOffset * 2;
+            int forwardJumpCellIndex = startPositionIndex + forwardJumpOffset;
+            ChessPosition forwardJumpCell = new ChessPosition(forwardJumpCellIndex);
+            ChessMove forwardJumpMove = new ChessMove(this.startPosition, forwardJumpCell);
 
-            // Check if the move exists on the board
-            if (isInvalidMove(movement, trueMovementDirection)) {
-                break;
+            if (!isInvalidMove(forwardJumpMove, forwardDirection)) {
+                boolean isForwardJumpBlocked = this.board.getPiece(forwardJumpCell) != null;
+                if (!isForwardJumpBlocked) {
+                    this.addPieceMove(pieceMoves, forwardJumpMove);
+                }
             }
-
-            if (board.getPiece(endPosition) == null) {
-                this.addPieceMove(pieceMoves, movement, color);
-            } else {
-                break;
-            }
-
-
         }
 
-        // Check diagonal capture
-        if (color == ChessGame.TeamColor.WHITE) {
-            int right_attack_offset = ChessDirection.RIGHT_UP.value() + startPosition.getBitboardIndex();
-            ChessPosition right_attack_pos = new ChessPosition(right_attack_offset);
-
-            if (!isInvalidMove(new ChessMove(startPosition, right_attack_pos), ChessDirection.RIGHT_UP)) {
-                ChessPiece right_attack = board.getPiece(right_attack_pos);
-                if (right_attack != null && right_attack.getTeamColor() != ChessGame.TeamColor.WHITE) {
-                    this.addPieceMove(pieceMoves, new ChessMove(startPosition, right_attack_pos), ChessGame.TeamColor.WHITE);
-                }
+        // left attack
+        int leftAttackOffset = ChessDirection.LEFT_UP.value() * colorInverter;
+        int leftAttackCellIndex = startPositionIndex + leftAttackOffset;
+        ChessPosition leftAttackCell = new ChessPosition(leftAttackCellIndex);
+        ChessMove leftAttack = new ChessMove(this.startPosition, leftAttackCell);
+        if (!isInvalidMove(leftAttack, leftAttackDirection)) {
+            ChessPiece targetedPiece = this.board.getPiece(leftAttackCell);
+            if (targetedPiece != null && targetedPiece.getTeamColor() != pieceColor) {
+                this.addPieceMove(pieceMoves, leftAttack);
             }
+        }
 
-            int left_attack_offset = ChessDirection.LEFT_UP.value() + startPosition.getBitboardIndex();
-            ChessPosition left_attack_pos = new ChessPosition(left_attack_offset);
-
-            if (!isInvalidMove(new ChessMove(startPosition, left_attack_pos), ChessDirection.LEFT_UP)) {
-                ChessPiece left_attack = board.getPiece(left_attack_pos);
-                if (left_attack != null && left_attack.getTeamColor() != ChessGame.TeamColor.WHITE) {
-                    this.addPieceMove(pieceMoves, new ChessMove(startPosition, left_attack_pos), ChessGame.TeamColor.WHITE);
-                }
-            }
-        } else {
-            int right_attack_offset = ChessDirection.LEFT_DOWN.value() + startPosition.getBitboardIndex();
-            ChessPosition right_attack_pos = new ChessPosition(right_attack_offset);
-
-            if (!isInvalidMove(new ChessMove(startPosition, right_attack_pos), ChessDirection.LEFT_DOWN)) {
-                ChessPiece right_attack = board.getPiece(right_attack_pos);
-                if (right_attack != null && right_attack.getTeamColor() != ChessGame.TeamColor.BLACK) {
-                    this.addPieceMove(pieceMoves, new ChessMove(startPosition, right_attack_pos), ChessGame.TeamColor.BLACK);
-                }
-            }
-
-            int left_attack_offset = ChessDirection.RIGHT_DOWN.value() + startPosition.getBitboardIndex();
-            ChessPosition left_attack_pos = new ChessPosition(left_attack_offset);
-
-            if (!isInvalidMove(new ChessMove(startPosition, left_attack_pos), ChessDirection.RIGHT_DOWN)) {
-                ChessPiece left_attack = board.getPiece(left_attack_pos);
-                if (left_attack != null && left_attack.getTeamColor() != ChessGame.TeamColor.BLACK) {
-                    this.addPieceMove(pieceMoves, new ChessMove(startPosition, left_attack_pos), ChessGame.TeamColor.BLACK);
-                }
+        // right attack
+        int rightAttackOffset = ChessDirection.RIGHT_UP.value() * colorInverter;
+        int rightAttackCellIndex = startPositionIndex + rightAttackOffset;
+        ChessPosition rightAttackCell = new ChessPosition(rightAttackCellIndex);
+        ChessMove rightAttack = new ChessMove(this.startPosition, rightAttackCell);
+        if (!isInvalidMove(rightAttack, rightAttackDirection)) {
+            ChessPiece targetedPiece = this.board.getPiece(rightAttackCell);
+            if (targetedPiece != null && targetedPiece.getTeamColor() != pieceColor) {
+                this.addPieceMove(pieceMoves, rightAttack);
             }
         }
 
         return pieceMoves;
     }
 
-    private void addPieceMove(Collection<ChessMove> pieceMoves, ChessMove move, ChessGame.TeamColor color) {
-        int promotionRow = color == ChessGame.TeamColor.WHITE ? 8 : 1;
+    private void addPieceMove(Collection<ChessMove> pieceMoves, ChessMove move) {
+        int promotionRow = (int) (4.5 + (3.5 * this.colorInverter));
+
         ChessPosition startPosition = move.getStartPosition();
         ChessPosition endPosition = move.getEndPosition();
 
