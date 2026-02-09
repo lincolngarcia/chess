@@ -33,7 +33,7 @@ public class PawnMoveCalculator extends ChessMoveCalculator {
 
     @Override
     public Collection<ChessMove> getPieceMoves() {
-        ChessPiece piece = board.getPiece(startPosition);
+        ChessPiece piece = this.board.getPiece(startPosition);
         ChessGame.TeamColor pieceColor = piece.getTeamColor();
         this.colorInverter = pieceColor == ChessGame.TeamColor.WHITE ? 1 : -1;
 

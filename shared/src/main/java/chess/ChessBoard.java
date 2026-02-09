@@ -1,6 +1,8 @@
 package chess;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Objects;
 
 /**
@@ -11,6 +13,8 @@ import java.util.Objects;
  */
 public class ChessBoard {
     ChessPiece[][] Board;
+    ChessPosition whiteKingPOS;
+    ChessPosition blackKingPOS;
 
     @Override
     public boolean equals(Object o) {
@@ -37,7 +41,7 @@ public class ChessBoard {
                 String characterCode = ".";
                 ChessPiece targetCell = this.getPiece(new ChessPosition(row + 1, col + 1));
                 if (targetCell != null) {
-                    characterCode = switch (targetCell.pieceType) {
+                    characterCode = switch (targetCell.getPieceType()) {
                         case KING -> "K";
                         case QUEEN -> "Q";
                         case ROOK -> "R";
@@ -65,6 +69,29 @@ public class ChessBoard {
         this.Board = new ChessPiece[8][8];
     }
 
+    public ChessBoard(ChessBoard oldBoard) {
+        this.Board = new ChessPiece[8][8];
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                int index = r * 8 + c;
+                ChessPosition position = new ChessPosition(index);
+                ChessPiece oldPiece = oldBoard.getPiece(position);
+                if (oldPiece == null) {
+                    continue;
+                }
+
+                ChessPiece piece = new ChessPiece(oldPiece);
+                this.addPiece(position, piece);
+            }
+        }
+
+        ChessPosition whiteKingPOS = oldBoard.getKingPosition(ChessGame.TeamColor.WHITE);
+        this.recordKingPosition(whiteKingPOS, ChessGame.TeamColor.WHITE);
+
+        ChessPosition blackKingPOS = oldBoard.getKingPosition(ChessGame.TeamColor.BLACK);
+        this.recordKingPosition(blackKingPOS, ChessGame.TeamColor.BLACK);
+    }
+
     /**
      * Adds a chess piece to the chessboard
      *
@@ -73,6 +100,13 @@ public class ChessBoard {
      */
     public void addPiece(ChessPosition position, ChessPiece piece) {
         this.Board[position.getRow() - 1][position.getColumn() - 1] = piece;
+
+        if (piece == null) {
+            return;
+        }
+        if (piece.getPieceType() == ChessPiece.PieceType.KING) {
+            this.recordKingPosition(position, piece.getTeamColor());
+        }
     }
 
     /**
@@ -87,6 +121,59 @@ public class ChessBoard {
     }
 
     /**
+     * records the position of the king for quick retrieval
+     *
+     * @param position the position of the king
+     * @param color    the color of the king
+     */
+    public void recordKingPosition(ChessPosition position, ChessGame.TeamColor color) {
+        if (color == ChessGame.TeamColor.WHITE) {
+            this.whiteKingPOS = position;
+        } else {
+            this.blackKingPOS = position;
+        }
+
+    }
+
+    /**
+     * returns the position of the king
+     *
+     * @param color the color of the king
+     * @return ChessPosition the position of the king
+     */
+    public ChessPosition getKingPosition(ChessGame.TeamColor color) {
+        if (color == ChessGame.TeamColor.WHITE) {
+            return this.whiteKingPOS;
+        } else {
+            return this.blackKingPOS;
+        }
+    }
+
+    /**
+     * returns a collection of piece positions given a team
+     *
+     * @param color the team color
+     * @return Collection of ChessPosition
+     */
+    public Collection<ChessPosition> getTeamPositions(ChessGame.TeamColor color) {
+        Collection<ChessPosition> positions = new ArrayList<>();
+
+        for (int i = 0; i < 64; i++) {
+            ChessPosition position = new ChessPosition(i);
+            ChessPiece piece = this.getPiece(position);
+            if (piece == null) {
+                continue;
+            }
+
+            if (piece.getTeamColor() == color) {
+                positions.add(position);
+            }
+        }
+
+        return positions;
+    }
+
+    /**
      * Sets the board to the default starting board
      * (How the game of chess normally starts)
      */
@@ -97,6 +184,9 @@ public class ChessBoard {
                 this.Board[rowIndex][colIndex] = null;
             }
         }
+
+        this.whiteKingPOS = new ChessPosition(1, 5);
+        this.blackKingPOS = new ChessPosition(8, 5);
 
         // Place black pieces
         this.Board[0][0] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.ROOK);

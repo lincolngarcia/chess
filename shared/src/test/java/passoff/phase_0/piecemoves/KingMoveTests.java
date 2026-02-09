@@ -1,8 +1,8 @@
-package passoff.chess.piecemoves;
+package passoff.phase_0.piecemoves;
 
 import chess.ChessPosition;
 import org.junit.jupiter.api.Test;
-import passoff.chess.TestUtilities;
+import passoff.phase_0.TestUtilities;
 
 public class KingMoveTests {
 
