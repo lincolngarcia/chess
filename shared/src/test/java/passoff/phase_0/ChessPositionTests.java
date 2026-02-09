@@ -1,4 +1,4 @@
-package passoff.chess;
+package passoff.phase_0;
 
 import chess.ChessPosition;
 
