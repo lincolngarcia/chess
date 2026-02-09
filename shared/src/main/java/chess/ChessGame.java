@@ -16,6 +16,9 @@ public class ChessGame {
     TeamColor teamToMove = TeamColor.WHITE;
     ChessBoard Board;
 
+    private boolean[] kingMoved = new boolean[]{false, false}; // [white, black]
+    private boolean[][] rookMoved = new boolean[][]{{false, false}, {false, false}}; //[column][kingIndex]
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof ChessGame chessGame)) {
@@ -122,6 +125,19 @@ public class ChessGame {
             }
         }
 
+        // Add castling moves
+        for (int i = 0; i < 2; i++) {
+            int column = i == 0 ? 1 : 8;
+
+            if (canTeamCastle(this.getTeamTurn(), column)) {
+                ChessPosition kingPOS = this.getBoard().getKingPosition(this.getTeamTurn());
+                int kingRow = kingPOS.getRow();
+
+                ChessMove castleMove = new ChessMove(kingPOS, new ChessPosition(kingRow, column == 1 ? 3 : 7));
+                validMoves.add(castleMove);
+            }
+        }
+
         return validMoves;
     }
 
@@ -148,13 +164,15 @@ public class ChessGame {
 
         if (validMoves == null || !validMoves.contains(move)) {
             throw new InvalidMoveException();
-        }else{
+        } else {
             this.updateBoard(move);
         }
+
     }
 
     /**
      * Forces a move (does not check for legality)
+     *
      * @param move a move to simulate
      */
     public void updateBoard(ChessMove move) {
@@ -164,16 +182,45 @@ public class ChessGame {
             return;
         }
 
-        // Simulate the move
         ChessPiece.PieceType pieceType = move.getPromotionPiece();
         ChessPiece.PieceType resultingPieceType = pieceType == null ? piece.getPieceType() : pieceType;
         ChessPiece resultingPiece = new ChessPiece(piece.getTeamColor(), resultingPieceType);
+        int row = this.getTeamTurn() == TeamColor.WHITE ? 1 : 8;
+        int rowIndex = row == 1 ? 0 : 1;
 
+        // Simulate the move
         if (piece.getPieceType() == ChessPiece.PieceType.KING) {
             Board.recordKingPosition(move.getEndPosition(), piece.getTeamColor());
+            this.kingMoved[rowIndex] = true;
         }
+
+        if (piece.getPieceType() == ChessPiece.PieceType.ROOK) {
+            int columnIndex = Math.floorDiv(startPosition.getColumn(), 8);
+            this.rookMoved[rowIndex][columnIndex] = true;
+        }
+
+
         this.getBoard().addPiece(move.getEndPosition(), resultingPiece);
         this.getBoard().addPiece(move.getStartPosition(), null);
+
+        int distance = Math.abs(move.getStartPosition().getColumn() - move.getEndPosition().getColumn());
+
+        if (resultingPiece.getPieceType() == ChessPiece.PieceType.KING && distance == 2) {
+            // Move the rook in the event of castling
+            int kingEndColumn = move.getEndPosition().getColumn();
+            int rookCol = kingEndColumn == 3 ? 1 : 8;
+            if (rookCol == 1) {
+                ChessPosition newRookPOS = new ChessPosition(row, 4);
+                ChessPiece newRook = new ChessPiece(piece.getTeamColor(), ChessPiece.PieceType.ROOK);
+                this.getBoard().addPiece(newRookPOS, newRook);
+                this.getBoard().addPiece(new ChessPosition(row, 1), null);
+            } else {
+                ChessPosition newRookPOS = new ChessPosition(row, 6);
+                ChessPiece newRook = new ChessPiece(piece.getTeamColor(), ChessPiece.PieceType.ROOK);
+                this.getBoard().addPiece(newRookPOS, newRook);
+                this.getBoard().addPiece(new ChessPosition(row, 8), null);
+            }
+        }
 
         this.toggleTeamTurn();
     }
@@ -185,28 +232,7 @@ public class ChessGame {
      * @return True if the specified team is in check
      */
     public boolean isInCheck(TeamColor teamColor) {
-        ChessBoard board = this.getBoard();
-        ChessPosition kingPosition = board.getKingPosition(teamColor);
-
-        // Find all the pieces that could have a line of sight to the king
-        Collection<ChessPosition> targetedPiecePositions = new SuperQueenMoveCalculator(this.getBoard(), kingPosition).getTargetedPieces();
-
-        // Iterate through all pieces and check their attack paths
-        for (ChessPosition targetedPiecePosition : targetedPiecePositions) {
-            ChessPiece piece = board.getPiece(targetedPiecePosition);
-            Collection<ChessMove> enemyMoves = piece.pieceMoves(board, targetedPiecePosition);
-
-            // Iterate through all moves for piece
-            for (ChessMove enemyMove : enemyMoves) {
-                ChessPosition endPosition = enemyMove.getEndPosition();
-
-                if (endPosition.equals(kingPosition)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return enemyCanAttackCell(this.getBoard().getKingPosition(teamColor));
     }
 
     /**
@@ -221,7 +247,9 @@ public class ChessGame {
 
         // Iterate through our pieces to see if any can remove check
         for (ChessPosition teamPiecePosition : teamPositions) {
-            if (hasEscape) break;
+            if (hasEscape) {
+                break;
+            }
 
             Collection<ChessMove> teamPieceMoves = this.validMoves(teamPiecePosition);
 
@@ -280,5 +308,139 @@ public class ChessGame {
      */
     public ChessBoard getBoard() {
         return this.Board;
+    }
+
+    /**
+     * Check if the required pieces haven't moved
+     *
+     * @param color the team to check
+     * @param col   column the column of the rook
+     * @return if the team in question hasn't moved the required pieces
+     */
+    public boolean castlingPiecesCanCastle(TeamColor color, int col) {
+        int kingIndex = color == TeamColor.WHITE ? 0 : 1;
+        int columnIndex = Math.floorDiv(col, 8);
+
+        boolean kingHasMoved = kingMoved[kingIndex];
+        boolean rookHasMoved = this.rookMoved[kingIndex][columnIndex];
+
+        if (kingHasMoved || rookHasMoved) {
+            return false;
+        }
+
+        int kingRow = color == TeamColor.WHITE ? 1 : 8;
+        int kingCol = 5;
+
+        // Test pieces exist in the right spot
+        ChessPosition kingPOS = new ChessPosition(kingRow, kingCol);
+        ChessPosition rookPOS = new ChessPosition(kingRow, col);
+
+        ChessPiece king = this.getBoard().getPiece(kingPOS);
+        ChessPiece rook = this.getBoard().getPiece(rookPOS);
+
+        if (king == null || rook == null) {
+            return false;
+        } else if (king.getPieceType() != ChessPiece.PieceType.KING) {
+            return false;
+        } else if (rook.getPieceType() != ChessPiece.PieceType.ROOK) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Check if cell is targeted by an enemy piece
+     *
+     * @param position the position to check
+     * @return if an enemy piece is attacking a cell
+     */
+    public boolean enemyCanAttackCell(ChessPosition position) {
+        Collection<ChessPosition> targetedPiecePositions = new SuperQueenMoveCalculator(this.getBoard(), position).getTargetedPieces();
+
+        // Iterate through all pieces and check their attack paths
+        for (ChessPosition targetedPiecePosition : targetedPiecePositions) {
+            ChessPiece piece = this.getBoard().getPiece(targetedPiecePosition);
+            Collection<ChessMove> enemyMoves = piece.pieceMoves(this.getBoard(), targetedPiecePosition);
+
+            // Iterate through all moves for piece
+            for (ChessMove enemyMove : enemyMoves) {
+                ChessPosition endPosition = enemyMove.getEndPosition();
+
+                if (endPosition.equals(position)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * determines if a team can castle
+     *
+     * @param teamColor the color to check
+     * @param rookCol   the Column of the rook
+     * @return boolean if the team can castle
+     */
+    public boolean canTeamCastle(TeamColor teamColor, int rookCol) {
+        // Cannot castle after moving
+        if (!castlingPiecesCanCastle(teamColor, rookCol)) {
+            return false;
+        }
+
+        // Make sure there's a king in the right spot
+        int kingRow = teamColor == TeamColor.WHITE ? 1 : 8;
+        int kingCol = 5;
+        ChessPosition kingPOS = new ChessPosition(kingRow, kingCol);
+        ChessPiece king = this.getBoard().getPiece(kingPOS);
+        if (king == null) {
+            return false;
+        }
+        if (king.getPieceType() != ChessPiece.PieceType.KING) {
+            return false;
+        }
+
+        // Make sure there's a rook in the right spot
+        int rookRow = teamColor == TeamColor.WHITE ? 1 : 8;
+        ChessPosition rookPOS = new ChessPosition(rookRow, rookCol);
+        ChessPiece rook = this.getBoard().getPiece(rookPOS);
+        if (rook == null) {
+            return false;
+        }
+        if (rook.getPieceType() != ChessPiece.PieceType.ROOK) {
+            return false;
+        }
+
+        // Check that castling squares aren't attacked
+        // Given 5 -> 8: 5,6,7
+        // Given 5 -> 1: 5,4,3,2
+        int rookColumn = rookPOS.getColumn();
+
+        int start = 5;
+        int end = (rookColumn == 8) ? 8 : 1;
+        int step = (rookColumn == 8) ? 1 : -1;
+
+        for (int i = start; i != end; i += step) {
+            ChessGame futureState = new ChessGame(this);
+
+            ChessPosition newPosition = new ChessPosition(kingRow, i);
+
+            // Cannot castle through pieces
+            if (futureState.getBoard().getPiece(newPosition) != null && i != 5) {
+                return false;
+            }
+
+            // Put a king in the selected spot for testing attack
+            ChessPiece newKing = new ChessPiece(teamColor, ChessPiece.PieceType.KING);
+            futureState.getBoard().addPiece(newPosition, newKing);
+
+            // Cannot castle through attacked cells
+            if (futureState.enemyCanAttackCell(newPosition)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
