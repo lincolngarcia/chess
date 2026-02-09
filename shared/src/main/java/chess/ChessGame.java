@@ -113,10 +113,6 @@ public class ChessGame {
 
         // Iterate through each piece's moves
         for (ChessMove pieceMove : pieceMoves) {
-            if (Objects.equals(pieceMove.toString(), "H5 to F7")) {
-                System.out.println("heyooo");
-            }
-
             ChessGame futureState = new ChessGame(this);
             futureState.updateBoard(pieceMove);
 
