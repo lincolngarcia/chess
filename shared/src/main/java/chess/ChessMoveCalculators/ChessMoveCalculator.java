@@ -3,9 +3,57 @@ package chess.ChessMoveCalculators;
 import chess.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 public abstract class ChessMoveCalculator {
+    @Override
+    public String toString() {
+        Collection<ChessMove> moves = this.getPieceMoves();
+        Collection<ChessPosition> endPositions = new ArrayList<>();
+        for (ChessMove move : moves) {
+            endPositions.add(move.getEndPosition());
+        }
+
+        StringBuilder board = new StringBuilder();
+        board.append("   A B C D E F G H\n");
+        for (int row = 7; row >= 0; row--) {
+            board.append(row + 1);
+            board.append(" |");
+            for (int col = 0; col < 8; col++) {
+
+                String characterCode = ".";
+                ChessPosition position = new ChessPosition(row + 1, col + 1);
+                ChessPiece targetCell = this.board.getPiece(position);
+
+                if (targetCell != null) {
+                    characterCode = switch (targetCell.getPieceType()) {
+                        case KING -> "K";
+                        case QUEEN -> "Q";
+                        case ROOK -> "R";
+                        case BISHOP -> "B";
+                        case KNIGHT -> "N";
+                        case PAWN -> "P";
+                    };
+                    // White is UpperCase
+                    if (targetCell.getTeamColor() == ChessGame.TeamColor.BLACK) {
+                        characterCode = characterCode.toLowerCase();
+                    }
+                }
+                if (endPositions.contains(position)) board.append("\033[41m");
+                board.append(characterCode);
+                if (endPositions.contains(position)) board.append("\033[0m");
+                board.append("|");
+            }
+            board.append(" ");
+            board.append(row + 1);
+            board.append("\n");
+        }
+        board.append("   A B C D E F G H\n");
+        return board.toString();
+    }
+
     ChessDirection[] movementDirections;
     int movementDistance;
     ChessBoard board;
@@ -34,7 +82,9 @@ public abstract class ChessMoveCalculator {
                 ChessMove movement = new ChessMove(this.startPosition, endPosition);
 
                 // Check if the move exists on the board
-                if (isInvalidMove(movement, direction)) break;
+                if (isInvalidMove(movement, direction)) {
+                    break;
+                }
 
                 // Check if the selected cell has a piece
                 ChessPiece currentPiece = this.board.getPiece(this.startPosition);
@@ -44,7 +94,7 @@ public abstract class ChessMoveCalculator {
                         pieceMoves.add(movement);
                     }
                     break;
-                }else{
+                } else {
                     pieceMoves.add(movement);
                 }
 
