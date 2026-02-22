@@ -16,6 +16,9 @@ public class ChessBoard {
     ChessPosition whiteKingPOS;
     ChessPosition blackKingPOS;
 
+    private boolean[] kingMoved = new boolean[]{false, false}; // [white, black]
+    private boolean[][] rookMoved = new boolean[][]{{false, false}, {false, false}}; //[column][kingIndex]
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
@@ -90,6 +93,9 @@ public class ChessBoard {
 
         ChessPosition blackKingPOS = oldBoard.getKingPosition(ChessGame.TeamColor.BLACK);
         this.recordKingPosition(blackKingPOS, ChessGame.TeamColor.BLACK);
+
+        this.kingMoved = oldBoard.kingMoved;
+        this.rookMoved = oldBoard.rookMoved;
     }
 
     /**
@@ -122,6 +128,7 @@ public class ChessBoard {
 
     /**
      * records the position of the king for quick retrieval
+     * and castling checks
      *
      * @param position the position of the king
      * @param color    the color of the king
@@ -129,10 +136,19 @@ public class ChessBoard {
     public void recordKingPosition(ChessPosition position, ChessGame.TeamColor color) {
         if (color == ChessGame.TeamColor.WHITE) {
             this.whiteKingPOS = position;
+            this.kingMoved[0] = true;
         } else {
             this.blackKingPOS = position;
+            this.kingMoved[1] = true;
         }
 
+    }
+
+    public void recordRookPosition(ChessPosition position, ChessGame.TeamColor color) {
+        int rowIndex = color == ChessGame.TeamColor.WHITE ? 0 : 1;
+        int colIndex = position.getColumn() == 1 ? 0 : 1;
+
+        this.rookMoved[rowIndex][colIndex] = true;
     }
 
     /**
@@ -171,6 +187,29 @@ public class ChessBoard {
         }
 
         return positions;
+    }
+
+    public void setKingMoved(ChessGame.TeamColor color) {
+        if (color == ChessGame.TeamColor.WHITE) {
+            this.kingMoved[0] = true;
+        }else{
+            this.kingMoved[1] = true;
+        }
+    }
+
+    public boolean hasKingMoved(ChessGame.TeamColor color) {
+        if (color == ChessGame.TeamColor.WHITE) {
+            return this.kingMoved[0];
+        }else{
+            return this.kingMoved[1];
+        }
+    }
+
+    public boolean hasRookMoved(ChessGame.TeamColor color, int col) {
+        int rowIndex = color == ChessGame.TeamColor.WHITE ? 0 : 1;
+        int colIndex = col == 1 ? 0 : 1;
+
+        return this.rookMoved[rowIndex][colIndex];
     }
 
     /**
