@@ -21,7 +21,7 @@ public class ChessBoard {
     private boolean[] kingMoved = new boolean[]{false, false}; // [white, black]
     private boolean[][] rookMoved = new boolean[][]{{false, false}, {false, false}}; //[column][kingIndex]
 
-    public ChessPosition enpassantSquare = null;
+    public ChessPosition enPassantSquare = null;
 
     @Override
     public boolean equals(Object o) {
@@ -109,9 +109,9 @@ public class ChessBoard {
             }
         }
 
-//        // enpassant square
-        if (oldBoard.enpassantSquare != null) {
-            this.enpassantSquare = new ChessPosition(oldBoard.enpassantSquare.getBitboardIndex());
+        // enPassant square
+        if (oldBoard.enPassantSquare != null) {
+            this.enPassantSquare = new ChessPosition(oldBoard.enPassantSquare.getBitboardIndex());
         }
     }
 

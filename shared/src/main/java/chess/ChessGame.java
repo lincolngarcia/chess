@@ -1,7 +1,5 @@
 package chess;
 
-import chess.ChessMoveCalculators.*;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
@@ -239,12 +237,12 @@ public class ChessGame {
         }
 
         // Remove the pawn in the case of enPassant
-        if (this.getBoard().enpassantSquare != null) {
+        if (this.getBoard().enPassantSquare != null) {
             if (piece.getPieceType() == ChessPiece.PieceType.PAWN) {
-                if (move.getEndPosition().equals(this.getBoard().enpassantSquare)) {
-                    // remove the column of the enpassant square at the row of the starting position
+                if (move.getEndPosition().equals(this.getBoard().enPassantSquare)) {
+                    // remove the column of the enPassant square at the row of the starting position
                     int enemyPawnRow = startPosition.getRow();
-                    int enemyPawnColumn = this.getBoard().enpassantSquare.getColumn();
+                    int enemyPawnColumn = this.getBoard().enPassantSquare.getColumn();
                     ChessPosition enemyPawnPosition = new ChessPosition(enemyPawnRow, enemyPawnColumn);
                     this.getBoard().addPiece(enemyPawnPosition, null);
 
@@ -252,17 +250,17 @@ public class ChessGame {
             }
         }
 
-        // reset enpassant
-        this.getBoard().enpassantSquare = null;
+        // reset enPassant
+        this.getBoard().enPassantSquare = null;
 
-        // conditionally set the enpassantSquare
+        // conditionally set the enPassantSquare
         if (piece.getPieceType() == ChessPiece.PieceType.PAWN) {
             int startRow = startPosition.getRow();
             int endRow = move.getEndPosition().getRow();
             int distanceMoved = startRow - endRow;
             if (Math.abs(distanceMoved) == 2) {
                 int enPassantOffset = (distanceMoved / 2) * 8;
-                this.getBoard().enpassantSquare = new ChessPosition(move.getEndPosition().getBitboardIndex() + enPassantOffset);
+                this.getBoard().enPassantSquare = new ChessPosition(move.getEndPosition().getBitboardIndex() + enPassantOffset);
             }
         }
 
