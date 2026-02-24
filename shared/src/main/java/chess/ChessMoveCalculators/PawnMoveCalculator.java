@@ -89,7 +89,7 @@ public class PawnMoveCalculator extends ChessMoveCalculator {
             ChessPiece targetedPiece = this.board.getPiece(leftAttackCell);
             if (targetedPiece != null && targetedPiece.getTeamColor() != pieceColor) {
                 this.addPieceMove(pieceMoves, leftAttack);
-            } else if (leftAttackCell.equals(this.getBoard().enPassantSquare)) {
+            } else if (leftAttackCell.equals(this.getBoard().getEnPassantSquare())) {
                 this.addPieceMove(pieceMoves, leftAttack);
             }
         }
@@ -103,7 +103,7 @@ public class PawnMoveCalculator extends ChessMoveCalculator {
             ChessPiece targetedPiece = this.board.getPiece(rightAttackCell);
             if (targetedPiece != null && targetedPiece.getTeamColor() != pieceColor) {
                 this.addPieceMove(pieceMoves, rightAttack);
-            } else if (rightAttackCell.equals(this.getBoard().enPassantSquare)) {
+            } else if (rightAttackCell.equals(this.getBoard().getEnPassantSquare())) {
                 this.addPieceMove(pieceMoves, rightAttack);
             }
         }

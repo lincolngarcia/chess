@@ -136,9 +136,8 @@ public class ChessGame {
                     int passedSquareOffset = pieceMove.getEndPosition().getColumn() == 3 ? -1 : 1;
                     int passedSquareIndex = pieceMove.getStartPosition().getBitboardIndex() + passedSquareOffset;
                     ChessPosition passedSquare = new ChessPosition(passedSquareIndex);
-                    if (this.getBoard().canEnemyAttackCell(passedSquare, piece.getTeamColor())) {
+                    if (this.getBoard().canTeamAttackCell(passedSquare, piece.getTeamColor())) {
                         validMoves.remove(pieceMove);
-                        continue;
                     }
                 }
             }
@@ -188,9 +187,6 @@ public class ChessGame {
             return;
         }
 
-        ChessPiece.PieceType pieceType = move.getPromotionPiece();
-        ChessPiece.PieceType resultingPieceType = pieceType == null ? piece.getPieceType() : pieceType;
-        ChessPiece resultingPiece = new ChessPiece(piece.getTeamColor(), resultingPieceType);
         int row = this.getTeamTurn() == TeamColor.WHITE ? 1 : 8;
 
         // Simulate the move
@@ -209,18 +205,16 @@ public class ChessGame {
             boolean correctStartCol = startCol == 1 || startCol == 8;
 
             if (correctStartRow && correctStartCol) {
-                this.getBoard().setRookMoved(startPosition, piece.getTeamColor());
+                this.getBoard().setRookMoved(piece.getTeamColor(), startCol);
             }
         }
 
         // Update the board
-        this.getBoard().addPiece(move.getEndPosition(), resultingPiece);
-        this.getBoard().addPiece(move.getStartPosition(), null);
+        this.getBoard().moveAndCapture(move);
 
         int distance = Math.abs(move.getStartPosition().getColumn() - move.getEndPosition().getColumn());
-
         // Move the rook in the event of castling
-        if (resultingPiece.getPieceType() == ChessPiece.PieceType.KING && distance == 2) {
+        if (piece.getPieceType() == ChessPiece.PieceType.KING && distance == 2) {
             int kingEndColumn = move.getEndPosition().getColumn();
             int rookCol = kingEndColumn == 3 ? 1 : 8;
             if (rookCol == 1) {
@@ -237,12 +231,12 @@ public class ChessGame {
         }
 
         // Remove the pawn in the case of enPassant
-        if (this.getBoard().enPassantSquare != null) {
+        if (this.getBoard().getEnPassantSquare() != null) {
             if (piece.getPieceType() == ChessPiece.PieceType.PAWN) {
-                if (move.getEndPosition().equals(this.getBoard().enPassantSquare)) {
+                if (move.getEndPosition().equals(this.getBoard().getEnPassantSquare())) {
                     // remove the column of the enPassant square at the row of the starting position
                     int enemyPawnRow = startPosition.getRow();
-                    int enemyPawnColumn = this.getBoard().enPassantSquare.getColumn();
+                    int enemyPawnColumn = this.getBoard().getEnPassantSquare().getColumn();
                     ChessPosition enemyPawnPosition = new ChessPosition(enemyPawnRow, enemyPawnColumn);
                     this.getBoard().addPiece(enemyPawnPosition, null);
 
@@ -251,7 +245,7 @@ public class ChessGame {
         }
 
         // reset enPassant
-        this.getBoard().enPassantSquare = null;
+        this.getBoard().setEnPassantSquare(null);
 
         // conditionally set the enPassantSquare
         if (piece.getPieceType() == ChessPiece.PieceType.PAWN) {
@@ -260,7 +254,7 @@ public class ChessGame {
             int distanceMoved = startRow - endRow;
             if (Math.abs(distanceMoved) == 2) {
                 int enPassantOffset = (distanceMoved / 2) * 8;
-                this.getBoard().enPassantSquare = new ChessPosition(move.getEndPosition().getBitboardIndex() + enPassantOffset);
+                this.getBoard().setEnPassantSquare(new ChessPosition(move.getEndPosition().getBitboardIndex() + enPassantOffset));
             }
         }
 
@@ -274,7 +268,7 @@ public class ChessGame {
      * @return True if the specified team is in check
      */
     public boolean isInCheck(TeamColor teamColor) {
-        return this.getBoard().canEnemyAttackCell(this.getBoard().getKingPosition(teamColor), teamColor);
+        return this.getBoard().canTeamAttackCell(this.getBoard().getKingPosition(teamColor), teamColor);
     }
 
     /**

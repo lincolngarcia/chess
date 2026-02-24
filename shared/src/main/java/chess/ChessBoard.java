@@ -14,15 +14,17 @@ import java.util.Objects;
  * signature of the existing methods.
  */
 public class ChessBoard {
-    ChessPiece[][] Board;
-    ChessPosition whiteKingPOS;
-    ChessPosition blackKingPOS;
+    // Class Variables
+    private final ChessPiece[][] Board;
+    private ChessPosition whiteKingPOS;
+    private ChessPosition blackKingPOS;
 
-    private boolean[] kingMoved = new boolean[]{false, false}; // [white, black]
-    private boolean[][] rookMoved = new boolean[][]{{false, false}, {false, false}}; //[column][kingIndex]
+    private final boolean[] kingMoved = new boolean[]{false, false}; // [white, black]
+    private final boolean[][] rookMoved = new boolean[][]{{false, false}, {false, false}}; //[column][kingIndex]
 
-    public ChessPosition enPassantSquare = null;
+    private ChessPosition enPassantSquare = null;
 
+    // Standard Overrides
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
@@ -72,6 +74,7 @@ public class ChessBoard {
         return board.toString();
     }
 
+    // Constructors
     public ChessBoard() {
         this.Board = new ChessPiece[8][8];
     }
@@ -98,7 +101,8 @@ public class ChessBoard {
         ChessPosition blackKingPOS = oldBoard.getKingPosition(ChessGame.TeamColor.BLACK);
         this.recordKingPosition(blackKingPOS, ChessGame.TeamColor.BLACK);
 
-        this.kingMoved = oldBoard.kingMoved.clone();
+        this.kingMoved[0] = oldBoard.kingMoved[0];
+        this.kingMoved[1] = oldBoard.kingMoved[1];
 
         // moved rooks
         for (int i = 0; i < 2; i++) {
@@ -115,52 +119,18 @@ public class ChessBoard {
         }
     }
 
+    // Getters
     /**
-     * Adds a chess piece to the chessboard
+     * Returns the position of the enPassant square
      *
-     * @param position where to add the piece to
-     * @param piece    the piece to add
+     * @return ChessPosition the position of the square
      */
-    public void addPiece(ChessPosition position, ChessPiece piece) {
-        this.Board[position.getRow() - 1][position.getColumn() - 1] = piece;
-
-        if (piece == null) {
-            return;
-        }
-        if (piece.getPieceType() == ChessPiece.PieceType.KING) {
-            this.recordKingPosition(position, piece.getTeamColor());
-        }
+    public ChessPosition getEnPassantSquare() {
+        return this.enPassantSquare;
     }
 
     /**
-     * Returns a chess piece on the chessboard
-     *
-     * @param position The position to get the piece from
-     * @return Either the piece at the position, or null if no piece is at that
-     * position
-     */
-    public ChessPiece getPiece(ChessPosition position) {
-        return this.Board[position.getRow() - 1][position.getColumn() - 1];
-    }
-
-    /**
-     * records the position of the king for quick retrieval
-     * and castling checks
-     *
-     * @param position the position of the king
-     * @param color    the color of the king
-     */
-    public void recordKingPosition(ChessPosition position, ChessGame.TeamColor color) {
-        if (color == ChessGame.TeamColor.WHITE) {
-            this.whiteKingPOS = position;
-        } else {
-            this.blackKingPOS = position;
-        }
-
-    }
-
-    /**
-     * returns the position of the king
+     * returns the position of the king of @param color
      *
      * @param color the color of the king
      * @return ChessPosition the position of the king
@@ -174,7 +144,18 @@ public class ChessBoard {
     }
 
     /**
-     * returns a collection of piece positions given a team
+     * Returns a chess piece on the chessboard at @param position
+     *
+     * @param position The position to get the piece from
+     * @return Either the piece at the position, or null if no piece is at that
+     * position
+     */
+    public ChessPiece getPiece(ChessPosition position) {
+        return this.Board[position.getRow() - 1][position.getColumn() - 1];
+    }
+
+    /**
+     * returns a collection of piece positions of @param color
      *
      * @param color the team color
      * @return Collection of ChessPosition
@@ -197,43 +178,137 @@ public class ChessBoard {
         return positions;
     }
 
+    // Setters
+    /**
+     * Sets the enPassant square
+     *
+     * @param position the position to store
+     */
+    public void setEnPassantSquare(ChessPosition position) {
+        this.enPassantSquare = position;
+    }
+
+    /**
+     * Acknowledges king movement for @param color
+     * for castling
+     *
+     * @param color the king's color
+     */
     public void setKingMoved(ChessGame.TeamColor color) {
         if (color == ChessGame.TeamColor.WHITE) {
             this.kingMoved[0] = true;
-        }else{
+        } else {
             this.kingMoved[1] = true;
         }
     }
 
-    public void setRookMoved(ChessPosition startPosition, ChessGame.TeamColor color) {
-        int rowIndex = color == ChessGame.TeamColor.WHITE ? 0 : 1;
-        int colIndex = startPosition.getColumn() == 1 ? 0 : 1;
+    /**
+     * Acknowledges rook movement for a rook of @param color
+     * and @param startPosition
+     *
+     * @param color       the rook's color
+     * @param startColumn the starting column of the rook
+     */
+    public void setRookMoved(ChessGame.TeamColor color, int startColumn) {
+        int startRow = color == ChessGame.TeamColor.WHITE ? 1 : 8;
+        assert startColumn == 1 || startColumn == 8 : "Invalid startColumn for Rook";
+
+        int rowIndex = startRow == 1 ? 0 : 1;
+        int colIndex = startColumn == 1 ? 0 : 1;
 
         this.rookMoved[rowIndex][colIndex] = true;
     }
 
+    // Other Functions
+    /**
+     * Adds a chess piece to the chessboard
+     *
+     * @param position where to add the piece to
+     * @param piece    the piece to add
+     */
+    public void addPiece(ChessPosition position, ChessPiece piece) {
+        this.Board[position.getRow() - 1][position.getColumn() - 1] = piece;
+
+        if (piece == null) {
+            return;
+        }
+        if (piece.getPieceType() == ChessPiece.PieceType.KING) {
+            this.recordKingPosition(position, piece.getTeamColor());
+        }
+    }
+
+    /**
+     * Returns if the king of @param color has moved previously
+     *
+     * @param color the king's color
+     * @return boolean if the king has previously moved
+     */
     public boolean hasKingMoved(ChessGame.TeamColor color) {
         if (color == ChessGame.TeamColor.WHITE) {
             return this.kingMoved[0];
-        }else{
+        } else {
             return this.kingMoved[1];
         }
     }
 
-    public boolean hasRookMoved(ChessGame.TeamColor color, int col) {
-        int rowIndex = color == ChessGame.TeamColor.WHITE ? 0 : 1;
-        int colIndex = col == 1 ? 0 : 1;
+    /**
+     * Returns if the rook of @param color and @param startColumn
+     * has moved previously
+     *
+     * @param color       the king's color
+     * @param startColumn the starting column of the rook
+     * @return boolean if the king has previously moved
+     */
+    public boolean hasRookMoved(ChessGame.TeamColor color, int startColumn) {
+        int startRow = color == ChessGame.TeamColor.WHITE ? 1 : 8;
+        assert startColumn == 1 || startColumn == 8 : "Invalid startColumn for Rook";
+
+        int rowIndex = startRow == 1 ? 0 : 1;
+        int colIndex = startColumn == 1 ? 0 : 1;
 
         return this.rookMoved[rowIndex][colIndex];
     }
 
     /**
+     * Updates the pieces on the board
+     *
+     * @param move the move to perform
+     */
+    public void move(ChessMove move) {
+        ChessPosition startPosition = move.getStartPosition();
+        ChessPiece piece = this.getPiece(startPosition);
+        ChessPiece.PieceType promotionPieceType = move.getPromotionPiece();
+        ChessPiece.PieceType resultingPieceType = promotionPieceType == null ? piece.getPieceType() : promotionPieceType;
+        ChessPiece resultingPiece = new ChessPiece(piece.getTeamColor(), resultingPieceType);
+
+        this.addPiece(move.getEndPosition(), resultingPiece);
+        this.addPiece(move.getStartPosition(), null);
+    }
+
+    /**
+     * records the position of the king for quick retrieval
+     *
+     * @param position the position of the king
+     * @param color    the color of the king
+     */
+    public void recordKingPosition(ChessPosition position, ChessGame.TeamColor color) {
+        if (color == ChessGame.TeamColor.WHITE) {
+            this.whiteKingPOS = position;
+        } else {
+            this.blackKingPOS = position;
+        }
+    }
+
+    // Logic Heavy Functions
+    /**
      * Check if cell is targeted by an enemy piece
      *
-     * @param position the position to check
+     * @param position the position to check against
+     * @param teamColor the color of the cell at @param position
      * @return if an enemy piece is attacking a cell
      */
-    public boolean canEnemyAttackCell(ChessPosition position, ChessGame.TeamColor teamColor) {
+    public boolean canTeamAttackCell(ChessPosition position, ChessGame.TeamColor teamColor) {
+        // Get the enemy pieces that can potentially target @param position (superQueenCalculator)
         Collection<ChessPosition> targetedPiecePositions = new SuperQueenMoveCalculator(this, position).getTargetedPieces(teamColor);
 
         // Iterate through all pieces and check their attack paths
@@ -245,13 +320,46 @@ public class ChessBoard {
             for (ChessMove enemyMove : enemyMoves) {
                 ChessPosition endPosition = enemyMove.getEndPosition();
 
+                // Return if the team can attack the cell
                 if (endPosition.equals(position)) {
                     return true;
                 }
             }
         }
 
+        // Otherwise, return false
         return false;
+    }
+
+    /**
+     * Performs the necessary calculators to move
+     * and update the board. Updates rook's have moved
+     * if they are captured
+     *
+     * @param move the move to execute
+     */
+    public void moveAndCapture(ChessMove move) {
+        // Variables
+        ChessPosition endPosition = move.getEndPosition();
+        ChessPiece capturedPiece = this.getPiece(endPosition);
+
+        // Check if an unmoved rook is being captured
+        if (capturedPiece != null) {
+            if (capturedPiece.getPieceType() == ChessPiece.PieceType.ROOK) {
+                int row = endPosition.getRow();
+                int column = endPosition.getColumn();
+
+                boolean cornerRow = row == 1 || row == 8;
+                boolean cornerColumn = column == 1 || column == 8;
+
+                if (cornerColumn && cornerRow) {
+                    ChessGame.TeamColor color = row == 1 ? ChessGame.TeamColor.WHITE : ChessGame.TeamColor.BLACK;
+                    this.setRookMoved(color, column);
+                }
+            }
+        }
+
+        this.move(move);
     }
 
     /**
@@ -266,11 +374,17 @@ public class ChessBoard {
             }
         }
 
+        // Reset the variables
         this.whiteKingPOS = new ChessPosition(1, 5);
         this.blackKingPOS = new ChessPosition(8, 5);
 
-        this.kingMoved = new boolean[]{false, false}; // [white, black]
-        this.rookMoved = new boolean[][]{{false, false}, {false, false}}; //[column][kingIndex]
+        this.kingMoved[0] = false;
+        this.kingMoved[1] = false;
+
+        this.rookMoved[0][0] = false;
+        this.rookMoved[0][1] = false;
+        this.rookMoved[1][0] = false;
+        this.rookMoved[1][1] = false;
 
         this.enPassantSquare = null;
 
