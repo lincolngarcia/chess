@@ -37,7 +37,9 @@ public class SuperQueenMoveCalculator extends ChessMoveCalculator {
 
     /**
      * Returns all pieces that can be targeted
+     * I'm pretty sure teamColor is redundant
      *
+     * @param teamColor the attacking piece's color
      * @return A collection of positions containing targeted pieces
      */
     public Collection<ChessPosition> getTargetedPieces(ChessGame.TeamColor teamColor) {
