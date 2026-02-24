@@ -50,10 +50,11 @@ public class PersonalTests {
         game.getBoard().resetBoard();
 
         try {
-            int moveCount = 25;
+            int moveCount = 26;
+            int SEED = 10298;
             for (int i = 0; i < moveCount; i++) {
                 List<ChessMove> allMoves = this.getAllMoves(game, game.getTeamTurn());
-                int index = Math.abs(allMoves.hashCode()) % allMoves.size();
+                int index = Math.abs(allMoves.hashCode() * SEED) % allMoves.size();
                 game.makeMove(allMoves.get(index));
             }
         } catch (InvalidMoveException e) {
@@ -83,6 +84,10 @@ public class PersonalTests {
         ChessMoveCalculator whiteCalculator = new QueenMoveCalculator(game.getBoard(), whiteQueenPOS);
 
         System.out.println(calculator);
+        System.out.println(whiteCalculator);
+
+        System.out.println(game.getBoard().getHistory());
+        game.getBoard().printHistory();
     }
 
     @Test
