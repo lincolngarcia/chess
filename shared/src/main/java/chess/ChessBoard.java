@@ -21,6 +21,8 @@ public class ChessBoard {
     private boolean[] kingMoved = new boolean[]{false, false}; // [white, black]
     private boolean[][] rookMoved = new boolean[][]{{false, false}, {false, false}}; //[column][kingIndex]
 
+    public ChessPosition enpassantSquare = null;
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
@@ -98,12 +100,18 @@ public class ChessBoard {
 
         this.kingMoved = oldBoard.kingMoved.clone();
 
+        // moved rooks
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < 2; j++) {
                 ChessGame.TeamColor color = i == 0 ? ChessGame.TeamColor.WHITE : ChessGame.TeamColor.BLACK;
                 int column = j == 0 ? 1 : 8;
                 this.rookMoved[i][j] = oldBoard.hasRookMoved(color, column);
             }
+        }
+
+//        // enpassant square
+        if (oldBoard.enpassantSquare != null) {
+            this.enpassantSquare = new ChessPosition(oldBoard.enpassantSquare.getBitboardIndex());
         }
     }
 

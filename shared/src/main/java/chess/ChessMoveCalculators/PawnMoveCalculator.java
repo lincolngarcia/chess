@@ -85,9 +85,11 @@ public class PawnMoveCalculator extends ChessMoveCalculator {
         int leftAttackCellIndex = startPositionIndex + leftAttackOffset;
         ChessPosition leftAttackCell = new ChessPosition(leftAttackCellIndex);
         ChessMove leftAttack = new ChessMove(this.startPosition, leftAttackCell);
-        if (!isInvalidMove(leftAttack, leftAttackDirection)) {
+        if (!this.isInvalidMove(leftAttack, leftAttackDirection)) {
             ChessPiece targetedPiece = this.board.getPiece(leftAttackCell);
             if (targetedPiece != null && targetedPiece.getTeamColor() != pieceColor) {
+                this.addPieceMove(pieceMoves, leftAttack);
+            } else if (leftAttackCell.equals(this.getBoard().enpassantSquare)) {
                 this.addPieceMove(pieceMoves, leftAttack);
             }
         }
@@ -97,9 +99,11 @@ public class PawnMoveCalculator extends ChessMoveCalculator {
         int rightAttackCellIndex = startPositionIndex + rightAttackOffset;
         ChessPosition rightAttackCell = new ChessPosition(rightAttackCellIndex);
         ChessMove rightAttack = new ChessMove(this.startPosition, rightAttackCell);
-        if (!isInvalidMove(rightAttack, rightAttackDirection)) {
+        if (!this.isInvalidMove(rightAttack, rightAttackDirection)) {
             ChessPiece targetedPiece = this.board.getPiece(rightAttackCell);
             if (targetedPiece != null && targetedPiece.getTeamColor() != pieceColor) {
+                this.addPieceMove(pieceMoves, rightAttack);
+            } else if (rightAttackCell.equals(this.getBoard().enpassantSquare)) {
                 this.addPieceMove(pieceMoves, rightAttack);
             }
         }
@@ -122,4 +126,23 @@ public class PawnMoveCalculator extends ChessMoveCalculator {
             pieceMoves.add(move);
         }
     }
+
+//    @Override
+//    protected boolean isInvalidMove(ChessMove move, ChessDirection directionMoved) {
+//        boolean isInvalidMove = super.isInvalidMove(move, directionMoved);
+//        if (!isInvalidMove) {
+//            return false;
+//        }
+//
+//        // Enpassant move
+//        if (this.getBoard().enpassantSquare == null) {
+//            return true;
+//        }
+//
+//        if (this.getBoard().enpassantSquare == move.getEndPosition()) {
+//            return false;
+//        }
+//
+//        return true;
+//    }
 }

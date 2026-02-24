@@ -238,6 +238,34 @@ public class ChessGame {
             }
         }
 
+        // Remove the pawn in the case of enPassant
+        if (this.getBoard().enpassantSquare != null) {
+            if (piece.getPieceType() == ChessPiece.PieceType.PAWN) {
+                if (move.getEndPosition().equals(this.getBoard().enpassantSquare)) {
+                    // remove the column of the enpassant square at the row of the starting position
+                    int enemyPawnRow = startPosition.getRow();
+                    int enemyPawnColumn = this.getBoard().enpassantSquare.getColumn();
+                    ChessPosition enemyPawnPosition = new ChessPosition(enemyPawnRow, enemyPawnColumn);
+                    this.getBoard().addPiece(enemyPawnPosition, null);
+
+                }
+            }
+        }
+
+        // reset enpassant
+        this.getBoard().enpassantSquare = null;
+
+        // conditionally set the enpassantSquare
+        if (piece.getPieceType() == ChessPiece.PieceType.PAWN) {
+            int startRow = startPosition.getRow();
+            int endRow = move.getEndPosition().getRow();
+            int distanceMoved = startRow - endRow;
+            if (Math.abs(distanceMoved) == 2) {
+                int enPassantOffset = (distanceMoved / 2) * 8;
+                this.getBoard().enpassantSquare = new ChessPosition(move.getEndPosition().getBitboardIndex() + enPassantOffset);
+            }
+        }
+
         this.toggleTeamTurn();
     }
 
