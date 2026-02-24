@@ -269,6 +269,11 @@ public class ChessBoard {
         this.whiteKingPOS = new ChessPosition(1, 5);
         this.blackKingPOS = new ChessPosition(8, 5);
 
+        this.kingMoved = new boolean[]{false, false}; // [white, black]
+        this.rookMoved = new boolean[][]{{false, false}, {false, false}}; //[column][kingIndex]
+
+        this.enPassantSquare = null;
+
         // Place black pieces
         this.Board[0][0] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.ROOK);
         this.Board[0][1] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KNIGHT);
