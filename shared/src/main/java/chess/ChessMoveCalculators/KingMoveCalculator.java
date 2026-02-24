@@ -84,7 +84,7 @@ public class KingMoveCalculator extends ChessMoveCalculator{
 
         for (int col : columnsToCheck) {
             ChessPosition position = new ChessPosition(row, col);
-            if (this.getBoard().getPiece(position) == null) return false;
+            if (this.getBoard().getPiece(position) != null) return false;
         }
 
         return true;

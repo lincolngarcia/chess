@@ -129,9 +129,9 @@ public class ChessGame {
                 int movementDistance = Math.abs(startColumn - endColumn);
                 if (movementDistance == 2) {
                     // Check if the king is in check
-                    if (this.getBoard().canEnemyAttackCell(pieceMove.getStartPosition(), this.getTeamTurn())) {
+                    if (this.isInCheck(piece.getTeamColor())) {
                         validMoves.remove(pieceMove);
-                        break;
+                        continue;
                     }
 
                     // Check the passed square for attacks
@@ -140,7 +140,7 @@ public class ChessGame {
                     ChessPosition passedSquare = new ChessPosition(passedSquareIndex);
                     if (this.getBoard().canEnemyAttackCell(passedSquare, piece.getTeamColor())) {
                         validMoves.remove(pieceMove);
-                        break;
+                        continue;
                     }
                 }
             }
