@@ -1,5 +1,7 @@
 package chess;
 
+import chess.ChessMoveCalculators.SuperQueenMoveCalculator;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -94,8 +96,15 @@ public class ChessBoard {
         ChessPosition blackKingPOS = oldBoard.getKingPosition(ChessGame.TeamColor.BLACK);
         this.recordKingPosition(blackKingPOS, ChessGame.TeamColor.BLACK);
 
-        this.kingMoved = oldBoard.kingMoved;
-        this.rookMoved = oldBoard.rookMoved;
+        this.kingMoved = oldBoard.kingMoved.clone();
+
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                ChessGame.TeamColor color = i == 0 ? ChessGame.TeamColor.WHITE : ChessGame.TeamColor.BLACK;
+                int column = j == 0 ? 1 : 8;
+                this.rookMoved[i][j] = oldBoard.hasRookMoved(color, column);
+            }
+        }
     }
 
     /**
@@ -136,19 +145,10 @@ public class ChessBoard {
     public void recordKingPosition(ChessPosition position, ChessGame.TeamColor color) {
         if (color == ChessGame.TeamColor.WHITE) {
             this.whiteKingPOS = position;
-            this.kingMoved[0] = true;
         } else {
             this.blackKingPOS = position;
-            this.kingMoved[1] = true;
         }
 
-    }
-
-    public void recordRookPosition(ChessPosition position, ChessGame.TeamColor color) {
-        int rowIndex = color == ChessGame.TeamColor.WHITE ? 0 : 1;
-        int colIndex = position.getColumn() == 1 ? 0 : 1;
-
-        this.rookMoved[rowIndex][colIndex] = true;
     }
 
     /**
@@ -197,6 +197,13 @@ public class ChessBoard {
         }
     }
 
+    public void setRookMoved(ChessPosition startPosition, ChessGame.TeamColor color) {
+        int rowIndex = color == ChessGame.TeamColor.WHITE ? 0 : 1;
+        int colIndex = startPosition.getColumn() == 1 ? 0 : 1;
+
+        this.rookMoved[rowIndex][colIndex] = true;
+    }
+
     public boolean hasKingMoved(ChessGame.TeamColor color) {
         if (color == ChessGame.TeamColor.WHITE) {
             return this.kingMoved[0];
@@ -210,6 +217,33 @@ public class ChessBoard {
         int colIndex = col == 1 ? 0 : 1;
 
         return this.rookMoved[rowIndex][colIndex];
+    }
+
+    /**
+     * Check if cell is targeted by an enemy piece
+     *
+     * @param position the position to check
+     * @return if an enemy piece is attacking a cell
+     */
+    public boolean canEnemyAttackCell(ChessPosition position, ChessGame.TeamColor teamColor) {
+        Collection<ChessPosition> targetedPiecePositions = new SuperQueenMoveCalculator(this, position).getTargetedPieces(teamColor);
+
+        // Iterate through all pieces and check their attack paths
+        for (ChessPosition targetedPiecePosition : targetedPiecePositions) {
+            ChessPiece piece = this.getPiece(targetedPiecePosition);
+            Collection<ChessMove> enemyMoves = piece.pieceMoves(this, targetedPiecePosition);
+
+            // Iterate through all moves for piece
+            for (ChessMove enemyMove : enemyMoves) {
+                ChessPosition endPosition = enemyMove.getEndPosition();
+
+                if (endPosition.equals(position)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**

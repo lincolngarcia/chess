@@ -40,7 +40,7 @@ public class SuperQueenMoveCalculator extends ChessMoveCalculator {
      *
      * @return A collection of positions containing targeted pieces
      */
-    public Collection<ChessPosition> getTargetedPieces() {
+    public Collection<ChessPosition> getTargetedPieces(ChessGame.TeamColor teamColor) {
         this.setMovementDirections();
         this.setMovementDistance();
 
@@ -70,10 +70,9 @@ public class SuperQueenMoveCalculator extends ChessMoveCalculator {
                 }
 
                 // Check if the selected cell has a piece
-                ChessPiece currentPiece = this.board.getPiece(this.startPosition);
                 ChessPiece targetedPiece = this.board.getPiece(endPosition);
                 if (targetedPiece != null) {
-                    if (targetedPiece.getTeamColor() != currentPiece.getTeamColor()) {
+                    if (targetedPiece.getTeamColor() != teamColor) {
                         targetedPieces.add(endPosition);
                     }
                     break;

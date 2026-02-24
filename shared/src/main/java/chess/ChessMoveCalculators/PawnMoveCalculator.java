@@ -33,14 +33,17 @@ public class PawnMoveCalculator extends ChessMoveCalculator {
 
     @Override
     public Collection<ChessMove> getPieceMoves() {
+        // Set variables
         ChessPiece piece = this.board.getPiece(startPosition);
         ChessGame.TeamColor pieceColor = piece.getTeamColor();
         this.colorInverter = pieceColor == ChessGame.TeamColor.WHITE ? 1 : -1;
 
+        // Correct directions
         ChessDirection forwardDirection = this.colorInverter == 1 ? ChessDirection.UP : ChessDirection.DOWN;
         ChessDirection leftAttackDirection = this.colorInverter == 1 ? ChessDirection.LEFT_UP : ChessDirection.RIGHT_DOWN;
         ChessDirection rightAttackDirection = this.colorInverter == 1 ? ChessDirection.RIGHT_UP : ChessDirection.LEFT_DOWN;
 
+        // Super
         this.setMovementDirections();
         this.setMovementDistance(startPosition);
 
