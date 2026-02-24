@@ -3,9 +3,7 @@ package chess.ChessMoveCalculators;
 import chess.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 
 public abstract class ChessMoveCalculator {
     @Override
@@ -62,6 +60,10 @@ public abstract class ChessMoveCalculator {
     public ChessMoveCalculator(ChessBoard board, ChessPosition position) {
         this.board = board;
         this.startPosition = position;
+    }
+
+    protected ChessBoard getBoard() {
+        return this.board;
     }
 
     abstract void setMovementDirections();

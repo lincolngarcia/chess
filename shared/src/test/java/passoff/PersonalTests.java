@@ -187,4 +187,14 @@ public class PersonalTests {
 
     }
 
+    @Test
+    @DisplayName("Test enums aren't copied by reference")
+    public void enumTest() {
+       ChessGame game = new ChessGame();
+       ChessGame secondGame = new ChessGame(game);
+       secondGame.setTeamTurn(ChessGame.TeamColor.BLACK);
+       System.out.println(game);
+        System.out.println(secondGame);
+    }
+
 }
