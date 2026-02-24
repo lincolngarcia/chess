@@ -3,9 +3,29 @@ package chess.ChessMoveCalculators;
 import chess.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Objects;
 
 public abstract class ChessMoveCalculator {
+    ChessDirection[] movementDirections;
+    int movementDistance;
+    ChessBoard board;
+    ChessPosition startPosition;
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof ChessMoveCalculator that)) {
+            return false;
+        }
+        return movementDistance == that.movementDistance && Objects.deepEquals(movementDirections, that.movementDirections) && Objects.equals(board, that.board) && Objects.equals(startPosition, that.startPosition);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(Arrays.hashCode(movementDirections), movementDistance, board, startPosition);
+    }
+
     @Override
     public String toString() {
         Collection<ChessMove> moves = this.getPieceMoves();
@@ -25,6 +45,7 @@ public abstract class ChessMoveCalculator {
                 ChessPosition position = new ChessPosition(row + 1, col + 1);
                 ChessPiece targetCell = this.board.getPiece(position);
 
+                // Normal Cells
                 if (targetCell != null) {
                     characterCode = switch (targetCell.getPieceType()) {
                         case KING -> "K";
@@ -39,9 +60,51 @@ public abstract class ChessMoveCalculator {
                         characterCode = characterCode.toLowerCase();
                     }
                 }
-                if (endPositions.contains(position)) board.append("\033[41m");
+
+                // Targeted Cells
+                if (endPositions.contains(position)) {
+                    if (targetCell == null) {
+                        characterCode = "⊗";
+                    } else {
+                        String[] targetedSymbols;
+                        if (targetCell.getTeamColor() == ChessGame.TeamColor.WHITE) {
+                            targetedSymbols = new String[]{"Ⓚ", "Ⓠ", "Ⓡ", "Ⓑ", "Ⓝ", "Ⓟ"};
+                        } else {
+                            targetedSymbols = new String[]{"ⓚ", "ⓠ", "ⓡ", "ⓑ", "ⓝ", "ⓟ"};
+                        }
+
+                        characterCode = switch (targetCell.getPieceType()) {
+                            case KING -> targetedSymbols[0];
+                            case QUEEN -> targetedSymbols[1];
+                            case ROOK -> targetedSymbols[2];
+                            case BISHOP -> targetedSymbols[3];
+                            case KNIGHT -> targetedSymbols[4];
+                            case PAWN -> targetedSymbols[5];
+                        };
+                    }
+                }
+
+                // Piece in question
+                if (this.startPosition.equals(position) && targetCell != null) {
+                    String[] targetedSymbols;
+                    if (targetCell.getTeamColor() == ChessGame.TeamColor.WHITE) {
+                        targetedSymbols = new String[]{"𝕂", "ℚ", "ℝ", "𝔹", "ℕ", "ℙ"};
+
+                    } else {
+                        targetedSymbols = new String[]{"𝕜", "𝕢", "𝕣", "𝕓", "𝕟", "𝕡"};
+                    }
+
+                    characterCode = switch (targetCell.getPieceType()) {
+                        case KING -> targetedSymbols[0];
+                        case QUEEN -> targetedSymbols[1];
+                        case ROOK -> targetedSymbols[2];
+                        case BISHOP -> targetedSymbols[3];
+                        case KNIGHT -> targetedSymbols[4];
+                        case PAWN -> targetedSymbols[5];
+                    };
+                }
+
                 board.append(characterCode);
-                if (endPositions.contains(position)) board.append("\033[0m");
                 board.append("|");
             }
             board.append(" ");
@@ -51,11 +114,6 @@ public abstract class ChessMoveCalculator {
         board.append("   A B C D E F G H\n");
         return board.toString();
     }
-
-    ChessDirection[] movementDirections;
-    int movementDistance;
-    ChessBoard board;
-    ChessPosition startPosition;
 
     public ChessMoveCalculator(ChessBoard board, ChessPosition position) {
         this.board = board;
