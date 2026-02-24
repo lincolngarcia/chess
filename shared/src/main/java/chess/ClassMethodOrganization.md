@@ -15,3 +15,4 @@ Add in assertions and error handling when necessary
 * corner check
 * isWhite check
 * king / rook row -> index converter
+* Piece Symbols

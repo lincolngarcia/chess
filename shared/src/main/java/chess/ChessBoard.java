@@ -24,8 +24,6 @@ public class ChessBoard {
 
     private ChessPosition enPassantSquare = null;
 
-    private final Collection<ChessMove> history = new ArrayList<>();
-
     // Standard Overrides
     @Override
     public boolean equals(Object o) {
@@ -129,13 +127,6 @@ public class ChessBoard {
      */
     public ChessPosition getEnPassantSquare() {
         return this.enPassantSquare;
-    }
-
-    /**
-     * Returns the history
-     */
-    public Collection<ChessMove> getHistory() {
-        return this.history;
     }
 
     /**
@@ -292,8 +283,6 @@ public class ChessBoard {
 
         this.addPiece(move.getEndPosition(), resultingPiece);
         this.addPiece(move.getStartPosition(), null);
-
-        this.history.add(move);
     }
 
     /**
@@ -371,22 +360,6 @@ public class ChessBoard {
         }
 
         this.move(move);
-    }
-
-    /**
-     * Prints the game history in an easy-to-read way
-     */
-    public void printHistory() {
-        ChessGame temp = new ChessGame();
-
-        for (ChessMove move : this.getHistory()) {
-            try {
-                temp.makeMove(move);
-                System.out.print(temp);
-            } catch (InvalidMoveException e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 
     /**

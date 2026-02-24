@@ -14,6 +14,8 @@ public class ChessGame {
     TeamColor teamToMove = TeamColor.WHITE;
     ChessBoard Board;
 
+    private final Collection<ChessMove> history = new ArrayList<>();
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof ChessGame chessGame)) {
@@ -258,7 +260,36 @@ public class ChessGame {
             }
         }
 
+        // Store move in history
+        this.history.add(move);
+
         this.toggleTeamTurn();
+    }
+
+    /**
+     * Returns the history
+     */
+    public Collection<ChessMove> getHistory() {
+        return this.history;
+    }
+
+    /**
+     * Prints the game history in an easy-to-read way
+     */
+    public void printHistory() {
+        ChessGame temp = new ChessGame();
+
+        int i = 1;
+        for (ChessMove move : this.getHistory()) {
+            try {
+                temp.makeMove(move);
+                System.out.println(Math.floorDiv(++i, 2) + " =====");
+                System.out.println(move);
+                System.out.print(temp);
+            } catch (InvalidMoveException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     /**
