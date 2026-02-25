@@ -214,64 +214,6 @@ public class ChessGame {
 
     // Logic Heavy Functions
     /**
-     * Gets a valid moves for a piece at the given location
-     *
-     * @param startPosition the piece to get valid moves for
-     * @return Set of valid moves for requested piece, or null if no piece at
-     * startPosition
-     */
-    public Collection<ChessMove> validMoves(ChessPosition startPosition) {
-        // If the piece doesn't exist, no moves can be generated
-        ChessPiece piece = this.getBoard().getPiece(startPosition);
-        if (piece == null) {
-            return null;
-        }
-
-        // Set Global Variables
-        Collection<ChessMove> validMoves = new ArrayList<>();
-        Collection<ChessMove> pieceMoves = piece.pieceMoves(this.getBoard(), startPosition);
-
-        // Iterate through each piece's moves
-        for (ChessMove pieceMove : pieceMoves) {
-            ChessGame futureState = new ChessGame(this);
-            futureState.setTeamTurn(piece.getTeamColor());
-            futureState.updateBoard(pieceMove);
-
-            // Check if the move puts the team in check.
-            if (!futureState.isInCheck(futureState.getOffTeamColor())) {
-                validMoves.add(pieceMove);
-            }
-        }
-
-        // Check castling moves
-        if (piece.getPieceType() == ChessPiece.PieceType.KING) {
-            for (ChessMove pieceMove : pieceMoves) {
-                // Check if the move is a castling move
-                int startColumn = pieceMove.getStartPosition().getColumn();
-                int endColumn = pieceMove.getEndPosition().getColumn();
-                int movementDistance = Math.abs(startColumn - endColumn);
-                if (movementDistance == 2) {
-                    // Check if the king is in check
-                    if (this.isInCheck(piece.getTeamColor())) {
-                        validMoves.remove(pieceMove);
-                        continue;
-                    }
-
-                    // Check the passed square for attacks
-                    int passedSquareOffset = pieceMove.getEndPosition().getColumn() == 3 ? -1 : 1;
-                    int passedSquareIndex = pieceMove.getStartPosition().getBitboardIndex() + passedSquareOffset;
-                    ChessPosition passedSquare = new ChessPosition(passedSquareIndex);
-                    if (this.getBoard().canTeamAttackCell(passedSquare, piece.getTeamColor())) {
-                        validMoves.remove(pieceMove);
-                    }
-                }
-            }
-        }
-
-        return validMoves;
-    }
-
-    /**
      * Makes a move in a chess game
      *
      * @param move chess move to perform
@@ -387,5 +329,63 @@ public class ChessGame {
         this.history.add(move);
 
         this.toggleTeamTurn();
+    }
+
+    /**
+     * Gets a valid moves for a piece at the given location
+     *
+     * @param startPosition the piece to get valid moves for
+     * @return Set of valid moves for requested piece, or null if no piece at
+     * startPosition
+     */
+    public Collection<ChessMove> validMoves(ChessPosition startPosition) {
+        // If the piece doesn't exist, no moves can be generated
+        ChessPiece piece = this.getBoard().getPiece(startPosition);
+        if (piece == null) {
+            return null;
+        }
+
+        // Set Global Variables
+        Collection<ChessMove> validMoves = new ArrayList<>();
+        Collection<ChessMove> pieceMoves = piece.pieceMoves(this.getBoard(), startPosition);
+
+        // Iterate through each piece's moves
+        for (ChessMove pieceMove : pieceMoves) {
+            ChessGame futureState = new ChessGame(this);
+            futureState.setTeamTurn(piece.getTeamColor());
+            futureState.updateBoard(pieceMove);
+
+            // Check if the move puts the team in check.
+            if (!futureState.isInCheck(futureState.getOffTeamColor())) {
+                validMoves.add(pieceMove);
+            }
+        }
+
+        // Check castling moves
+        if (piece.getPieceType() == ChessPiece.PieceType.KING) {
+            for (ChessMove pieceMove : pieceMoves) {
+                // Check if the move is a castling move
+                int startColumn = pieceMove.getStartPosition().getColumn();
+                int endColumn = pieceMove.getEndPosition().getColumn();
+                int movementDistance = Math.abs(startColumn - endColumn);
+                if (movementDistance == 2) {
+                    // Check if the king is in check
+                    if (this.isInCheck(piece.getTeamColor())) {
+                        validMoves.remove(pieceMove);
+                        continue;
+                    }
+
+                    // Check the passed square for attacks
+                    int passedSquareOffset = pieceMove.getEndPosition().getColumn() == 3 ? -1 : 1;
+                    int passedSquareIndex = pieceMove.getStartPosition().getBitboardIndex() + passedSquareOffset;
+                    ChessPosition passedSquare = new ChessPosition(passedSquareIndex);
+                    if (this.getBoard().canTeamAttackCell(passedSquare, piece.getTeamColor())) {
+                        validMoves.remove(pieceMove);
+                    }
+                }
+            }
+        }
+
+        return validMoves;
     }
 }
