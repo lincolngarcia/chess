@@ -5,6 +5,7 @@ import chess.*;
 import java.util.Collection;
 
 public class KingMoveCalculator extends ChessMoveCalculator{
+    // Standard Overrides
     @Override
     void setMovementDirections() {
         this.movementDirections = new ChessDirection[]{
@@ -24,38 +25,20 @@ public class KingMoveCalculator extends ChessMoveCalculator{
         this.movementDistance = 1;
     }
 
+    // Constructors
     public KingMoveCalculator(ChessBoard board, ChessPosition position) {
         super(board, position);
     }
 
-    @Override
-    public Collection<ChessMove> getPieceMoves() {
-        // Get normal moves
-        Collection<ChessMove> pieceMoves = super.getPieceMoves();
-
-        // Store variables
-        ChessPiece piece = this.board.getPiece(this.startPosition);
-        ChessGame.TeamColor pieceColor = piece.getTeamColor();
-        int row = pieceColor == ChessGame.TeamColor.WHITE ? 1 : 8;
-
-        // Check for castling
-        int[] rookColumns = new int[] {1, 8};
-        for (int i = 0; i < 2; i++) {
-            int rookCol = rookColumns[i];
-            int kingEndCol = rookCol == 1 ? 3 : 7;
-
-            if (canCastle(rookCol)) {
-                ChessPosition endPosition = new ChessPosition(row, kingEndCol);
-                ChessMove move = new ChessMove(this.startPosition, endPosition);
-                pieceMoves.add(move);
-            }
-        }
-
-        return pieceMoves;
-    }
-
+    // Logic Heavy Functions
+    /**
+     * Determines if the king of this.teamColor can
+     * castle towards rook of @param rookCol
+     * @param rookCol the starting column of the rook
+     * @return boolean if the move is possible (ignores checks)
+     */
     public boolean canCastle(int rookCol) {
-        ChessPiece piece = this.board.getPiece(this.startPosition);
+        ChessPiece piece = this.board.getPiece(this.getPosition());
         if (piece == null) return false;
         if (piece.getPieceType() != ChessPiece.PieceType.KING) return false;
 
@@ -88,5 +71,31 @@ public class KingMoveCalculator extends ChessMoveCalculator{
         }
 
         return true;
+    }
+
+    @Override
+    public Collection<ChessMove> getPieceMoves() {
+        // Get normal moves
+        Collection<ChessMove> pieceMoves = super.getPieceMoves();
+
+        // Store variables
+        ChessPiece piece = this.board.getPiece(this.getPosition());
+        ChessGame.TeamColor pieceColor = piece.getTeamColor();
+        int row = pieceColor == ChessGame.TeamColor.WHITE ? 1 : 8;
+
+        // Check for castling
+        int[] rookColumns = new int[] {1, 8};
+        for (int i = 0; i < 2; i++) {
+            int rookCol = rookColumns[i];
+            int kingEndCol = rookCol == 1 ? 3 : 7;
+
+            if (canCastle(rookCol)) {
+                ChessPosition endPosition = new ChessPosition(row, kingEndCol);
+                ChessMove move = new ChessMove(this.getPosition(), endPosition);
+                pieceMoves.add(move);
+            }
+        }
+
+        return pieceMoves;
     }
 }

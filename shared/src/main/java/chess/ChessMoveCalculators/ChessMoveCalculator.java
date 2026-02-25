@@ -7,23 +7,32 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
 
+/**
+ * An abstract class for basing movement
+ * calculators based off a location and a
+ * board.
+ */
 public abstract class ChessMoveCalculator {
-    ChessDirection[] movementDirections;
-    int movementDistance;
-    ChessBoard board;
-    ChessPosition startPosition;
+    // Class Variables
+    protected ChessDirection[] movementDirections;
+    protected ChessGame.TeamColor teamColor;
+    protected int movementDistance;
+    protected final ChessBoard board;
+    protected final ChessPosition position;
+    protected final ChessPiece piece;
 
+    // Standard Overrides
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof ChessMoveCalculator that)) {
             return false;
         }
-        return movementDistance == that.movementDistance && Objects.deepEquals(movementDirections, that.movementDirections) && Objects.equals(board, that.board) && Objects.equals(startPosition, that.startPosition);
+        return movementDistance == that.movementDistance && Objects.deepEquals(movementDirections, that.movementDirections) && Objects.equals(board, that.board) && Objects.equals(position, that.position);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(Arrays.hashCode(movementDirections), movementDistance, board, startPosition);
+        return Objects.hash(Arrays.hashCode(movementDirections), movementDistance, board, position);
     }
 
     @Override
@@ -85,7 +94,7 @@ public abstract class ChessMoveCalculator {
                 }
 
                 // Piece in question
-                if (this.startPosition.equals(position) && targetCell != null) {
+                if (this.getPosition().equals(position) && targetCell != null) {
                     String[] targetedSymbols;
                     if (targetCell.getTeamColor() == ChessGame.TeamColor.WHITE) {
                         targetedSymbols = new String[]{"𝕂", "ℚ", "ℝ", "𝔹", "ℕ", "ℙ"};
@@ -115,19 +124,59 @@ public abstract class ChessMoveCalculator {
         return board.toString();
     }
 
+    // Constructors
     public ChessMoveCalculator(ChessBoard board, ChessPosition position) {
         this.board = board;
-        this.startPosition = position;
+        this.position = position;
+
+        this.piece = this.getBoard().getPiece(this.getPosition());
+        assert this.piece != null : "Invalid Constructor, teamColor not found";
+
+        this.teamColor = this.piece.getTeamColor();
     }
 
+    public ChessMoveCalculator(ChessBoard board, ChessPosition position, ChessGame.TeamColor teamColor) {
+        this.board = board;
+        this.position = position;
+        this.piece = this.getBoard().getPiece(this.getPosition());
+        this.teamColor = teamColor;
+    }
+
+    // Getters
+    /**
+     * @return ChessBoard the board associated with the calculator
+     */
     protected ChessBoard getBoard() {
         return this.board;
     }
 
+    /**
+     * @return ChessPosition the position to calculate from
+     */
+    protected ChessPosition getPosition() {
+        return this.position;
+    }
+
+    /**
+     * @return the team to perform calculations as
+     */
+    protected ChessGame.TeamColor getTeamColor() {
+        return this.teamColor;
+    }
+
+    // Setters
+    /**
+     * Set directions a piece can move in
+     */
     abstract void setMovementDirections();
 
+    /**
+     * Set maximum movement distance possible
+     * for a piece
+     */
     abstract void setMovementDistance();
 
+    // Logic Heavy Functions
     public Collection<ChessMove> getPieceMoves() {
         this.setMovementDirections();
         this.setMovementDistance();
@@ -136,10 +185,10 @@ public abstract class ChessMoveCalculator {
 
         for (ChessDirection direction : this.movementDirections) {
             for (int distance = 1; distance <= this.movementDistance; distance++) {
-                int endIndex = this.startPosition.getBitboardIndex() + (distance * direction.value());
+                int endIndex = this.getPosition().getBitboardIndex() + (distance * direction.value());
 
                 ChessPosition endPosition = new ChessPosition(endIndex);
-                ChessMove movement = new ChessMove(this.startPosition, endPosition);
+                ChessMove movement = new ChessMove(this.getPosition(), endPosition);
 
                 // Check if the move exists on the board
                 if (isInvalidMove(movement, direction)) {
@@ -147,7 +196,7 @@ public abstract class ChessMoveCalculator {
                 }
 
                 // Check if the selected cell has a piece
-                ChessPiece currentPiece = this.board.getPiece(this.startPosition);
+                ChessPiece currentPiece = this.board.getPiece(this.getPosition());
                 ChessPiece targetedPiece = this.board.getPiece(endPosition);
                 if (targetedPiece != null) {
                     if (targetedPiece.getTeamColor() != currentPiece.getTeamColor()) {
@@ -164,20 +213,20 @@ public abstract class ChessMoveCalculator {
     }
 
     protected boolean isInvalidMove(ChessMove move, ChessDirection directionMoved) {
-        // Move is invalid when index < 0 or greater than 63
-        // Move is invalid when startCol > endCol when moving left
-        // Move is invalid when startCol > endCol when moving right
-
+        // Variables
         ChessPosition startPosition = move.getStartPosition();
         ChessPosition endPosition = move.getEndPosition();
 
         int endIndex = endPosition.getBitboardIndex();
 
+        // Move is invalid when index < 0 or greater than 63
         if (endIndex < 0 || endIndex >= 64) {
             return true;
         }
 
         switch (directionMoved) {
+
+            // Move is invalid when startCol > endCol when moving left
             case ChessDirection.LEFT_UP,
                  ChessDirection.LEFT,
                  ChessDirection.LEFT_DOWN,
@@ -186,11 +235,14 @@ public abstract class ChessMoveCalculator {
                  ChessDirection.LEFT_DOWN_JUMP,
                  ChessDirection.UP_LEFT_JUMP,
                  ChessDirection.DOWN_LEFT_JUMP:
+
                 if (startPosition.getColumn() < endPosition.getColumn()) {
                     return true;
                 }
+
                 break;
 
+            // Move is invalid when startCol > endCol when moving right
             case ChessDirection.RIGHT_UP,
                  ChessDirection.RIGHT,
                  ChessDirection.RIGHT_DOWN,
@@ -199,11 +251,13 @@ public abstract class ChessMoveCalculator {
                  ChessDirection.RIGHT_DOWN_JUMP,
                  ChessDirection.UP_RIGHT_JUMP,
                  ChessDirection.DOWN_RIGHT_JUMP:
+
                 if (startPosition.getColumn() > endPosition.getColumn()) {
                     return true;
                 }
         }
 
+        // Otherwise, return false
         return false;
     }
 }

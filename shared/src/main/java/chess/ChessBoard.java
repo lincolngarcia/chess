@@ -309,7 +309,7 @@ public class ChessBoard {
      */
     public boolean canTeamAttackCell(ChessPosition position, ChessGame.TeamColor teamColor) {
         // Get the enemy pieces that can potentially target @param position (superQueenCalculator)
-        Collection<ChessPosition> targetedPiecePositions = new SuperQueenMoveCalculator(this, position).getTargetedPieces(teamColor);
+        Collection<ChessPosition> targetedPiecePositions = new SuperQueenMoveCalculator(this, position, teamColor).getTargetedPieces(teamColor);
 
         // Iterate through all pieces and check their attack paths
         for (ChessPosition targetedPiecePosition : targetedPiecePositions) {

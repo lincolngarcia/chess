@@ -61,10 +61,10 @@ public class SuperQueenMoveCalculator extends ChessMoveCalculator {
 
         for (ChessDirection direction : this.movementDirections) {
             for (int distance = 1; distance <= this.movementDistance; distance++) {
-                int endIndex = this.startPosition.getBitboardIndex() + (distance * direction.value());
+                int endIndex = this.getPosition().getBitboardIndex() + (distance * direction.value());
 
                 ChessPosition endPosition = new ChessPosition(endIndex);
-                ChessMove movement = new ChessMove(this.startPosition, endPosition);
+                ChessMove movement = new ChessMove(this.getPosition(), endPosition);
 
                 // Check if the move exists on the board
                 if (isInvalidMove(movement, direction)) {
@@ -80,7 +80,9 @@ public class SuperQueenMoveCalculator extends ChessMoveCalculator {
                     break;
                 }
                 // If ChessMove is in Knight List, break;
-                if (jumpMoves.contains(direction)) break;
+                if (jumpMoves.contains(direction)) {
+                    break;
+                }
             }
         }
         return targetedPieces;
@@ -88,5 +90,9 @@ public class SuperQueenMoveCalculator extends ChessMoveCalculator {
 
     public SuperQueenMoveCalculator(ChessBoard board, ChessPosition position) {
         super(board, position);
+    }
+
+    public SuperQueenMoveCalculator(ChessBoard board, ChessPosition position, ChessGame.TeamColor teamColor) {
+        super(board, position, teamColor);
     }
 }
