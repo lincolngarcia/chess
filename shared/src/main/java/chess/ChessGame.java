@@ -247,7 +247,7 @@ public class ChessGame {
      *
      * @param move a move to simulate
      */
-    public void updateBoard(ChessMove move) {
+    private void updateBoard(ChessMove move) {
         ChessPosition startPosition = move.getStartPosition();
         ChessPiece piece = this.getBoard().getPiece(startPosition);
         if (piece == null) {
