@@ -11,29 +11,39 @@ import java.util.Objects;
  * signature of the existing methods.
  */
 public class ChessGame {
-    TeamColor teamToMove = TeamColor.WHITE;
-    ChessBoard Board;
-
+    // Class Variables
+    private TeamColor activeTeam = TeamColor.WHITE;
+    private ChessBoard board = new ChessBoard();
     private final Collection<ChessMove> history = new ArrayList<>();
 
+    /**
+     * Enum identifying the 2 possible teams in a chess game
+     */
+    public enum TeamColor {
+        WHITE,
+        BLACK
+    }
+
+    // Standard Overrides
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof ChessGame chessGame)) {
             return false;
         }
-        return teamToMove == chessGame.teamToMove && Objects.equals(Board, chessGame.Board);
+        return activeTeam == chessGame.activeTeam && Objects.equals(board, chessGame.board);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(teamToMove, Board);
+        return Objects.hash(activeTeam, board);
     }
 
     @Override
     public String toString() {
-        return teamToMove + " to move," + "\n" + Board;
+        return activeTeam + " to move," + "\n" + board;
     }
 
+    // Constructors
     public ChessGame() {
         this.setBoard(new ChessBoard());
         this.getBoard().resetBoard();
@@ -44,14 +54,28 @@ public class ChessGame {
         this.setTeamTurn(oldGame.getTeamTurn());
     }
 
+    // Getters (alphabetical)
     /**
-     * @return Which team's turn it is
+     * Gets the current chessboard
+     *
+     * @return the chessboard
      */
-    public TeamColor getTeamTurn() {
-        return this.teamToMove;
+    public ChessBoard getBoard() {
+        return this.board;
     }
 
     /**
+     * Returns the history
+     *
+     * @return Collection<ChessMove> the history of moves
+     */
+    public Collection<ChessMove> getHistory() {
+        return this.history;
+    }
+
+    /**
+     * Get the team opposite of whose turn it is
+     *
      * @return Get the team whose turn it isn't
      */
     public TeamColor getOffTeamColor() {
@@ -63,33 +87,132 @@ public class ChessGame {
     }
 
     /**
+     * Get the team who can make a move
+     *
+     * @return Which team's turn it is
+     */
+    public TeamColor getTeamTurn() {
+        return this.activeTeam;
+    }
+
+    // Setters (alphabetical)
+    /**
+     * Sets this game's chessboard with a given board
+     *
+     * @param board the new board to use
+     */
+    public void setBoard(ChessBoard board) {
+        this.board = board;
+    }
+
+    /**
      * Set's which teams turn it is
      *
      * @param team the team whose turn it is
      */
     public void setTeamTurn(TeamColor team) {
-        this.teamToMove = team;
+        this.activeTeam = team;
+    }
+
+    // Other Functions
+    /**
+     * Determines if the given team is in check
+     *
+     * @param teamColor which team to check for check
+     * @return True if the specified team is in check
+     */
+    public boolean isInCheck(TeamColor teamColor) {
+        return this.getBoard().canTeamAttackCell(this.getBoard().getKingPosition(teamColor), teamColor);
+    }
+
+    /**
+     * Determines if the given team is in checkmate
+     *
+     * @param teamColor which team to check for checkmate
+     * @return True if the specified team is in checkmate
+     */
+    public boolean isInCheckmate(TeamColor teamColor) {
+        boolean hasEscape = false;
+        Collection<ChessPosition> teamPositions = this.getBoard().getTeamPositions(teamColor);
+
+        // Iterate through our pieces to see if any can remove check
+        for (ChessPosition teamPiecePosition : teamPositions) {
+            if (hasEscape) {
+                break;
+            }
+
+            Collection<ChessMove> teamPieceMoves = this.validMoves(teamPiecePosition);
+
+            // Iterate through each piece's moves
+            for (ChessMove move : teamPieceMoves) {
+                ChessGame futureState = new ChessGame(this);
+                futureState.updateBoard(move);
+
+                if (!futureState.isInCheck(futureState.getOffTeamColor())) {
+                    hasEscape = true;
+                }
+
+            }
+
+        }
+
+        return !hasEscape;
+    }
+
+    /**
+     * Determines if the given team is in stalemate, which here is defined as having
+     * no valid moves while not in check.
+     *
+     * @param teamColor which team to check for stalemate
+     * @return True if the specified team is in stalemate, otherwise false
+     */
+    public boolean isInStalemate(TeamColor teamColor) {
+        if (this.isInCheck(teamColor)) {
+            return false;
+        }
+
+        Collection<ChessPosition> teamPieceLocations = this.getBoard().getTeamPositions(teamColor);
+        for (ChessPosition position : teamPieceLocations) {
+            Collection<ChessMove> validMoves = this.validMoves(position);
+            if (!validMoves.isEmpty()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Prints the game history in an easy-to-read way
+     */
+    public void printHistory() {
+        ChessGame temp = new ChessGame();
+
+        int i = 1;
+        for (ChessMove move : this.getHistory()) {
+            try {
+                temp.makeMove(move);
+                System.out.println(Math.floorDiv(++i, 2) + " =====");
+                System.out.println(move);
+                System.out.print(temp);
+            } catch (InvalidMoveException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     /**
      * Alternate the team to move
      */
     public void toggleTeamTurn() {
-        if (this.teamToMove == TeamColor.WHITE) {
-            this.teamToMove = TeamColor.BLACK;
+        if (this.activeTeam == TeamColor.WHITE) {
+            this.activeTeam = TeamColor.BLACK;
         } else {
-            this.teamToMove = TeamColor.WHITE;
+            this.activeTeam = TeamColor.WHITE;
         }
     }
 
-    /**
-     * Enum identifying the 2 possible teams in a chess game
-     */
-    public enum TeamColor {
-        WHITE,
-        BLACK
-    }
-
+    // Logic Heavy Functions
     /**
      * Gets a valid moves for a piece at the given location
      *
@@ -264,116 +387,5 @@ public class ChessGame {
         this.history.add(move);
 
         this.toggleTeamTurn();
-    }
-
-    /**
-     * Returns the history
-     */
-    public Collection<ChessMove> getHistory() {
-        return this.history;
-    }
-
-    /**
-     * Prints the game history in an easy-to-read way
-     */
-    public void printHistory() {
-        ChessGame temp = new ChessGame();
-
-        int i = 1;
-        for (ChessMove move : this.getHistory()) {
-            try {
-                temp.makeMove(move);
-                System.out.println(Math.floorDiv(++i, 2) + " =====");
-                System.out.println(move);
-                System.out.print(temp);
-            } catch (InvalidMoveException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    /**
-     * Determines if the given team is in check
-     *
-     * @param teamColor which team to check for check
-     * @return True if the specified team is in check
-     */
-    public boolean isInCheck(TeamColor teamColor) {
-        return this.getBoard().canTeamAttackCell(this.getBoard().getKingPosition(teamColor), teamColor);
-    }
-
-    /**
-     * Determines if the given team is in checkmate
-     *
-     * @param teamColor which team to check for checkmate
-     * @return True if the specified team is in checkmate
-     */
-    public boolean isInCheckmate(TeamColor teamColor) {
-        boolean hasEscape = false;
-        Collection<ChessPosition> teamPositions = this.getBoard().getTeamPositions(teamColor);
-
-        // Iterate through our pieces to see if any can remove check
-        for (ChessPosition teamPiecePosition : teamPositions) {
-            if (hasEscape) {
-                break;
-            }
-
-            Collection<ChessMove> teamPieceMoves = this.validMoves(teamPiecePosition);
-
-            // Iterate through each piece's moves
-            for (ChessMove move : teamPieceMoves) {
-                ChessGame futureState = new ChessGame(this);
-                futureState.updateBoard(move);
-
-                if (!futureState.isInCheck(futureState.getOffTeamColor())) {
-                    hasEscape = true;
-                }
-
-            }
-
-        }
-
-        return !hasEscape;
-    }
-
-    /**
-     * Determines if the given team is in stalemate, which here is defined as having
-     * no valid moves while not in check.
-     *
-     * @param teamColor which team to check for stalemate
-     * @return True if the specified team is in stalemate, otherwise false
-     */
-    public boolean isInStalemate(TeamColor teamColor) {
-        if (this.isInCheck(teamColor)) {
-            return false;
-        }
-
-        Collection<ChessPosition> teamPieceLocations = this.getBoard().getTeamPositions(teamColor);
-        for (ChessPosition position : teamPieceLocations) {
-            Collection<ChessMove> validMoves = this.validMoves(position);
-            if (!validMoves.isEmpty()) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Sets this game's chessboard with a given board
-     *
-     * @param board the new board to use
-     */
-    public void setBoard(ChessBoard board) {
-        this.Board = board;
-    }
-
-    /**
-     * Gets the current chessboard
-     *
-     * @return the chessboard
-     */
-    public ChessBoard getBoard() {
-        return this.Board;
     }
 }
