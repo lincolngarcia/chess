@@ -9,12 +9,10 @@ import java.util.Objects;
  * signature of the existing methods.
  */
 public class ChessMove {
-    // Class Variables
-    private final ChessPosition startPosition;
-    private final ChessPosition endPosition;
-    private final ChessPiece.PieceType promotionPiece;
+    ChessPosition startPosition;
+    ChessPosition endPosition;
+    ChessPiece.PieceType promotionPiece;
 
-    // Standard Overrides
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
@@ -34,7 +32,6 @@ public class ChessMove {
         return this.startPosition + " to " + this.endPosition;
     }
 
-    // Constructors
     public ChessMove(ChessPosition startPosition, ChessPosition endPosition) {
         this.startPosition = startPosition;
         this.endPosition = endPosition;
@@ -47,10 +44,7 @@ public class ChessMove {
         this.promotionPiece = promotionPiece;
     }
 
-    // Getters
     /**
-     * Get the starting position of the move
-     *
      * @return ChessPosition of starting location
      */
     public ChessPosition getStartPosition() {
@@ -58,8 +52,6 @@ public class ChessMove {
     }
 
     /**
-     * Get the ending position of the move
-     *
      * @return ChessPosition of ending location
      */
     public ChessPosition getEndPosition() {
@@ -75,7 +67,4 @@ public class ChessMove {
     public ChessPiece.PieceType getPromotionPiece() {
         return this.promotionPiece;
     }
-
-    // Setters
-    // Other Functions
 }
