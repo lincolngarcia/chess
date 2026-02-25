@@ -54,7 +54,8 @@ public class ChessGame {
         this.setTeamTurn(oldGame.getTeamTurn());
     }
 
-    // Getters (alphabetical)
+    // Getters
+
     /**
      * Gets the current chessboard
      *
@@ -115,6 +116,7 @@ public class ChessGame {
     }
 
     // Other Functions
+
     /**
      * Determines if the given team is in check
      *
@@ -213,6 +215,7 @@ public class ChessGame {
     }
 
     // Logic Heavy Functions
+
     /**
      * Gets a valid moves for a piece at the given location
      *
