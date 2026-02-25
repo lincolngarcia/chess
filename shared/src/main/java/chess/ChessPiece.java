@@ -12,9 +12,23 @@ import java.util.Objects;
  * signature of the existing methods.
  */
 public class ChessPiece {
-    private PieceType pieceType;
-    private ChessGame.TeamColor pieceColor;
+    // Class Variables
+    private final PieceType pieceType;
+    private final ChessGame.TeamColor pieceColor;
 
+    /**
+     * The various different chess piece options
+     */
+    public enum PieceType {
+        KING,
+        QUEEN,
+        BISHOP,
+        KNIGHT,
+        ROOK,
+        PAWN
+    }
+
+    // Standard Overrides
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
@@ -34,6 +48,7 @@ public class ChessPiece {
         return this.pieceColor.toString() + " " + this.pieceType.toString();
     }
 
+    // Constructors
     public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type) {
         this.pieceType = type;
         this.pieceColor = pieceColor;
@@ -44,18 +59,7 @@ public class ChessPiece {
         this.pieceColor = piece.getTeamColor();
     }
 
-    /**
-     * The various different chess piece options
-     */
-    public enum PieceType {
-        KING,
-        QUEEN,
-        BISHOP,
-        KNIGHT,
-        ROOK,
-        PAWN
-    }
-
+    // Getters
     /**
      * @return Which team this chess piece belongs to
      */
@@ -70,6 +74,7 @@ public class ChessPiece {
         return this.pieceType;
     }
 
+    // Functions
     /**
      * Calculates all the positions a chess piece can move to
      * Does not take into account moves that are illegal due to leaving the king in
