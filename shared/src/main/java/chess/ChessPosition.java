@@ -9,10 +9,12 @@ import java.util.Objects;
  * signature of the existing methods.
  */
 public class ChessPosition {
+    // Class Variables
     private final String[] columnLabels = {"A", "B", "C", "D", "E", "F", "G", "H"};
-    int row;
-    int column;
+    private final int row;
+    private final int column;
 
+    // Standard Overrides
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
@@ -32,6 +34,7 @@ public class ChessPosition {
         return this.columnLabels[this.column - 1] + this.row;
     }
 
+    // Constructors
     public ChessPosition(int row, int col) {
         this.row = row;
         this.column = col;
@@ -42,6 +45,7 @@ public class ChessPosition {
         this.column = (index % 8) + 1;
     }
 
+    // Getters
     /**
      * @return which row this position is in
      * 1 codes for the bottom row
@@ -58,11 +62,12 @@ public class ChessPosition {
         return this.column;
     }
 
+    // Functions
     /**
      * @return the indexes of the location of the cell
      */
     public int[] toIndexFormat() {
-        return new int[] { this.row - 1, this.column - 1 };
+        return new int[] { this.getRow() - 1, this.getColumn() - 1 };
     }
 
     /**

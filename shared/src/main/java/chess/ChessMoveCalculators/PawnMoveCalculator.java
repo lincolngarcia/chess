@@ -89,7 +89,7 @@ public class PawnMoveCalculator extends ChessMoveCalculator {
             ChessPiece targetedPiece = this.board.getPiece(leftAttackCell);
             if (targetedPiece != null && targetedPiece.getTeamColor() != pieceColor) {
                 this.addPieceMove(pieceMoves, leftAttack);
-            } else if (leftAttackCell.equals(this.getBoard().enpassantSquare)) {
+            } else if (leftAttackCell.equals(this.getBoard().getEnPassantSquare())) {
                 this.addPieceMove(pieceMoves, leftAttack);
             }
         }
@@ -103,7 +103,7 @@ public class PawnMoveCalculator extends ChessMoveCalculator {
             ChessPiece targetedPiece = this.board.getPiece(rightAttackCell);
             if (targetedPiece != null && targetedPiece.getTeamColor() != pieceColor) {
                 this.addPieceMove(pieceMoves, rightAttack);
-            } else if (rightAttackCell.equals(this.getBoard().enpassantSquare)) {
+            } else if (rightAttackCell.equals(this.getBoard().getEnPassantSquare())) {
                 this.addPieceMove(pieceMoves, rightAttack);
             }
         }
@@ -135,11 +135,11 @@ public class PawnMoveCalculator extends ChessMoveCalculator {
 //        }
 //
 //        // Enpassant move
-//        if (this.getBoard().enpassantSquare == null) {
+//        if (this.getBoard().enPassantSquare == null) {
 //            return true;
 //        }
 //
-//        if (this.getBoard().enpassantSquare == move.getEndPosition()) {
+//        if (this.getBoard().enPassantSquare == move.getEndPosition()) {
 //            return false;
 //        }
 //
