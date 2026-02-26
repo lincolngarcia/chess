@@ -20,6 +20,8 @@ public class PawnMoveCalculator extends ChessMoveCalculator {
 
     public PawnMoveCalculator(ChessBoard board, ChessPosition position) {
         super(board, position);
+        this.setMovementDirections();
+        this.setMovementDistance();
     }
 
     void setMovementDistance(ChessPosition position) {

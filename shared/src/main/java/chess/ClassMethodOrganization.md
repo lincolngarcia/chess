@@ -16,3 +16,4 @@ Add in assertions and error handling when necessary
 * isWhite check
 * king / rook row -> index converter
 * Piece Symbols
+* Color -> starting row / pawn row

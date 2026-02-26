@@ -5,6 +5,7 @@ import chess.ChessDirection;
 import chess.ChessPosition;
 
 public class BishopMoveCalculator extends ChessMoveCalculator {
+    // Standard Overrides
     @Override
     void setMovementDirections() {
         this.movementDirections = new ChessDirection[]{
@@ -20,7 +21,10 @@ public class BishopMoveCalculator extends ChessMoveCalculator {
         this.movementDistance = 7;
     }
 
+    // Constructors
     public BishopMoveCalculator(ChessBoard board, ChessPosition position) {
         super(board, position);
+        this.setMovementDirections();
+        this.setMovementDistance();
     }
 }

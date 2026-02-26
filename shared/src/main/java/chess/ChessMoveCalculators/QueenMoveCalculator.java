@@ -5,6 +5,7 @@ import chess.ChessDirection;
 import chess.ChessPosition;
 
 public class QueenMoveCalculator extends ChessMoveCalculator{
+    // Standard Overrides
     @Override
     void setMovementDirections() {
         this.movementDirections = new ChessDirection[]{
@@ -24,7 +25,10 @@ public class QueenMoveCalculator extends ChessMoveCalculator{
         this.movementDistance = 7;
     }
 
+    // Constructors
     public QueenMoveCalculator(ChessBoard board, ChessPosition position) {
         super(board, position);
+        this.setMovementDirections();
+        this.setMovementDistance();
     }
 }
