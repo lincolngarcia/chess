@@ -2,10 +2,7 @@ package chess.ChessMoveCalculators;
 
 import chess.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * An abstract class for basing movement
@@ -178,11 +175,10 @@ public abstract class ChessMoveCalculator {
 
     // Logic Heavy Functions
     public Collection<ChessMove> getPieceMoves() {
-        this.setMovementDirections();
-        this.setMovementDistance();
-
+        // Variables
         ArrayList<ChessMove> pieceMoves = new ArrayList<>();
 
+        // Loop through all movement directions
         for (ChessDirection direction : this.movementDirections) {
             for (int distance = 1; distance <= this.movementDistance; distance++) {
                 int endIndex = this.getPosition().getBitboardIndex() + (distance * direction.value());
@@ -210,6 +206,54 @@ public abstract class ChessMoveCalculator {
             }
         }
         return pieceMoves;
+    }
+
+    /**
+     * Returns all pieces that can be targeted
+     *
+     * @return A collection of positions containing targeted pieces
+     */
+    public Collection<ChessPosition> getTargetedPieces() {
+        // Variables
+        ArrayList<ChessPosition> targetedPieces = new ArrayList<>();
+        Collection<ChessDirection> jumpMoves = new ArrayList<>(List.of(
+                ChessDirection.UP_LEFT_JUMP,
+                ChessDirection.UP_RIGHT_JUMP,
+                ChessDirection.LEFT_UP_JUMP,
+                ChessDirection.RIGHT_UP_JUMP,
+                ChessDirection.LEFT_DOWN_JUMP,
+                ChessDirection.RIGHT_DOWN_JUMP,
+                ChessDirection.DOWN_LEFT_JUMP,
+                ChessDirection.DOWN_RIGHT_JUMP
+        ));
+
+        for (ChessDirection direction : this.movementDirections) {
+            for (int distance = 1; distance <= this.movementDistance; distance++) {
+                int endIndex = this.getPosition().getBitboardIndex() + (distance * direction.value());
+
+                ChessPosition endPosition = new ChessPosition(endIndex);
+                ChessMove movement = new ChessMove(this.getPosition(), endPosition);
+
+                // Check if the move exists on the board
+                if (isInvalidMove(movement, direction)) {
+                    break;
+                }
+
+                // Check if the selected cell has a piece
+                ChessPiece targetedPiece = this.board.getPiece(endPosition);
+                if (targetedPiece != null) {
+                    if (targetedPiece.getTeamColor() != teamColor) {
+                        targetedPieces.add(endPosition);
+                    }
+                    break;
+                }
+                // If ChessMove is in Knight List, break;
+                if (jumpMoves.contains(direction)) {
+                    break;
+                }
+            }
+        }
+        return targetedPieces;
     }
 
     protected boolean isInvalidMove(ChessMove move, ChessDirection directionMoved) {

@@ -28,6 +28,8 @@ public class KingMoveCalculator extends ChessMoveCalculator{
     // Constructors
     public KingMoveCalculator(ChessBoard board, ChessPosition position) {
         super(board, position);
+        this.setMovementDirections();
+        this.setMovementDistance();
     }
 
     // Logic Heavy Functions
@@ -38,20 +40,24 @@ public class KingMoveCalculator extends ChessMoveCalculator{
      * @return boolean if the move is possible (ignores checks)
      */
     public boolean canCastle(int rookCol) {
-        ChessPiece piece = this.board.getPiece(this.getPosition());
-        if (piece == null) return false;
+        // King must exist
+        if (this.piece == null) return false;
         if (piece.getPieceType() != ChessPiece.PieceType.KING) return false;
 
-        ChessGame.TeamColor pieceColor = piece.getTeamColor();
+        // King must be in  it's starting location
+        int startingRow = this.getTeamColor() == ChessGame.TeamColor.WHITE ? 1 : 8;
+        int startingCol = 5;
+        if (this.getPosition().getRow() != startingRow) return false;
+        if (this.getPosition().getColumn() != startingCol) return false;
 
         // Check if the king has moved
-        if (this.getBoard().hasKingMoved(pieceColor)) return false;
+        if (this.getBoard().hasKingMoved(this.getTeamColor())) return false;
 
         // Check if the rook has moved
-        if (this.getBoard().hasRookMoved(pieceColor, rookCol)) return false;
+        if (this.getBoard().hasRookMoved(this.getTeamColor(), rookCol)) return false;
 
         // Check that the rook exists
-        int row = pieceColor == ChessGame.TeamColor.WHITE ? 1 : 8;
+        int row = this.getTeamColor() == ChessGame.TeamColor.WHITE ? 1 : 8;
         ChessPosition rookPosition = new ChessPosition(row, rookCol);
         ChessPiece rook = this.getBoard().getPiece(rookPosition);
         if (rook == null) return false;
