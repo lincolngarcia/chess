@@ -1,6 +1,7 @@
 package chess;
 
 import chess.ChessConverter.ChessFunctions;
+import chess.ChessMoveCalculators.SuperQueenMoveCalculator;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -137,7 +138,7 @@ public class ChessGame {
      * @return True if the specified team is in check
      */
     public boolean isInCheck(TeamColor teamColor) {
-        return this.getBoard().canTeamAttackCell(this.getBoard().getKingPosition(teamColor), teamColor);
+        return this.canTeamAttackCell(this.getBoard().getKingPosition(teamColor), teamColor);
     }
 
     /**
@@ -224,6 +225,37 @@ public class ChessGame {
     }
 
     // Logic Heavy Functions
+    /**
+     * Check if cell is targeted by an enemy piece
+     *
+     * @param position the position to check against
+     * @param teamColor the color of the cell at @param position
+     * @return if an enemy piece is attacking a cell
+     */
+    public boolean canTeamAttackCell(ChessPosition position, ChessGame.TeamColor teamColor) {
+        // Get the enemy pieces that can potentially target @param position (superQueenCalculator)
+        Collection<ChessPosition> targetedPiecePositions = new SuperQueenMoveCalculator(this.getBoard(), position, teamColor).getTargetedPieces();
+
+        // Iterate through all pieces and check their attack paths
+        for (ChessPosition targetedPiecePosition : targetedPiecePositions) {
+            ChessPiece piece = this.getBoard().getPiece(targetedPiecePosition);
+            Collection<ChessMove> enemyMoves = piece.pieceMoves(this.getBoard(), targetedPiecePosition);
+
+            // Iterate through all moves for piece
+            for (ChessMove enemyMove : enemyMoves) {
+                ChessPosition endPosition = enemyMove.getEndPosition();
+
+                // Return if the team can attack the cell
+                if (endPosition.equals(position)) {
+                    return true;
+                }
+            }
+        }
+
+        // Otherwise, return false
+        return false;
+    }
+
     /**
      * Makes a move in a chess game
      *
@@ -389,7 +421,7 @@ public class ChessGame {
                     int passedSquareOffset = pieceMove.getEndPosition().getColumn() == 3 ? -1 : 1;
                     int passedSquareIndex = pieceMove.getStartPosition().getBitboardIndex() + passedSquareOffset;
                     ChessPosition passedSquare = new ChessPosition(passedSquareIndex);
-                    if (this.getBoard().canTeamAttackCell(passedSquare, piece.getTeamColor())) {
+                    if (this.canTeamAttackCell(passedSquare, piece.getTeamColor())) {
                         validMoves.remove(pieceMove);
                     }
                 }

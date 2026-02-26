@@ -1,7 +1,6 @@
 package chess;
 
 import chess.ChessConverter.ChessFunctions;
-import chess.ChessMoveCalculators.SuperQueenMoveCalculator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -303,37 +302,6 @@ public class ChessBoard {
     }
 
     // Logic Heavy Functions
-    /**
-     * Check if cell is targeted by an enemy piece
-     *
-     * @param position the position to check against
-     * @param teamColor the color of the cell at @param position
-     * @return if an enemy piece is attacking a cell
-     */
-    public boolean canTeamAttackCell(ChessPosition position, ChessGame.TeamColor teamColor) {
-        // Get the enemy pieces that can potentially target @param position (superQueenCalculator)
-        Collection<ChessPosition> targetedPiecePositions = new SuperQueenMoveCalculator(this, position, teamColor).getTargetedPieces();
-
-        // Iterate through all pieces and check their attack paths
-        for (ChessPosition targetedPiecePosition : targetedPiecePositions) {
-            ChessPiece piece = this.getPiece(targetedPiecePosition);
-            Collection<ChessMove> enemyMoves = piece.pieceMoves(this, targetedPiecePosition);
-
-            // Iterate through all moves for piece
-            for (ChessMove enemyMove : enemyMoves) {
-                ChessPosition endPosition = enemyMove.getEndPosition();
-
-                // Return if the team can attack the cell
-                if (endPosition.equals(position)) {
-                    return true;
-                }
-            }
-        }
-
-        // Otherwise, return false
-        return false;
-    }
-
     /**
      * Performs the necessary calculators to move
      * and update the board. Updates rook's have moved
