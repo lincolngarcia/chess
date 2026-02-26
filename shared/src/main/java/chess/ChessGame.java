@@ -21,7 +21,14 @@ public class ChessGame {
      */
     public enum TeamColor {
         WHITE,
-        BLACK
+        BLACK;
+
+        public TeamColor invert() {
+            return switch (this) {
+                case WHITE -> BLACK;
+                case BLACK -> WHITE;
+            };
+        }
     }
 
     // Standard Overrides

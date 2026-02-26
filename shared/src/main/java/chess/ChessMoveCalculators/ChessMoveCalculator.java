@@ -1,6 +1,7 @@
 package chess.ChessMoveCalculators;
 
 import chess.*;
+import chess.ChessConverter.ChessFunctions;
 
 import java.util.*;
 
@@ -62,7 +63,7 @@ public abstract class ChessMoveCalculator {
                         case PAWN -> "P";
                     };
                     // White is UpperCase
-                    if (targetCell.getTeamColor() == ChessGame.TeamColor.BLACK) {
+                    if (ChessFunctions.isBlack(targetCell.getTeamColor())) {
                         characterCode = characterCode.toLowerCase();
                     }
                 }
@@ -73,7 +74,7 @@ public abstract class ChessMoveCalculator {
                         characterCode = "⊗";
                     } else {
                         String[] targetedSymbols;
-                        if (targetCell.getTeamColor() == ChessGame.TeamColor.WHITE) {
+                        if (ChessFunctions.isWhite(targetCell.getTeamColor())) {
                             targetedSymbols = new String[]{"Ⓚ", "Ⓠ", "Ⓡ", "Ⓑ", "Ⓝ", "Ⓟ"};
                         } else {
                             targetedSymbols = new String[]{"ⓚ", "ⓠ", "ⓡ", "ⓑ", "ⓝ", "ⓟ"};
@@ -93,7 +94,7 @@ public abstract class ChessMoveCalculator {
                 // Piece in question
                 if (this.getPosition().equals(position) && targetCell != null) {
                     String[] targetedSymbols;
-                    if (targetCell.getTeamColor() == ChessGame.TeamColor.WHITE) {
+                    if (ChessFunctions.isWhite(targetCell.getTeamColor())) {
                         targetedSymbols = new String[]{"𝕂", "ℚ", "ℝ", "𝔹", "ℕ", "ℙ"};
 
                     } else {
