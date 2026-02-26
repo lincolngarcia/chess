@@ -26,7 +26,5 @@ public class KnightMoveCalculator extends ChessMoveCalculator {
 
     public KnightMoveCalculator(ChessBoard board, ChessPosition position) {
         super(board, position);
-        this.setMovementDirections();
-        this.setMovementDistance();
     }
 }

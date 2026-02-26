@@ -24,7 +24,5 @@ public class BishopMoveCalculator extends ChessMoveCalculator {
     // Constructors
     public BishopMoveCalculator(ChessBoard board, ChessPosition position) {
         super(board, position);
-        this.setMovementDirections();
-        this.setMovementDistance();
     }
 }

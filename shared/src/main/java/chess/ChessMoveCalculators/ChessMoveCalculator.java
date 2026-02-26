@@ -131,6 +131,9 @@ public abstract class ChessMoveCalculator {
         assert this.piece != null : "Invalid Constructor, teamColor not found";
 
         this.teamColor = this.piece.getTeamColor();
+
+        this.setMovementDirections();
+        this.setMovementDistance();
     }
 
     public ChessMoveCalculator(ChessBoard board, ChessPosition position, ChessGame.TeamColor teamColor) {
@@ -138,6 +141,9 @@ public abstract class ChessMoveCalculator {
         this.position = position;
         this.piece = this.getBoard().getPiece(this.getPosition());
         this.teamColor = teamColor;
+
+        this.setMovementDirections();
+        this.setMovementDistance();
     }
 
     // Getters

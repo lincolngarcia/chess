@@ -1,5 +1,6 @@
 package chess.ChessConverter;
 
+import chess.ChessDirection;
 import chess.ChessGame;
 
 public class ChessFunctions {
@@ -13,5 +14,21 @@ public class ChessFunctions {
 
     static public boolean isBlack(ChessGame.TeamColor color) {
         return color == ChessGame.TeamColor.BLACK;
+    }
+
+    static public int getIndexByColor(ChessGame.TeamColor color) {
+        return isWhite(color) ? 0 : 1;
+    }
+
+    static public int getPawnStartRow(ChessGame.TeamColor color) {
+        return isWhite(color) ? 2 : 7;
+    }
+
+    static public int getPromotionRow(ChessGame.TeamColor color) {
+        return isWhite(color) ? 8 : 1;
+    }
+
+    static public int getStartRow(ChessGame.TeamColor color) {
+        return isWhite(color) ? 1 : 8;
     }
 }

@@ -1,5 +1,7 @@
 package chess;
 
+import chess.ChessConverter.ChessFunctions;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
@@ -20,8 +22,18 @@ public class ChessGame {
      * Enum identifying the 2 possible teams in a chess game
      */
     public enum TeamColor {
-        WHITE,
-        BLACK;
+        WHITE(1),
+        BLACK(-1);
+
+        private final int value;
+
+        TeamColor(int value) {
+            this.value = value;
+        }
+
+        public int value() {
+            return this.value;
+        }
 
         public TeamColor invert() {
             return switch (this) {
@@ -86,11 +98,7 @@ public class ChessGame {
      * @return Get the team whose turn it isn't
      */
     public TeamColor getOffTeamColor() {
-        if (this.getTeamTurn() == TeamColor.WHITE) {
-            return TeamColor.BLACK;
-        } else {
-            return TeamColor.WHITE;
-        }
+        return this.getTeamTurn().invert();
     }
 
     /**
@@ -212,11 +220,7 @@ public class ChessGame {
      * Alternate the team to move
      */
     public void toggleTeamTurn() {
-        if (this.activeTeam == TeamColor.WHITE) {
-            this.activeTeam = TeamColor.BLACK;
-        } else {
-            this.activeTeam = TeamColor.WHITE;
-        }
+        this.activeTeam = this.getTeamTurn().invert();
     }
 
     // Logic Heavy Functions
@@ -261,7 +265,7 @@ public class ChessGame {
             return;
         }
 
-        int row = this.getTeamTurn() == TeamColor.WHITE ? 1 : 8;
+        int startRow = ChessFunctions.getStartRow(this.getTeamTurn());
 
         // Simulate the move
         if (piece.getPieceType() == ChessPiece.PieceType.KING) {
@@ -272,7 +276,6 @@ public class ChessGame {
         // setHasRookMoved Check
         if (piece.getPieceType() == ChessPiece.PieceType.ROOK) {
             // Figure out if the rook is on an applicable starting square
-            int startRow = piece.getTeamColor() == TeamColor.WHITE ? 1 : 8;
             int startCol = startPosition.getColumn();
 
             boolean correctStartRow = startPosition.getRow() == startRow;
@@ -292,15 +295,15 @@ public class ChessGame {
             int kingEndColumn = move.getEndPosition().getColumn();
             int rookCol = kingEndColumn == 3 ? 1 : 8;
             if (rookCol == 1) {
-                ChessPosition newRookPOS = new ChessPosition(row, 4);
+                ChessPosition newRookPOS = new ChessPosition(startRow, 4);
                 ChessPiece newRook = new ChessPiece(piece.getTeamColor(), ChessPiece.PieceType.ROOK);
                 this.getBoard().addPiece(newRookPOS, newRook);
-                this.getBoard().addPiece(new ChessPosition(row, 1), null);
+                this.getBoard().addPiece(new ChessPosition(startRow, 1), null);
             } else {
-                ChessPosition newRookPOS = new ChessPosition(row, 6);
+                ChessPosition newRookPOS = new ChessPosition(startRow, 6);
                 ChessPiece newRook = new ChessPiece(piece.getTeamColor(), ChessPiece.PieceType.ROOK);
                 this.getBoard().addPiece(newRookPOS, newRook);
-                this.getBoard().addPiece(new ChessPosition(row, 8), null);
+                this.getBoard().addPiece(new ChessPosition(startRow, 8), null);
             }
         }
 
@@ -323,9 +326,9 @@ public class ChessGame {
 
         // conditionally set the enPassantSquare
         if (piece.getPieceType() == ChessPiece.PieceType.PAWN) {
-            int startRow = startPosition.getRow();
-            int endRow = move.getEndPosition().getRow();
-            int distanceMoved = startRow - endRow;
+            int enPassantStartRow = startPosition.getRow();
+            int enPassantEndRow = move.getEndPosition().getRow();
+            int distanceMoved = enPassantStartRow - enPassantEndRow;
             if (Math.abs(distanceMoved) == 2) {
                 int enPassantOffset = (distanceMoved / 2) * 8;
                 this.getBoard().setEnPassantSquare(new ChessPosition(move.getEndPosition().getBitboardIndex() + enPassantOffset));

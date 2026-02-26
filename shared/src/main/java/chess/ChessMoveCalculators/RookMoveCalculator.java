@@ -24,7 +24,5 @@ public class RookMoveCalculator extends ChessMoveCalculator{
     // Constructors
     public RookMoveCalculator(ChessBoard board, ChessPosition position) {
         super(board, position);
-        this.setMovementDirections();
-        this.setMovementDistance();
     }
 }

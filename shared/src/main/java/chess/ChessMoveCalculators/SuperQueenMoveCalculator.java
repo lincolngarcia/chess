@@ -35,7 +35,5 @@ public class SuperQueenMoveCalculator extends ChessMoveCalculator {
     // Constructors
     public SuperQueenMoveCalculator(ChessBoard board, ChessPosition position, ChessGame.TeamColor teamColor) {
         super(board, position, teamColor);
-        this.setMovementDirections();
-        this.setMovementDistance();
     }
 }

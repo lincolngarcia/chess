@@ -1,5 +1,6 @@
 package chess;
 
+import chess.ChessConverter.ChessFunctions;
 import chess.ChessMoveCalculators.SuperQueenMoveCalculator;
 
 import java.util.ArrayList;
@@ -77,6 +78,8 @@ public class ChessBoard {
     // Constructors
     public ChessBoard() {
         this.Board = new ChessPiece[8][8];
+        this.whiteKingPOS = new ChessPosition(1, 5);
+        this.blackKingPOS = new ChessPosition(8, 5);
     }
 
     public ChessBoard(ChessBoard oldBoard) {
@@ -195,7 +198,7 @@ public class ChessBoard {
      * @param color the king's color
      */
     public void setKingMoved(ChessGame.TeamColor color) {
-        if (color == ChessGame.TeamColor.WHITE) {
+        if (ChessFunctions.isWhite(color)) {
             this.kingMoved[0] = true;
         } else {
             this.kingMoved[1] = true;
@@ -210,7 +213,7 @@ public class ChessBoard {
      * @param startColumn the starting column of the rook
      */
     public void setRookMoved(ChessGame.TeamColor color, int startColumn) {
-        int startRow = color == ChessGame.TeamColor.WHITE ? 1 : 8;
+        int startRow = ChessFunctions.getStartRow(color);
         assert startColumn == 1 || startColumn == 8 : "Invalid startColumn for Rook";
 
         int rowIndex = startRow == 1 ? 0 : 1;
@@ -244,7 +247,7 @@ public class ChessBoard {
      * @return boolean if the king has previously moved
      */
     public boolean hasKingMoved(ChessGame.TeamColor color) {
-        if (color == ChessGame.TeamColor.WHITE) {
+        if (ChessFunctions.isWhite(color)) {
             return this.kingMoved[0];
         } else {
             return this.kingMoved[1];
@@ -260,7 +263,7 @@ public class ChessBoard {
      * @return boolean if the king has previously moved
      */
     public boolean hasRookMoved(ChessGame.TeamColor color, int startColumn) {
-        int startRow = color == ChessGame.TeamColor.WHITE ? 1 : 8;
+        int startRow = ChessFunctions.getStartRow(color);
         assert startColumn == 1 || startColumn == 8 : "Invalid startColumn for Rook";
 
         int rowIndex = startRow == 1 ? 0 : 1;
@@ -346,15 +349,15 @@ public class ChessBoard {
         // Check if an unmoved rook is being captured
         if (capturedPiece != null) {
             if (capturedPiece.getPieceType() == ChessPiece.PieceType.ROOK) {
-                int row = endPosition.getRow();
-                int column = endPosition.getColumn();
+                int endRow = endPosition.getRow();
+                int endColumn = endPosition.getColumn();
 
-                boolean cornerRow = row == 1 || row == 8;
-                boolean cornerColumn = column == 1 || column == 8;
+                boolean cornerRow = endRow == 1 || endRow == 8;
+                boolean cornerColumn = endColumn == 1 || endColumn == 8;
 
                 if (cornerColumn && cornerRow) {
-                    ChessGame.TeamColor color = row == 1 ? ChessGame.TeamColor.WHITE : ChessGame.TeamColor.BLACK;
-                    this.setRookMoved(color, column);
+                    ChessGame.TeamColor color = endRow == 1 ? ChessGame.TeamColor.WHITE : ChessGame.TeamColor.BLACK;
+                    this.setRookMoved(color, endColumn);
                 }
             }
         }

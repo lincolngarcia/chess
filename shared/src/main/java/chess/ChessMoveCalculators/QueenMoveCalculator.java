@@ -28,7 +28,5 @@ public class QueenMoveCalculator extends ChessMoveCalculator{
     // Constructors
     public QueenMoveCalculator(ChessBoard board, ChessPosition position) {
         super(board, position);
-        this.setMovementDirections();
-        this.setMovementDistance();
     }
 }

@@ -1,13 +1,15 @@
 package chess.ChessMoveCalculators;
 
 import chess.*;
+import chess.ChessConverter.ChessFunctions;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
 public class PawnMoveCalculator extends ChessMoveCalculator {
-    protected int colorInverter = 0;
+    protected int directionInverter;
 
+    // Standard Overrides
     @Override
     void setMovementDirections() {
         this.movementDirections = new ChessDirection[]{ChessDirection.UP};
@@ -15,45 +17,32 @@ public class PawnMoveCalculator extends ChessMoveCalculator {
 
     @Override
     void setMovementDistance() {
-        this.movementDistance = 0;
-    }
-
-    public PawnMoveCalculator(ChessBoard board, ChessPosition position) {
-        super(board, position);
-        this.setMovementDirections();
-        this.setMovementDistance();
-    }
-
-    void setMovementDistance(ChessPosition position) {
         // Figure out what the color's starting row is
-        if (4.5 - (2.5 * this.colorInverter) == position.getRow()) {
+        if (ChessFunctions.getPawnStartRow(this.getTeamColor()) == position.getRow()) {
             this.movementDistance = 2;
         } else {
             this.movementDistance = 1;
         }
     }
 
+    // Constructors
+    public PawnMoveCalculator(ChessBoard board, ChessPosition position) {
+        super(board, position);
+        this.directionInverter = this.getTeamColor().value();
+    }
+
     @Override
     public Collection<ChessMove> getPieceMoves() {
-        // Set variables
-        ChessPiece piece = this.board.getPiece(this.getPosition());
-        ChessGame.TeamColor pieceColor = piece.getTeamColor();
-        this.colorInverter = pieceColor == ChessGame.TeamColor.WHITE ? 1 : -1;
-
         // Correct directions
-        ChessDirection forwardDirection = this.colorInverter == 1 ? ChessDirection.UP : ChessDirection.DOWN;
-        ChessDirection leftAttackDirection = this.colorInverter == 1 ? ChessDirection.LEFT_UP : ChessDirection.RIGHT_DOWN;
-        ChessDirection rightAttackDirection = this.colorInverter == 1 ? ChessDirection.RIGHT_UP : ChessDirection.LEFT_DOWN;
-
-        // Super
-        this.setMovementDirections();
-        this.setMovementDistance(this.getPosition());
+        ChessDirection forwardDirection = this.directionInverter == 1 ? ChessDirection.UP : ChessDirection.DOWN;
+        ChessDirection leftAttackDirection = this.directionInverter == 1 ? ChessDirection.LEFT_UP : ChessDirection.RIGHT_DOWN;
+        ChessDirection rightAttackDirection = this.directionInverter == 1 ? ChessDirection.RIGHT_UP : ChessDirection.LEFT_DOWN;
 
         ArrayList<ChessMove> pieceMoves = new ArrayList<>();
 
         // front-forward
         int startPositionIndex = this.getPosition().getBitboardIndex();
-        int forwardOffset = ChessDirection.UP.value() * colorInverter;
+        int forwardOffset = ChessDirection.UP.value() * directionInverter;
         int forwardCellIndex = startPositionIndex + forwardOffset;
         ChessPosition forwardCell = new ChessPosition(forwardCellIndex);
         ChessMove forwardMove = new ChessMove(this.getPosition(), forwardCell);
@@ -83,13 +72,13 @@ public class PawnMoveCalculator extends ChessMoveCalculator {
         }
 
         // left attack
-        int leftAttackOffset = ChessDirection.LEFT_UP.value() * colorInverter;
+        int leftAttackOffset = ChessDirection.LEFT_UP.value() * directionInverter;
         int leftAttackCellIndex = startPositionIndex + leftAttackOffset;
         ChessPosition leftAttackCell = new ChessPosition(leftAttackCellIndex);
         ChessMove leftAttack = new ChessMove(this.getPosition(), leftAttackCell);
         if (!this.isInvalidMove(leftAttack, leftAttackDirection)) {
             ChessPiece targetedPiece = this.board.getPiece(leftAttackCell);
-            if (targetedPiece != null && targetedPiece.getTeamColor() != pieceColor) {
+            if (targetedPiece != null && targetedPiece.getTeamColor() != this.getTeamColor()) {
                 this.addPieceMove(pieceMoves, leftAttack);
             } else if (leftAttackCell.equals(this.getBoard().getEnPassantSquare())) {
                 this.addPieceMove(pieceMoves, leftAttack);
@@ -97,13 +86,13 @@ public class PawnMoveCalculator extends ChessMoveCalculator {
         }
 
         // right attack
-        int rightAttackOffset = ChessDirection.RIGHT_UP.value() * colorInverter;
+        int rightAttackOffset = ChessDirection.RIGHT_UP.value() * directionInverter;
         int rightAttackCellIndex = startPositionIndex + rightAttackOffset;
         ChessPosition rightAttackCell = new ChessPosition(rightAttackCellIndex);
         ChessMove rightAttack = new ChessMove(this.getPosition(), rightAttackCell);
         if (!this.isInvalidMove(rightAttack, rightAttackDirection)) {
             ChessPiece targetedPiece = this.board.getPiece(rightAttackCell);
-            if (targetedPiece != null && targetedPiece.getTeamColor() != pieceColor) {
+            if (targetedPiece != null && targetedPiece.getTeamColor() != this.getTeamColor()) {
                 this.addPieceMove(pieceMoves, rightAttack);
             } else if (rightAttackCell.equals(this.getBoard().getEnPassantSquare())) {
                 this.addPieceMove(pieceMoves, rightAttack);
@@ -114,7 +103,7 @@ public class PawnMoveCalculator extends ChessMoveCalculator {
     }
 
     private void addPieceMove(Collection<ChessMove> pieceMoves, ChessMove move) {
-        int promotionRow = (int) (4.5 + (3.5 * this.colorInverter));
+        int promotionRow = ChessFunctions.getPromotionRow(this.getTeamColor());
 
         ChessPosition endPosition = move.getEndPosition();
 
