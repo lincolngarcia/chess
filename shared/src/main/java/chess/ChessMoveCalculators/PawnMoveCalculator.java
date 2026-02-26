@@ -127,23 +127,4 @@ public class PawnMoveCalculator extends ChessMoveCalculator {
             pieceMoves.add(move);
         }
     }
-
-//    @Override
-//    protected boolean isInvalidMove(ChessMove move, ChessDirection directionMoved) {
-//        boolean isInvalidMove = super.isInvalidMove(move, directionMoved);
-//        if (!isInvalidMove) {
-//            return false;
-//        }
-//
-//        // Enpassant move
-//        if (this.getBoard().enPassantSquare == null) {
-//            return true;
-//        }
-//
-//        if (this.getBoard().enPassantSquare == move.getEndPosition()) {
-//            return false;
-//        }
-//
-//        return true;
-//    }
 }
