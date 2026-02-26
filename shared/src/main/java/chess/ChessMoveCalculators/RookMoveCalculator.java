@@ -5,6 +5,7 @@ import chess.ChessDirection;
 import chess.ChessPosition;
 
 public class RookMoveCalculator extends ChessMoveCalculator{
+    // Constructors
     @Override
     void setMovementDirections() {
         this.movementDirections = new ChessDirection[]{
@@ -20,6 +21,7 @@ public class RookMoveCalculator extends ChessMoveCalculator{
         this.movementDistance = 7;
     }
 
+    // Constructors
     public RookMoveCalculator(ChessBoard board, ChessPosition position) {
         super(board, position);
     }
