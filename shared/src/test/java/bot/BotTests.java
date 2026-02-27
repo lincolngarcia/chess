@@ -1,8 +1,11 @@
 package bot;
 
+import chess.*;
+import chess.ChessConverter.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -16,12 +19,6 @@ public class BotTests {
     @DisplayName("Meta Data Load")
     public void loadMetaData() {
         Campeon sucker = new Campeon();
-        System.out.println(sucker.getMetaData());
-        System.out.println(sucker.getBinaryMetaData());
-        System.out.println(sucker.getConnectionCount());
-        System.out.println(sucker.getRawNeuronCountAmplifier());
-        System.out.println(sucker.getRawNeuronSpreadAmplifier());
-        System.out.println(sucker.getRawNeuronSlopeAmplifier());
     }
 
     @Test
@@ -54,8 +51,24 @@ public class BotTests {
     }
 
     @Test
-    @DisplayName("Generate Nodes")
-    public void generateNodes() {
-        Campeon campeon = this.standardCampeon();
+    @DisplayName("Visualization Test")
+    public void visualizationTests() throws IOException, InterruptedException {
+        Campeon campeon = new Campeon("00000000001000000000000000001111");
+        Functions.renderGraphviz(Functions.generateDot(campeon.getLayerSizes(), campeon.getConnections()), "graphix.svg");
+    }
+
+    @Test
+    @DisplayName("getBestMoveTest")
+    public void getBestMoveTest() {
+        Campeon campeon = new Campeon("00000000001000000000000000001111");
+
+        int moveSeed = 49335;
+        int degreesOfEntropy = 16;
+
+        ChessGame game = new ChessGame();
+        for (int i = 0; i < degreesOfEntropy; i++) ChessFunctions.executeRandomMove(game, moveSeed);
+
+        ChessMove move = campeon.getBestMove(game);
+        System.out.println(move);
     }
 }

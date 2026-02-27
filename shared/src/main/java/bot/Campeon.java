@@ -1,6 +1,7 @@
 package bot;
 
 import chess.*;
+import chess.ChessConverter.ChessFunctions;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,10 +30,11 @@ public class Campeon {
     private final double neuronSlopeAmplifier;
 
     private final int hiddenLayerCount;
-    private final ArrayList<Integer> hiddenLayerSizes;
+    private final ArrayList<Integer> layerSizes;
 
     private final Neuron[][] neurons;
-    private final int[] connections;
+    private final int[] connectionData;
+    private final Connection[] connections;
 
     private ChessGame currentGame;
 
@@ -61,19 +63,20 @@ public class Campeon {
         this.neuronSlopeAmplifier = (double) (this.rawNeuronSlopeAmplifier + 9) / 8;
 
         // Determine Layer Sizes
-        this.hiddenLayerSizes = this.calculateHiddenLayerSizes();
-        this.hiddenLayerCount = this.hiddenLayerSizes.size();
+        this.layerSizes = this.calculateHiddenLayerSizes();
+        this.hiddenLayerCount = this.layerSizes.size();
 
         // Generate Neurons
         this.neurons = this.generateNeurons();
 
         // Generate Connections
-        this.connections = new int[this.connectionCount];
+        this.connectionData = new int[this.connectionCount];
         Random random = new Random();
         for (int i = 0; i < this.connectionCount; i++) {
-            this.connections[i] = random.nextInt();
+            this.connectionData[i] = random.nextInt();
         }
 
+        this.connections = new Connection[this.connectionCount];
         this.generateConnections();
     }
 
@@ -94,7 +97,11 @@ public class Campeon {
         return connectionCount;
     }
 
-    public int[] getConnections() {
+    public int[] getConnectionData() {
+        return connectionData;
+    }
+
+    public Connection[] getConnections() {
         return connections;
     }
 
@@ -102,8 +109,8 @@ public class Campeon {
         return hiddenLayerCount;
     }
 
-    public ArrayList<Integer> getHiddenLayerSizes() {
-        return hiddenLayerSizes;
+    public ArrayList<Integer> getLayerSizes() {
+        return layerSizes;
     }
 
     public int getMetaData() {
@@ -127,7 +134,7 @@ public class Campeon {
     }
 
     public Neuron getOutputNeuron() {
-        return this.getNeurons()[this.getHiddenLayerCount()][0];
+        return this.getNeurons()[this.getHiddenLayerCount() - 1][0];
     }
 
     public int getRawNeuronCountAmplifier() {
@@ -156,6 +163,10 @@ public class Campeon {
         int i = 0;
         do {
             layerSize = this.calculateNeuronCountByLayerIndex(i++);
+            if (layerSize < 1) {
+                layerSize = 1;
+            }
+
             hiddenLayerSizes.add(layerSize);
         } while (layerSize > 1);
         return hiddenLayerSizes;
@@ -167,22 +178,23 @@ public class Campeon {
         assert this.neurons != null;
 
         // Iterate through all connection data
-        for (int connectionBinary : this.connections) {
+        for (int i = 0; i < this.getConnectionCount(); i++) {
+            int connectionBinary = this.getConnectionData()[i];
             Connection connection = new Connection(connectionBinary);
+            this.connections[i] = connection;
 
             // get a starting layer between the first and before the last
             int startLayerIndex = connection.getStartLayer() % (this.getHiddenLayerCount() - 1);
-            int toAddressIndex = connection.getToAddress() % (this.getHiddenLayerSizes().get(startLayerIndex + 1));
+            int toAddressIndex = connection.getToAddress() % (this.getLayerSizes().get(startLayerIndex + 1));
 
             this.getNeurons()[startLayerIndex + 1][toAddressIndex].addInputConnection(connection);
         }
-
     }
 
     private Neuron[][] generateNeurons() {
         assert this.getHiddenLayerCount() != 0;
-        assert this.getHiddenLayerSizes() != null;
-        assert this.getHiddenLayerSizes().size() == this.getHiddenLayerCount();
+        assert this.getLayerSizes() != null;
+        assert this.getLayerSizes().size() == this.getHiddenLayerCount();
 
         // Variables
         Neuron[][] nodes = new Neuron[this.getHiddenLayerCount()][];
@@ -190,9 +202,10 @@ public class Campeon {
         // Loop through each layer
         for (int i = 0; i < this.getHiddenLayerCount(); i++) {
             // Create the neurons in each layer
-            int currentLayerSize = this.getHiddenLayerSizes().get(i);
+            int currentLayerSize = this.getLayerSizes().get(i);
             nodes[i] = new Neuron[currentLayerSize];
 
+            // Set the neuron type
             Neuron.Types type;
             if (i == 0) {
                 type = Neuron.Types.input;
@@ -204,7 +217,7 @@ public class Campeon {
 
             // Create the individual nodes
             for (int j = 0; j < currentLayerSize; j++) {
-                nodes[i][j] = new Neuron(type, j, this);
+                nodes[i][j] = new Neuron(type, i, this);
             }
         }
 
@@ -218,24 +231,22 @@ public class Campeon {
         double bestMoveRating = -1; // Best move is -1 to 1; -1 being least favorable, 1 being the most
 
         // Iterate through all piece moves, get the rating of each
-        for (ChessPosition position : game.getBoard().getTeamPositions(game.getTeamTurn())) {
-            for (ChessMove move : game.validMoves(position)) {
-                this.currentGame = new ChessGame(game);
+        for (ChessMove move : ChessFunctions.getAllMoves(game, game.getTeamTurn())) {
+            this.currentGame = new ChessGame(game);
 
-                try {
-                    this.currentGame.makeMove(move);
-                } catch (InvalidMoveException e) {
-                    throw new RuntimeException(e);
-                }
+            try {
+                this.currentGame.makeMove(move);
+            } catch (InvalidMoveException e) {
+                throw new RuntimeException(e);
+            }
 
-                // calculate the move rating based on color and input
-                double computedRating = this.getOutputNeuron().computeValue();
-                double moveRating = computedRating * game.getTeamTurn().value();
+            // calculate the move rating based on color and input
+            double computedRating = this.getOutputNeuron().computeValue();
+            double moveRating = computedRating * game.getTeamTurn().value();
 
-                if (moveRating > bestMoveRating) {
-                    bestMove = move;
-                    bestMoveRating = moveRating;
-                }
+            if (moveRating > bestMoveRating) {
+                bestMove = move;
+                bestMoveRating = moveRating;
             }
         }
 

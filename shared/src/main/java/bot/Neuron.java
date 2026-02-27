@@ -56,7 +56,7 @@ public class Neuron {
             for (Connection connection : this.inputConnections) {
                 // Get the connecting neurons value
                 int fromNeuronAddress = connection.getFromAddress();
-                int fromNeuronLayerSize = this.getSelf().getHiddenLayerSizes().get(this.layerId - 1);
+                int fromNeuronLayerSize = this.getSelf().getLayerSizes().get(this.layerId - 1);
 
                 int fromNeuronLayerIndex = fromNeuronAddress % fromNeuronLayerSize;
 
