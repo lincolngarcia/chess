@@ -14,7 +14,7 @@ import java.util.Random;
 public class Campeon {
     // Class Variables
     public static final int INPUT_NODE_COUNT = 778;
-    public static final int CUSTOM_INPUT_NODE_COUNT = 9;
+    public static final int CUSTOM_INPUT_NODE_COUNT = 10;
 
     private final int metaData;
     private final int connectionCount;
@@ -32,6 +32,9 @@ public class Campeon {
     private final ArrayList<Integer> hiddenLayerSizes;
 
     private final Neuron[][] neurons;
+    private final int[] connections;
+
+    private ChessGame currentGame;
 
     public Campeon(int metaData) {
         // metaData Structure:
@@ -43,12 +46,12 @@ public class Campeon {
 
         // Class Variables
         this.metaData = metaData;
-        this.connectionCount = parseMetaData(0, 16);
+        this.connectionCount = Functions.parseSubInt(this.metaData, 0, 16);
 
         // These values are calculated to give a clean slope for the given limits of the brain size
-        this.rawNeuronCountAmplifier = parseMetaData(16, 4);
-        this.rawNeuronSpreadAmplifier = parseMetaData(20, 4);
-        this.rawNeuronSlopeAmplifier = parseMetaData(24, 4);
+        this.rawNeuronCountAmplifier = Functions.parseSubInt(metaData, 16, 4);
+        this.rawNeuronSpreadAmplifier = Functions.parseSubInt(metaData, 20, 4);
+        this.rawNeuronSlopeAmplifier = Functions.parseSubInt(metaData, 24, 4);
 
         // Reasonable values are 84 -> 96.
         // Note there is danger above 84 due to the potential of being unable
@@ -65,6 +68,12 @@ public class Campeon {
         this.neurons = this.generateNeurons();
 
         // Generate Connections
+        this.connections = new int[this.connectionCount];
+        Random random = new Random();
+        for (int i = 0; i < this.connectionCount; i++) {
+            this.connections[i] = random.nextInt();
+        }
+
         this.generateConnections();
     }
 
@@ -83,6 +92,10 @@ public class Campeon {
 
     public int getConnectionCount() {
         return connectionCount;
+    }
+
+    public int[] getConnections() {
+        return connections;
     }
 
     public int getHiddenLayerCount() {
@@ -130,15 +143,6 @@ public class Campeon {
     }
 
     // Functions
-    public int parseMetaData(int offset, int size) {
-        assert offset < 32 : "Offset is greater than maximum 32 bits";
-        assert size <= 32 : "Size is greater than maximum 32 bits";
-        assert offset + size <= 32 : "Attempt to access invalid index of 32 bit integer";
-
-        int msbOffset = 32 - offset - size; // Convert MSB-based offset to LSB-based
-        return (this.metaData >>> msbOffset) & ((1 << size) - 1);
-    }
-
     public int calculateNeuronCountByLayerIndex(int index) {
         double body = (double) index / this.getNeuronSpreadAmplifier();
         double exponent = -(index * this.getNeuronSlopeAmplifier()) / this.getNeuronSpreadAmplifier();
@@ -159,8 +163,18 @@ public class Campeon {
 
     // Logic Heavy Functions
     private void generateConnections() {
-        for (int i = 0; i < this.getConnectionCount(); i++) {
+        assert this.connections != null;
+        assert this.neurons != null;
 
+        // Iterate through all connection data
+        for (int connectionBinary : this.connections) {
+            Connection connection = new Connection(connectionBinary);
+
+            // get a starting layer between the first and before the last
+            int startLayerIndex = connection.getStartLayer() % (this.getHiddenLayerCount() - 1);
+            int toAddressIndex = connection.getToAddress() % (this.getHiddenLayerSizes().get(startLayerIndex + 1));
+
+            this.getNeurons()[startLayerIndex + 1][toAddressIndex].addInputConnection(connection);
         }
 
     }
@@ -190,7 +204,7 @@ public class Campeon {
 
             // Create the individual nodes
             for (int j = 0; j < currentLayerSize; j++) {
-                nodes[i][j] = new Neuron(type);
+                nodes[i][j] = new Neuron(type, j, this);
             }
         }
 
@@ -198,43 +212,75 @@ public class Campeon {
         return nodes;
     }
 
-    public ChessMove getBestMove(Collection<ChessMove> validMoves) {
-        ChessMove bestMove;
-        for (ChessMove move : validMoves) {
-            this.getOutputNeuron().sigmoid(10);
+    public ChessMove getBestMove(ChessGame game) {
+        // Variables
+        ChessMove bestMove = null;
+        double bestMoveRating = -1; // Best move is -1 to 1; -1 being least favorable, 1 being the most
+
+        // Iterate through all piece moves, get the rating of each
+        for (ChessPosition position : game.getBoard().getTeamPositions(game.getTeamTurn())) {
+            for (ChessMove move : game.validMoves(position)) {
+                this.currentGame = new ChessGame(game);
+
+                try {
+                    this.currentGame.makeMove(move);
+                } catch (InvalidMoveException e) {
+                    throw new RuntimeException(e);
+                }
+
+                // calculate the move rating based on color and input
+                double computedRating = this.getOutputNeuron().computeValue();
+                double moveRating = computedRating * game.getTeamTurn().value();
+
+                if (moveRating > bestMoveRating) {
+                    bestMove = move;
+                    bestMoveRating = moveRating;
+                }
+            }
         }
-        return null;
+
+        // Delete the local copy of the game
+        this.currentGame = null;
+
+        return bestMove;
     }
 
-    public int getInputNeuronValue(ChessGame game, int inputIndex) {
+    // Static Functions
+    public static int connectionCountFromMetaData(int metaData) {
+        return Functions.parseSubInt(metaData, 0, 16);
+    }
+
+    public int getInputNeuronValue(int inputIndex) {
         switch (inputIndex) {
             case 0:
                 // isInCheckMate
-                return game.isInCheckmate(game.getTeamTurn()) ? 1 : 0;
+                return this.currentGame.isInCheckmate(this.currentGame.getTeamTurn()) ? 1 : 0;
             case 1:
                 // isInStaleMate
-                return game.isInStalemate(game.getTeamTurn()) ? 1 : 0;
+                return this.currentGame.isInStalemate(this.currentGame.getTeamTurn()) ? 1 : 0;
             case 2:
                 // isInCheck
-                return game.isInCheck(game.getTeamTurn()) ? 1 : 0;
+                return this.currentGame.isInCheck(this.currentGame.getTeamTurn()) ? 1 : 0;
             case 3:
                 // white_king hasMoved
-                return game.getBoard().hasKingMoved(ChessGame.TeamColor.WHITE) ? 1 : 0;
+                return this.currentGame.getBoard().hasKingMoved(ChessGame.TeamColor.WHITE) ? 1 : 0;
             case 4:
                 // black_king hasMoved
-                return game.getBoard().hasKingMoved(ChessGame.TeamColor.BLACK) ? 1 : 0;
+                return this.currentGame.getBoard().hasKingMoved(ChessGame.TeamColor.BLACK) ? 1 : 0;
             case 5:
                 // white_rook_1 hasMoved
-                return game.getBoard().hasRookMoved(ChessGame.TeamColor.WHITE, 1) ? 1 : 0;
+                return this.currentGame.getBoard().hasRookMoved(ChessGame.TeamColor.WHITE, 1) ? 1 : 0;
             case 6:
                 // white_rook_8 hasMoved
-                return game.getBoard().hasRookMoved(ChessGame.TeamColor.WHITE, 8) ? 1 : 0;
+                return this.currentGame.getBoard().hasRookMoved(ChessGame.TeamColor.WHITE, 8) ? 1 : 0;
             case 7:
                 // black_rook_1 hasMoved
-                return game.getBoard().hasRookMoved(ChessGame.TeamColor.BLACK, 1) ? 1 : 0;
+                return this.currentGame.getBoard().hasRookMoved(ChessGame.TeamColor.BLACK, 1) ? 1 : 0;
             case 8:
                 // black_rook_8 hasMoved
-                return game.getBoard().hasRookMoved(ChessGame.TeamColor.BLACK, 8) ? 1 : 0;
+                return this.currentGame.getBoard().hasRookMoved(ChessGame.TeamColor.BLACK, 8) ? 1 : 0;
+            case 9:
+                return this.currentGame.getTeamTurn().value();
             default:
                 int boardIndex = inputIndex - CUSTOM_INPUT_NODE_COUNT;
                 int bitBoardIndex = boardIndex % 64;
@@ -242,7 +288,7 @@ public class Campeon {
 
                 ChessPosition position = new ChessPosition(bitBoardIndex);
                 ChessPiece.PieceType expectedPieceType = getPieceTypeByIndex(pieceIndex);
-                ChessPiece piece = game.getBoard().getPiece(position);
+                ChessPiece piece = this.currentGame.getBoard().getPiece(position);
 
                 if (piece == null) {
                     return 0;

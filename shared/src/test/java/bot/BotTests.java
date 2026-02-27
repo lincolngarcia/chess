@@ -52,4 +52,10 @@ public class BotTests {
         ArrayList<Integer> expectedCounts = new ArrayList<>(List.of(Campeon.INPUT_NODE_COUNT, 960, 2600, 2600, 1785, 960, 430, 167, 57, 17, 5, 1));
         assert expectedCounts.equals(campeon.calculateHiddenLayerSizes());
     }
+
+    @Test
+    @DisplayName("Generate Nodes")
+    public void generateNodes() {
+        Campeon campeon = this.standardCampeon();
+    }
 }
