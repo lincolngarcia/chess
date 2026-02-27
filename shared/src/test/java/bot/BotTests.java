@@ -7,18 +7,20 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
 public class BotTests {
     public Campeon standardCampeon() {
-        return new Campeon("10011101011001101001001011100010");
+        return new Campeon("00001001001000001001001011100010");
     }
 
     @Test
     @DisplayName("Meta Data Load")
     public void loadMetaData() {
         Campeon sucker = new Campeon();
+        assert sucker.getNeurons().length != 0;
     }
 
     @Test
@@ -53,14 +55,63 @@ public class BotTests {
     @Test
     @DisplayName("Visualization Test")
     public void visualizationTests() throws IOException, InterruptedException {
-        Campeon campeon = new Campeon("00000000001000000000000000001111");
-        Functions.renderGraphviz(Functions.generateDot(campeon.getLayerSizes(), campeon.getConnections()), "graphix.svg");
+        Campeon campeon = new Campeon("00001000001000000000000000001111");
+        Functions.renderGraphviz(campeon);
+    }
+
+    @Test
+    @DisplayName("Connection Distribution Test")
+    public void connectionDistributionTest() {
+        double sensitivity = 0.5;
+
+        Campeon campeon = new Campeon("00001000001000000000000000001111");
+
+        int[] connectionsPerLayer = new int[campeon.getLayerSizes().size()];
+        for (Connection connection : campeon.getConnections()) {
+            connectionsPerLayer[connection.getStartLayer()] += 1;
+        }
+
+        double[] expectedConnectionsPerLayer = new double[campeon.getLayerSizes().size()];
+        for (int i = 0; i < campeon.getLayerSizes().size(); i++) {
+            int connectionCount = campeon.getConnectionCount();
+            expectedConnectionsPerLayer[i] = ((double) campeon.getLayerSizes().get(i) / campeon.getNeuronCount()) * connectionCount;
+        }
+
+        // A normalized projection of number of nodes expected vs actual
+        double[] normalizedPercentages = new double[campeon.getLayerSizes().size()];
+        for (int i = 0; i < campeon.getLayerSizes().size(); i++) {
+            // actual
+            int actualCount = connectionsPerLayer[i];
+
+            double difference = (double) actualCount / expectedConnectionsPerLayer[i];
+
+            normalizedPercentages[i] = difference;
+        }
+
+        // assert
+        System.out.println(Arrays.toString(normalizedPercentages));
+        for (int i = 0; i < campeon.getLayerSizes().size(); i++) {
+            // only perform the calculation on statistically significant data point
+            if (campeon.getLayerSizes().get(i) < 30) break;
+
+            double percentage = normalizedPercentages[i];
+            assert percentage > 1 - sensitivity;
+            assert percentage < 1 + sensitivity;
+        }
+
+    }
+
+    @Test
+    @DisplayName("Insert Bit Test")
+    public void insertBitsTest() {
+        int updatedNumber = Functions.insertBits(65535, 0, 4, 7);
+        assert updatedNumber == 1879113727;
     }
 
     @Test
     @DisplayName("getBestMoveTest")
-    public void getBestMoveTest() {
-        Campeon campeon = new Campeon("00000000001000000000000000001111");
+    public void getBestMoveTest() throws IOException, InterruptedException {
+        Campeon campeon = new Campeon();
 
         int moveSeed = 49335;
         int degreesOfEntropy = 16;
@@ -68,7 +119,12 @@ public class BotTests {
         ChessGame game = new ChessGame();
         for (int i = 0; i < degreesOfEntropy; i++) ChessFunctions.executeRandomMove(game, moveSeed);
 
+        System.out.println(ChessFunctions.exportGameToSAN(game));
+
+        Functions.renderGraphviz(campeon);
+
+        System.out.println("Render Complete");
+
         ChessMove move = campeon.getBestMove(game);
-        System.out.println(move);
     }
 }

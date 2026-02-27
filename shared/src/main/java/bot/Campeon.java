@@ -4,7 +4,6 @@ import chess.*;
 import chess.ChessConverter.ChessFunctions;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 
@@ -33,6 +32,7 @@ public class Campeon {
     private final ArrayList<Integer> layerSizes;
 
     private final Neuron[][] neurons;
+    private final int neuronCount;
     private final int[] connectionData;
     private final Connection[] connections;
 
@@ -69,12 +69,18 @@ public class Campeon {
         // Generate Neurons
         this.neurons = this.generateNeurons();
 
+        // Calculate total neurons
+        int neuronCounter = 0;
+        for (int layerSize : layerSizes) {
+            neuronCounter += layerSize;
+        }
+        this.neuronCount = neuronCounter;
+
+
         // Generate Connections
         this.connectionData = new int[this.connectionCount];
-        Random random = new Random();
-        for (int i = 0; i < this.connectionCount; i++) {
-            this.connectionData[i] = random.nextInt();
-        }
+        this.generateRandomConnections();
+
 
         this.connections = new Connection[this.connectionCount];
         this.generateConnections();
@@ -115,6 +121,10 @@ public class Campeon {
 
     public int getMetaData() {
         return metaData;
+    }
+
+    public int getNeuronCount() {
+        return neuronCount;
     }
 
     public int getNeuronSpreadAmplifier() {
@@ -241,12 +251,15 @@ public class Campeon {
             }
 
             // calculate the move rating based on color and input
-            double computedRating = this.getOutputNeuron().computeValue();
+            double computedRating = this.getOutputNeuron().computeValue(game.hashCode());
             double moveRating = computedRating * game.getTeamTurn().value();
 
             if (moveRating > bestMoveRating) {
+                System.out.println("New Best move is " + move + " with a rating of " + moveRating);
                 bestMove = move;
                 bestMoveRating = moveRating;
+            }else{
+                System.out.println("move is " + move + " with a rating of " + moveRating);
             }
         }
 
@@ -261,35 +274,65 @@ public class Campeon {
         return Functions.parseSubInt(metaData, 0, 16);
     }
 
+    public void generateRandomConnections() {
+        for (int i = 0; i < this.connectionData.length; i++) {
+            // get a random node index
+            Random random = new Random();
+            int nodeIndex = (random.nextInt() & 0x7FFFFFFF) % this.neuronCount;
+
+            // find the layer that fits that index
+            int layerIndex = 0;
+            int cumulativeLayerCount = 0;
+            for (int j = 0; j < layerSizes.size(); j++) {
+                int layerSize = layerSizes.get(j);
+                cumulativeLayerCount += layerSize;
+
+                if (nodeIndex < cumulativeLayerCount) {
+                    layerIndex = j;
+                    break;
+                }
+            }
+
+            // use that as the starting layer
+            int connection = random.nextInt();
+            int offset = Connection.startLayerOffset;
+            int size = Connection.startLayerSize;
+
+            this.connectionData[i] = Functions.insertBits(connection, offset, size, layerIndex);
+            String binary = Functions.intToBinaryString(this.connectionData[i]);
+        }
+
+    }
+
     public int getInputNeuronValue(int inputIndex) {
         switch (inputIndex) {
             case 0:
                 // isInCheckMate
-                return this.currentGame.isInCheckmate(this.currentGame.getTeamTurn()) ? 1 : 0;
+                return this.currentGame.isInCheckmate(this.currentGame.getTeamTurn()) ? 1 : -1;
             case 1:
                 // isInStaleMate
-                return this.currentGame.isInStalemate(this.currentGame.getTeamTurn()) ? 1 : 0;
+                return this.currentGame.isInStalemate(this.currentGame.getTeamTurn()) ? 1 : -1;
             case 2:
                 // isInCheck
-                return this.currentGame.isInCheck(this.currentGame.getTeamTurn()) ? 1 : 0;
+                return this.currentGame.isInCheck(this.currentGame.getTeamTurn()) ? 1 : -1;
             case 3:
                 // white_king hasMoved
-                return this.currentGame.getBoard().hasKingMoved(ChessGame.TeamColor.WHITE) ? 1 : 0;
+                return this.currentGame.getBoard().hasKingMoved(ChessGame.TeamColor.WHITE) ? 1 : -1;
             case 4:
                 // black_king hasMoved
-                return this.currentGame.getBoard().hasKingMoved(ChessGame.TeamColor.BLACK) ? 1 : 0;
+                return this.currentGame.getBoard().hasKingMoved(ChessGame.TeamColor.BLACK) ? 1 : -1;
             case 5:
                 // white_rook_1 hasMoved
-                return this.currentGame.getBoard().hasRookMoved(ChessGame.TeamColor.WHITE, 1) ? 1 : 0;
+                return this.currentGame.getBoard().hasRookMoved(ChessGame.TeamColor.WHITE, 1) ? 1 : -1;
             case 6:
                 // white_rook_8 hasMoved
-                return this.currentGame.getBoard().hasRookMoved(ChessGame.TeamColor.WHITE, 8) ? 1 : 0;
+                return this.currentGame.getBoard().hasRookMoved(ChessGame.TeamColor.WHITE, 8) ? 1 : -1;
             case 7:
                 // black_rook_1 hasMoved
-                return this.currentGame.getBoard().hasRookMoved(ChessGame.TeamColor.BLACK, 1) ? 1 : 0;
+                return this.currentGame.getBoard().hasRookMoved(ChessGame.TeamColor.BLACK, 1) ? 1 : -1;
             case 8:
                 // black_rook_8 hasMoved
-                return this.currentGame.getBoard().hasRookMoved(ChessGame.TeamColor.BLACK, 8) ? 1 : 0;
+                return this.currentGame.getBoard().hasRookMoved(ChessGame.TeamColor.BLACK, 8) ? 1 : -1;
             case 9:
                 return this.currentGame.getTeamTurn().value();
             default:
@@ -298,13 +341,13 @@ public class Campeon {
                 int pieceIndex = boardIndex / 64;
 
                 ChessPosition position = new ChessPosition(bitBoardIndex);
-                ChessPiece.PieceType expectedPieceType = getPieceTypeByIndex(pieceIndex);
+                ChessPiece expectedPieceType = getPieceTypeByIndex(pieceIndex);
                 ChessPiece piece = this.currentGame.getBoard().getPiece(position);
 
                 if (piece == null) {
                     return 0;
                 }
-                if (piece.getPieceType() == expectedPieceType) {
+                if (piece.equals(expectedPieceType)) {
                     return 1;
                 } else {
                     return 0;
@@ -312,24 +355,25 @@ public class Campeon {
         }
     }
 
-    public ChessPiece.PieceType getPieceTypeByIndex(int index) {
-        return null;
+    public ChessPiece getPieceTypeByIndex(int index) {
+        return switch (index) {
+            // White pieces
+            case 0 -> new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KING);
+            case 1 -> new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.QUEEN);
+            case 2 -> new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.ROOK);
+            case 3 -> new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.BISHOP);
+            case 4 -> new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KNIGHT);
+            case 5 -> new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.PAWN);
+
+            // Black pieces
+            case 6 -> new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.KING);
+            case 7 -> new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.QUEEN);
+            case 8 -> new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.ROOK);
+            case 9 -> new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.BISHOP);
+            case 10 -> new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.KNIGHT);
+            case 11 -> new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.PAWN);
+
+            default -> throw new IllegalArgumentException("Invalid index: " + index);
+        };
     }
-
-
-    /**
-     * 768 (8 * 8 * 12) (12 piece types)
-     * isCheckmate
-     * isStalemate
-     * isInCheck
-     * whiteRook_1 hasMoved
-     * whiteRook_8 hasMoved
-     * blackRook_1 hasMoved
-     * blackRook_8 hasMoved
-     * white_king hasMoved
-     * black_king hasMoved
-     * promotion_piece?
-     */
-
-
 }

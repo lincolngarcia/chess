@@ -5,7 +5,9 @@ package bot;
  */
 public class Connection {
     // Class Variables
-    private final int amplifierBitCount = 2;
+    public static final int amplifierBitCount = 2;
+    public static final int startLayerOffset = 24;
+    public static final int startLayerSize = 6;
 
     private final int fromAddress;
     private final int toAddress;

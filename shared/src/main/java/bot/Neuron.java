@@ -15,6 +15,10 @@ public class Neuron {
     private final Types type;
     private final Campeon self;
 
+    private double storedCache;
+    private boolean hasStoredCache = false;
+    private int cacheKey;
+
     public enum Types {
         input,
         layer,
@@ -42,11 +46,15 @@ public class Neuron {
     }
 
     // Logic Heavy Functions
-    public double computeValue() {
+    public double computeValue(int cacheKey) {
+        if (this.cacheKey == cacheKey && hasStoredCache) {
+            return this.storedCache;
+        }
+
         if (this.getType() == Types.input) {
             // Return input values for input neurons
             return this.getSelf().getInputNeuronValue(this.layerId);
-        }else{
+        } else {
             // Safety checks
             assert this.layerId > 0;
 
@@ -60,19 +68,23 @@ public class Neuron {
 
                 int fromNeuronLayerIndex = fromNeuronAddress % fromNeuronLayerSize;
 
-                double fromNeuronValue = this.getSelf().getNeurons()[this.layerId - 1][fromNeuronLayerIndex].computeValue();
+                double fromNeuronValue = this.getSelf().getNeurons()[this.layerId - 1][fromNeuronLayerIndex].computeValue(cacheKey);
 
                 // Pass the value from the neuron through the connection;
                 inputSum += connection.computeValue(fromNeuronValue);
             }
 
             // return the sigmoid
-            return this.sigmoid(inputSum);
+            this.hasStoredCache = true;
+            this.cacheKey = cacheKey;
+            this.storedCache = this.sigmoid(inputSum);
+            return this.storedCache;
         }
     }
 
     public double sigmoid(double input) {
-        double eValue = Math.pow(Math.E, - input);
+        double exponent = input + Math.log(2);
+        double eValue = Math.pow(Math.E, -exponent);
         double mainTerm = 1 / (0.5 + eValue);
         return mainTerm - 1;
     }
