@@ -3,6 +3,7 @@ package bot;
 import chess.ChessGame;
 import chess.InvalidMoveException;
 
+import java.util.ArrayList;
 import java.util.Random;
 
 public class Arena {
@@ -35,6 +36,10 @@ public class Arena {
             for (int i = 0; i < batchSize; i++) {
                 firstGeneration[i] = this.createRandomStrain();
             }
+
+            System.out.println("Finished batch creation");
+            System.out.flush();
+
             return this.executeBatch(firstGeneration);
         }
 
@@ -45,13 +50,15 @@ public class Arena {
             Campeon sInput = previousGenerationWinners[i + 1];
 
             newGeneration[i * 4] = pInput;
-            newGeneration[i * 4 + 1] = createStrain(pInput, sInput);
+            newGeneration[i * 4 + 1] = createStrainByParents(pInput, sInput);
             newGeneration[i * 4 + 2] = sInput;
-            newGeneration[i * 4 + 3] = createStrain(pInput, sInput);
+            newGeneration[i * 4 + 3] = createStrainByParents(pInput, sInput);
         }
 
         // Store brain data: neuronCount, a, b, c
 
+        System.out.println("Finished batch creation");
+        System.out.flush();
         return this.executeBatch(newGeneration);
     }
 
@@ -92,7 +99,7 @@ public class Arena {
 
                 // If tied, create a new strain and return it
                 System.out.println("WARNING: tie found");
-                return createStrain(whitePlayer, blackPlayer);
+                return createStrainByParents(whitePlayer, blackPlayer);
 
             }
 
@@ -108,8 +115,8 @@ public class Arena {
 
     }
 
-    public Campeon createStrain(Campeon pInput, Campeon sInput) {
-        return null;
+    public Campeon createStrainByParents(Campeon pInput, Campeon sInput) {
+        return new Campeon(pInput, sInput);
     }
 
     public Campeon mutateStrain(Campeon input) {
@@ -119,14 +126,18 @@ public class Arena {
 
     public Campeon createRandomStrain() {
         int metaData = random.nextInt();
+
+        int a = Campeon.parseNeuronCountAmplifier(Campeon.parseRawNeuronCountAmplifier(metaData));
+        int b = Campeon.parseNeuronSpreadAmplifier(Campeon.parseRawNeuronSpreadAmplifier(metaData));
+        double c = Campeon.parseNeuronSlopeAmplifier(Campeon.parseRawNeuronSlopeAmplifier(metaData));
+
         int connectionCount = Campeon.parseConnectionCountFromMetaData(metaData);
+        ArrayList<Integer> layerSizes = Campeon.calculateHiddenLayerSizes(a, b, c);
+        int neuronCount = Campeon.calculateTotalNeuronCount(layerSizes);
 
-        int[] connections = new int[connectionCount];
+        int[] connections = Campeon.generateRandomConnections(neuronCount, layerSizes, connectionCount);
 
-        //Campeon.generateRandomConnections()
-
-        //Campeon campeon = new Campeon(metaData, )
-        return null;
+        return new Campeon(metaData, connections);
     }
 
     public String getStatistics(String[] batchData) {

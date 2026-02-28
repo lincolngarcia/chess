@@ -14,6 +14,15 @@ public class Campeon {
     public static final int INPUT_NODE_COUNT = 778;
     public static final int CUSTOM_INPUT_NODE_COUNT = 10;
 
+    public static final int RAW_CONNECTION_COUNT_SIZE = 16;
+    public static final int RAW_CONNECTION_COUNT_OFFSET = 0;
+    public static final int RAW_NEURON_COUNT_AMPLIFIER_SIZE = 4;
+    public static final int RAW_NEURON_COUNT_AMPLIFIER_OFFSET = 16;
+    public static final int RAW_NEURON_SPREAD_AMPLIFIER_SIZE = 4;
+    public static final int RAW_NEURON_SPREAD_AMPLIFIER_OFFSET = 20;
+    public static final int RAW_NEURON_SLOPE_AMPLIFIER_SIZE = 4;
+    public static final int RAW_NEURON_SLOPE_AMPLIFIER_OFFSET = 24;
+
     private final int metaData;
     private final int connectionCount;
 
@@ -65,13 +74,6 @@ public class Campeon {
     }
 
     public Campeon(int metaData, int[] connectionData) {
-        // metaData Structure:
-        // 16 bits -> connections (65536)
-        //  4 bits -> amplifier
-        //  4 bits -> spread
-        //  4 bits -> slope
-        //  4 bits -> something else?
-
         // Class Variables
         this.metaData = metaData;
         this.connectionCount = Functions.parseSubInt(this.metaData, 0, 16);
@@ -97,17 +99,54 @@ public class Campeon {
         this.neurons = this.generateNeurons();
 
         // Calculate total neurons
-        int neuronCounter = 0;
-        for (int layerSize : layerSizes) {
-            neuronCounter += layerSize;
-        }
-        this.neuronCount = neuronCounter;
+        this.neuronCount = Campeon.calculateTotalNeuronCount(this.getLayerSizes());
 
 
         // Generate Connections
         this.connectionData = connectionData;
         this.connections = new Connection[this.connectionCount];
         this.generateConnections();
+    }
+
+    public Campeon(Campeon pInput, Campeon sInput) {
+        Random random = new Random();
+
+        int connectionCount = random.nextBoolean() ? pInput.getConnectionCount() : sInput.getConnectionCount();
+        int a = random.nextBoolean() ? pInput.getRawNeuronCountAmplifier() : sInput.getRawNeuronCountAmplifier();
+        int b = random.nextBoolean() ? pInput.getRawNeuronSpreadAmplifier() : sInput.getRawNeuronSpreadAmplifier();
+        int c = random.nextBoolean() ? pInput.getRawNeuronSlopeAmplifier() : sInput.getRawNeuronSlopeAmplifier();
+
+        int metaData = 0;
+
+        metaData = Functions.insertBits(
+                metaData,
+                RAW_NEURON_COUNT_AMPLIFIER_OFFSET,
+                RAW_NEURON_COUNT_AMPLIFIER_SIZE,
+                a
+        );
+
+        metaData = Functions.insertBits(
+                metaData,
+                RAW_NEURON_SPREAD_AMPLIFIER_OFFSET,
+                RAW_NEURON_SLOPE_AMPLIFIER_SIZE,
+                b
+        );
+
+        metaData = Functions.insertBits(
+                metaData,
+                RAW_NEURON_SLOPE_AMPLIFIER_OFFSET,
+                RAW_NEURON_SLOPE_AMPLIFIER_SIZE,
+                c
+        );
+
+        int[] connections = new int[connectionCount];
+        for (int i = 0; i < connectionCount; i++) {
+            connections[i] = random.nextBoolean() ?
+                    pInput.getConnections()[i].binaryData:
+                    sInput.getConnections()[i].binaryData;
+        }
+
+        this(metaData, connections);
     }
 
     // Getters
@@ -185,7 +224,7 @@ public class Campeon {
         );
     }
 
-    public static int calculateNeuronCountByLayerIndex(int index, int a, int b, int c) {
+    public static int calculateNeuronCountByLayerIndex(int index, int a, int b, double c) {
         int countAmplifier = Campeon.parseNeuronCountAmplifier(a);
         int spreadAmplifier = Campeon.parseNeuronSpreadAmplifier(b);
         double slopeAmplifier = Campeon.parseNeuronSlopeAmplifier(c);
@@ -205,7 +244,7 @@ public class Campeon {
         );
     }
 
-    public static ArrayList<Integer> calculateHiddenLayerSizes(int a, int b, int c) {
+    public static ArrayList<Integer> calculateHiddenLayerSizes(int a, int b, double c) {
         ArrayList<Integer> hiddenLayerSizes = new ArrayList<>(List.of(INPUT_NODE_COUNT));
         int layerSize;
         int i = 0;
@@ -381,15 +420,25 @@ public class Campeon {
     }
 
     public static int parseRawNeuronCountAmplifier(int metaData) {
-        return Functions.parseSubInt(metaData, 16, 4);
+        return Functions.parseSubInt(metaData,
+                RAW_NEURON_COUNT_AMPLIFIER_OFFSET,
+                RAW_NEURON_COUNT_AMPLIFIER_SIZE
+        );
     }
 
     public static int parseRawNeuronSpreadAmplifier(int metaData) {
-        return Functions.parseSubInt(metaData, 20, 4);
+        return Functions.parseSubInt(metaData,
+                RAW_NEURON_SPREAD_AMPLIFIER_OFFSET,
+                RAW_NEURON_SLOPE_AMPLIFIER_SIZE
+        );
     }
 
     public static int parseRawNeuronSlopeAmplifier(int metaData) {
-        return Functions.parseSubInt(metaData, 24, 4);
+        return Functions.parseSubInt(
+                metaData,
+                RAW_NEURON_SLOPE_AMPLIFIER_OFFSET,
+                RAW_NEURON_SLOPE_AMPLIFIER_SIZE
+        );
     }
 
     public static int parseNeuronCountAmplifier(int raw) {
@@ -400,12 +449,20 @@ public class Campeon {
         return raw + 2;
     }
 
-    public static double parseNeuronSlopeAmplifier(int raw) {
-        return (double) (raw + 9) / 8;
+    public static double parseNeuronSlopeAmplifier(double raw) {
+        return (double) (raw + 3) / 2;
     }
 
     public static int parseConnectionCountFromMetaData(int metaData) {
         return Functions.parseSubInt(metaData, 0, 16);
+    }
+
+    public static int calculateTotalNeuronCount(ArrayList<Integer> layerSizes) {
+        int neuronCounter = 0;
+        for (int layerSize : layerSizes) {
+            neuronCounter += layerSize;
+        }
+        return neuronCounter;
     }
 
     public static int[] generateRandomConnections(int neuronCount, ArrayList<Integer> layerSizes, int connectionCount) {

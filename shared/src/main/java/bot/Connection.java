@@ -9,6 +9,8 @@ public class Connection {
     public static final int startLayerOffset = 24;
     public static final int startLayerSize = 6;
 
+    public final int binaryData;
+
     private final int fromAddress;
     private final int toAddress;
     private final int startLayer;
@@ -16,11 +18,11 @@ public class Connection {
 
     // Constructors
     public Connection(int binaryData) {
+        this.binaryData = binaryData;
         this.fromAddress = Functions.parseSubInt(binaryData, 0, 12);
         this.toAddress = Functions.parseSubInt(binaryData, 12, 12);
         this.startLayer = Functions.parseSubInt(binaryData, 24, 6);
         this.amplifier = Functions.parseSubInt(binaryData, 30, amplifierBitCount);
-
         // 4 bits remaining;
     }
 

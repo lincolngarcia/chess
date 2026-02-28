@@ -111,7 +111,9 @@ public class BotTests {
         System.out.println(Arrays.toString(normalizedPercentages));
         for (int i = 0; i < campeon.getLayerSizes().size(); i++) {
             // only perform the calculation on statistically significant data point
-            if (campeon.getLayerSizes().get(i) < 30) break;
+            if (campeon.getLayerSizes().get(i) < 30) {
+                break;
+            }
 
             double percentage = normalizedPercentages[i];
             assert percentage > 1 - sensitivity;
@@ -129,7 +131,7 @@ public class BotTests {
 
     @Test
     @DisplayName("getBestMoveTest")
-    public void getBestMoveTest() throws IOException, InterruptedException {
+    public void getBestMoveTest() {
         Campeon campeon = this.standardCampeon();
 
         System.out.println(campeon);
@@ -137,7 +139,9 @@ public class BotTests {
         int moveSeed = 49335;
         int degreesOfEntropy = 16;
         ChessGame game = new ChessGame();
-        for (int i = 0; i < degreesOfEntropy; i++) ChessFunctions.executeRandomMove(game, moveSeed);
+        for (int i = 0; i < degreesOfEntropy; i++) {
+            ChessFunctions.executeRandomMove(game, moveSeed);
+        }
 
         System.out.println(ChessFunctions.exportGameToSAN(game));
 
@@ -149,11 +153,19 @@ public class BotTests {
     @DisplayName("Read / Write Match")
     public void readWriteMatch() throws IOException {
         Campeon writtenCampeon = Functions.createCampeonFromFile("campeon_alpha_test");
-
         Functions.writeCampeonToFile(writtenCampeon, "campeon_alpha_test_1");
-
         assert writtenCampeon.equals(Functions.createCampeonFromFile("campeon_alpha_test_1"));
-
         Files.deleteIfExists(Path.of("campeon_alpha_test_1"));
+    }
+
+    @Test
+    @DisplayName("Random Bot Creation")
+    public void randomBot() {
+        for (int i = 0; i < 100; i++) {
+            Arena arena = new Arena();
+            Campeon campeon = arena.createRandomStrain();
+
+            assert campeon.getNeuronCount() > 0;
+        }
     }
 }
