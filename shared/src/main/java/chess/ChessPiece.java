@@ -20,12 +20,22 @@ public class ChessPiece {
      * The various different chess piece options
      */
     public enum PieceType {
-        KING,
-        QUEEN,
-        BISHOP,
-        KNIGHT,
-        ROOK,
-        PAWN
+        KING(0),
+        QUEEN(8),
+        BISHOP(3),
+        KNIGHT(3),
+        ROOK(5),
+        PAWN(1);
+
+        private final int value;
+
+        PieceType(int value) {
+            this.value = value;
+        }
+
+        public int value() {
+            return this.value;
+        }
     }
 
     // Standard Overrides
