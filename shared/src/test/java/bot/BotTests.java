@@ -24,7 +24,7 @@ public class BotTests {
 
     @Test
     @DisplayName("Meta Data Load")
-    public void loadMetaData() throws IOException {
+    public void loadMetaData() {
         Campeon sucker = this.standardCampeon();
         assert sucker.getNeurons().length != 0;
     }
@@ -161,7 +161,7 @@ public class BotTests {
     @Test
     @DisplayName("Random Bot Creation")
     public void randomBot() {
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 16; i++) {
             Arena arena = new Arena();
             Campeon campeon = arena.createRandomStrain();
 

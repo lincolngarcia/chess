@@ -31,10 +31,6 @@ public class Campeon {
     final int rawNeuronSpreadAmplifier;
     final int rawNeuronSlopeAmplifier;
 
-    private final int neuronCountAmplifier;
-    private final int neuronSpreadAmplifier;
-    private final double neuronSlopeAmplifier;
-
     private final int hiddenLayerCount;
     private final ArrayList<Integer> layerSizes;
 
@@ -83,14 +79,6 @@ public class Campeon {
         this.rawNeuronSpreadAmplifier = Campeon.parseRawNeuronSpreadAmplifier(metaData);
         this.rawNeuronSlopeAmplifier = Campeon.parseRawNeuronSlopeAmplifier(metaData);
 
-        // Reasonable values are 84 -> 96.
-        // Note there is danger above 84 due to the potential of being unable
-        // to connect to certain nodes in layers with sizes > 4096
-
-        this.neuronCountAmplifier = Campeon.parseNeuronCountAmplifier(this.rawNeuronCountAmplifier);
-        this.neuronSpreadAmplifier = Campeon.parseNeuronSpreadAmplifier(this.rawNeuronSlopeAmplifier);
-        this.neuronSlopeAmplifier = Campeon.parseNeuronSlopeAmplifier(this.rawNeuronSlopeAmplifier);
-
         // Determine Layer Sizes
         this.layerSizes = this.calculateHiddenLayerSizes();
         this.hiddenLayerCount = this.layerSizes.size();
@@ -116,6 +104,19 @@ public class Campeon {
         int b = random.nextBoolean() ? pInput.getRawNeuronSpreadAmplifier() : sInput.getRawNeuronSpreadAmplifier();
         int c = random.nextBoolean() ? pInput.getRawNeuronSlopeAmplifier() : sInput.getRawNeuronSlopeAmplifier();
 
+        int metaData = createMetaData(a, b, c);
+
+        int[] connections = new int[connectionCount];
+        for (int i = 0; i < connectionCount; i++) {
+            connections[i] = random.nextBoolean() ?
+                    pInput.getConnections()[i].binaryData:
+                    sInput.getConnections()[i].binaryData;
+        }
+
+        this(metaData, connections);
+    }
+
+    private static int createMetaData(int a, int b, int c) {
         int metaData = 0;
 
         metaData = Functions.insertBits(
@@ -128,7 +129,7 @@ public class Campeon {
         metaData = Functions.insertBits(
                 metaData,
                 RAW_NEURON_SPREAD_AMPLIFIER_OFFSET,
-                RAW_NEURON_SLOPE_AMPLIFIER_SIZE,
+                RAW_NEURON_SPREAD_AMPLIFIER_SIZE,
                 b
         );
 
@@ -138,15 +139,7 @@ public class Campeon {
                 RAW_NEURON_SLOPE_AMPLIFIER_SIZE,
                 c
         );
-
-        int[] connections = new int[connectionCount];
-        for (int i = 0; i < connectionCount; i++) {
-            connections[i] = random.nextBoolean() ?
-                    pInput.getConnections()[i].binaryData:
-                    sInput.getConnections()[i].binaryData;
-        }
-
-        this(metaData, connections);
+        return metaData;
     }
 
     // Getters
@@ -180,18 +173,6 @@ public class Campeon {
 
     public int getNeuronCount() {
         return neuronCount;
-    }
-
-    public int getNeuronSpreadAmplifier() {
-        return neuronSpreadAmplifier;
-    }
-
-    public double getNeuronSlopeAmplifier() {
-        return neuronSlopeAmplifier;
-    }
-
-    public int getNeuronCountAmplifier() {
-        return neuronCountAmplifier;
     }
 
     public Neuron[][] getNeurons() {
@@ -429,7 +410,7 @@ public class Campeon {
     public static int parseRawNeuronSpreadAmplifier(int metaData) {
         return Functions.parseSubInt(metaData,
                 RAW_NEURON_SPREAD_AMPLIFIER_OFFSET,
-                RAW_NEURON_SLOPE_AMPLIFIER_SIZE
+                RAW_NEURON_SPREAD_AMPLIFIER_SIZE
         );
     }
 
