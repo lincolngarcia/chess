@@ -3,9 +3,7 @@ package bot;
 import chess.*;
 import chess.ChessConverter.ChessFunctions;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 
 /**
@@ -37,6 +35,40 @@ public class Campeon {
     private final Connection[] connections;
 
     private ChessGame currentGame;
+
+    // Standard Overrides
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Campeon campeon)) {
+            return false;
+        }
+        return metaData == campeon.metaData && Objects.deepEquals(connectionData, campeon.connectionData);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(metaData, Arrays.hashCode(connectionData));
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder str = new StringBuilder();
+        str.append("Campeon:\n");
+
+        str.append("metaData: ");
+        str.append(this.metaData);
+        str.append("\n");
+
+        str.append("neuronCount: ");
+        str.append(this.neuronCount);
+        str.append("\n");
+
+        str.append("connectionCount: ");
+        str.append(this.connectionCount);
+        str.append("\n");
+
+        return str.toString();
+    }
 
     public Campeon(int metaData) {
         // metaData Structure:
