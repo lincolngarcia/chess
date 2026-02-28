@@ -1,8 +1,6 @@
 package bot;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -144,4 +142,34 @@ public class Functions {
         }
     }
 
+    // Method to write a Campeon object to a binary file
+    public static void writeCampeonToFile(Campeon campeon, String filename) throws IOException {
+        try (DataOutputStream dos = new DataOutputStream(new FileOutputStream(filename))) {
+            // Write metadata first
+            dos.writeInt(campeon.getMetaData());
+            // Write connection data
+            for (int conn : campeon.getConnectionData()) {
+                dos.writeInt(conn);
+            }
+        }
+    }
+
+    // Method to read a Campeon object from a binary file
+    public static Campeon createCampeonFromFile(String filename) throws IOException {
+        try (DataInputStream dis = new DataInputStream(new FileInputStream(filename))) {
+            int metaData = dis.readInt(); // first int
+
+            List<Integer> connections = new ArrayList<>();
+            try {
+                while (true) {
+                    connections.add(dis.readInt());
+                }
+            } catch (EOFException e) {
+                // reached end of file
+            }
+
+            int[] connectionData = connections.stream().mapToInt(Integer::intValue).toArray();
+            return new Campeon(metaData, connectionData);
+        }
+    }
 }

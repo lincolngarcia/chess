@@ -2,6 +2,7 @@ package bot;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 
 /**
  * Responsible for holding backpropagation data
@@ -12,6 +13,7 @@ public class Neuron {
     // Class Variables
     private final Collection<Connection> inputConnections = new ArrayList<>();
     private final int layerId;
+    private final int layerIndex;
     private final Types type;
     private final Campeon self;
 
@@ -25,9 +27,35 @@ public class Neuron {
         output
     }
 
-    public Neuron(Neuron.Types type, int layerId, Campeon campeon) {
+    // Standard Overrides
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Neuron neuron)) {
+            return false;
+        }
+        return layerId == neuron.layerId && layerIndex == neuron.layerIndex && type == neuron.type && Objects.equals(self, neuron.self);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(layerId, layerIndex, type, self);
+    }
+
+    @Override
+    public String toString() {
+        return "Neuron{" +
+                "layerId=" + layerId +
+                ", layerIndex=" + layerIndex +
+                ", type=" + type +
+                '}';
+    }
+
+    public Neuron(Neuron.Types type, int layerId, int layerIndex, Campeon campeon) {
         this.type = type;
         this.layerId = layerId;
+        this.layerIndex = layerIndex;
         this.self = campeon;
     }
 
@@ -53,7 +81,7 @@ public class Neuron {
 
         if (this.getType() == Types.input) {
             // Return input values for input neurons
-            return this.getSelf().getInputNeuronValue(this.layerId);
+            this.storedCache = this.getSelf().getInputNeuronValue(this.layerIndex);
         } else {
             // Safety checks
             assert this.layerId > 0;
@@ -75,11 +103,12 @@ public class Neuron {
             }
 
             // return the sigmoid
-            this.hasStoredCache = true;
-            this.cacheKey = cacheKey;
             this.storedCache = this.sigmoid(inputSum);
-            return this.storedCache;
         }
+
+        this.hasStoredCache = true;
+        this.cacheKey = cacheKey;
+        return this.storedCache;
     }
 
     public double sigmoid(double input) {

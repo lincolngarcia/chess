@@ -13,27 +13,41 @@ import java.util.Objects;
 
 public class BotTests {
     public Campeon standardCampeon() {
-        return new Campeon("00001001001000001001001011100010");
+        try {
+            return Functions.createCampeonFromFile("campeon_alpha_test");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
     @DisplayName("Meta Data Load")
-    public void loadMetaData() {
-        Campeon sucker = new Campeon();
+    public void loadMetaData() throws IOException {
+        Campeon sucker = this.standardCampeon();
         assert sucker.getNeurons().length != 0;
     }
 
     @Test
-    @DisplayName("Create from string")
-    public void createFromString() {
-        Campeon sucker = new Campeon("00100000101100100100101100110101");
+    @DisplayName("Create")
+    public void create() {
+        Campeon sucker = this.standardCampeon();
 
-        assert sucker.getMetaData() == 548555573;
-        assert Objects.equals(sucker.getBinaryMetaData(), "00100000101100100100101100110101");
-        assert sucker.getConnectionCount() == 8370;
-        assert sucker.getRawNeuronCountAmplifier() == 4;
-        assert sucker.getRawNeuronSpreadAmplifier() == 11;
-        assert sucker.getRawNeuronSlopeAmplifier() == 3;
+        try {
+            Functions.writeCampeonToFile(sucker, "campeon_alpha_test");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        sucker = this.standardCampeon();
+
+        assert sucker.getMetaData() == -356540438;
+        assert Objects.equals(sucker.getBinaryMetaData(), "11101010101111111001111111101010");
+        assert sucker.getConnectionCount() == 60095;
+        assert sucker.getRawNeuronCountAmplifier() == 9;
+        assert sucker.getRawNeuronSpreadAmplifier() == 15;
+        assert sucker.getRawNeuronSlopeAmplifier() == 14;
+
+
     }
 
     @Test
@@ -55,7 +69,7 @@ public class BotTests {
     @Test
     @DisplayName("Visualization Test")
     public void visualizationTests() throws IOException, InterruptedException {
-        Campeon campeon = new Campeon("00001000001000000000000000001111");
+        Campeon campeon = this.standardCampeon();
         Functions.renderGraphviz(campeon);
     }
 
@@ -64,7 +78,7 @@ public class BotTests {
     public void connectionDistributionTest() {
         double sensitivity = 0.5;
 
-        Campeon campeon = new Campeon("00001000001000000000000000001111");
+        Campeon campeon = this.standardCampeon();
 
         int[] connectionsPerLayer = new int[campeon.getLayerSizes().size()];
         for (Connection connection : campeon.getConnections()) {
@@ -111,20 +125,24 @@ public class BotTests {
     @Test
     @DisplayName("getBestMoveTest")
     public void getBestMoveTest() throws IOException, InterruptedException {
-        Campeon campeon = new Campeon();
+        Campeon campeon = this.standardCampeon();
+
+        System.out.println(campeon);
 
         int moveSeed = 49335;
         int degreesOfEntropy = 16;
-
         ChessGame game = new ChessGame();
         for (int i = 0; i < degreesOfEntropy; i++) ChessFunctions.executeRandomMove(game, moveSeed);
 
         System.out.println(ChessFunctions.exportGameToSAN(game));
 
-        Functions.renderGraphviz(campeon);
-
-        System.out.println("Render Complete");
-
         ChessMove move = campeon.getBestMove(game);
+        System.out.println(move);
+    }
+
+    @Test
+    @DisplayName("Read / Write Match")
+    public void readWriteMatch() throws IOException {
+        Campeon writtenCampeon = Functions.createCampeonFromFile("campeon_alph_test");
     }
 }

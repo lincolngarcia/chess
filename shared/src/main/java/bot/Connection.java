@@ -43,7 +43,7 @@ public class Connection {
 
     // Functions
     public double computeValue(double input) {
-        double exponent = 1 - ( this.getAmplifier() / ((double) this.amplifierBitCount / 2));
+        double exponent = 1 - ( this.getAmplifier() / ((double) Connection.amplifierBitCount / 2));
         double amplifier = Math.pow(0.5, exponent);
 
         return input * amplifier;

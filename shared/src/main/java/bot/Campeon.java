@@ -52,25 +52,21 @@ public class Campeon {
 
     @Override
     public String toString() {
-        StringBuilder str = new StringBuilder();
-        str.append("Campeon:\n");
+        String str = "Campeon:\n" +
+                "metaData: " +
+                this.metaData +
+                "\n" +
+                "neuronCount: " +
+                this.neuronCount +
+                "\n" +
+                "connectionCount: " +
+                this.connectionCount +
+                "\n";
 
-        str.append("metaData: ");
-        str.append(this.metaData);
-        str.append("\n");
-
-        str.append("neuronCount: ");
-        str.append(this.neuronCount);
-        str.append("\n");
-
-        str.append("connectionCount: ");
-        str.append(this.connectionCount);
-        str.append("\n");
-
-        return str.toString();
+        return str;
     }
 
-    public Campeon(int metaData) {
+    public Campeon(int metaData, int[] connectionData) {
         // metaData Structure:
         // 16 bits -> connections (65536)
         //  4 bits -> amplifier
@@ -110,20 +106,9 @@ public class Campeon {
 
 
         // Generate Connections
-        this.connectionData = new int[this.connectionCount];
-        this.generateRandomConnections();
-
-
+        this.connectionData = connectionData;
         this.connections = new Connection[this.connectionCount];
         this.generateConnections();
-    }
-
-    public Campeon() {
-        this(new Random().nextInt());
-    }
-
-    public Campeon(String brain) {
-        this((int) Long.parseLong(brain, 2));
     }
 
     // Getters
@@ -259,7 +244,7 @@ public class Campeon {
 
             // Create the individual nodes
             for (int j = 0; j < currentLayerSize; j++) {
-                nodes[i][j] = new Neuron(type, i, this);
+                nodes[i][j] = new Neuron(type, i, j, this);
             }
         }
 
@@ -283,7 +268,7 @@ public class Campeon {
             }
 
             // calculate the move rating based on color and input
-            double computedRating = this.getOutputNeuron().computeValue(game.hashCode());
+            double computedRating = this.getOutputNeuron().computeValue(this.currentGame.hashCode());
             double moveRating = computedRating * game.getTeamTurn().value();
 
             if (moveRating > bestMoveRating) {
