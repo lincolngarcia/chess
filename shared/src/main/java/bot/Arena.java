@@ -3,9 +3,12 @@ package bot;
 import chess.ChessGame;
 import chess.InvalidMoveException;
 
+import java.util.Random;
+
 public class Arena {
     int generations;
     int batchSize;
+    Random random = new Random();
 
     public void main(String[] args) {
         int generations = Integer.parseInt(args[0]);
@@ -115,6 +118,14 @@ public class Arena {
     }
 
     public Campeon createRandomStrain() {
+        int metaData = random.nextInt();
+        int connectionCount = Campeon.parseConnectionCountFromMetaData(metaData);
+
+        int[] connections = new int[connectionCount];
+
+        //Campeon.generateRandomConnections()
+
+        //Campeon campeon = new Campeon(metaData, )
         return null;
     }
 

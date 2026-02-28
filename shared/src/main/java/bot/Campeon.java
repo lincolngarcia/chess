@@ -52,7 +52,7 @@ public class Campeon {
 
     @Override
     public String toString() {
-        String str = "Campeon:\n" +
+        return "Campeon:\n" +
                 "metaData: " +
                 this.metaData +
                 "\n" +
@@ -62,8 +62,6 @@ public class Campeon {
                 "connectionCount: " +
                 this.connectionCount +
                 "\n";
-
-        return str;
     }
 
     public Campeon(int metaData, int[] connectionData) {
@@ -79,16 +77,17 @@ public class Campeon {
         this.connectionCount = Functions.parseSubInt(this.metaData, 0, 16);
 
         // These values are calculated to give a clean slope for the given limits of the brain size
-        this.rawNeuronCountAmplifier = Functions.parseSubInt(metaData, 16, 4);
-        this.rawNeuronSpreadAmplifier = Functions.parseSubInt(metaData, 20, 4);
-        this.rawNeuronSlopeAmplifier = Functions.parseSubInt(metaData, 24, 4);
+        this.rawNeuronCountAmplifier = Campeon.parseRawNeuronCountAmplifier(metaData);
+        this.rawNeuronSpreadAmplifier = Campeon.parseRawNeuronSpreadAmplifier(metaData);
+        this.rawNeuronSlopeAmplifier = Campeon.parseRawNeuronSlopeAmplifier(metaData);
 
         // Reasonable values are 84 -> 96.
         // Note there is danger above 84 due to the potential of being unable
         // to connect to certain nodes in layers with sizes > 4096
-        this.neuronCountAmplifier = 96 * (this.rawNeuronCountAmplifier + 1);
-        this.neuronSpreadAmplifier = this.rawNeuronSpreadAmplifier + 2;
-        this.neuronSlopeAmplifier = (double) (this.rawNeuronSlopeAmplifier + 9) / 8;
+
+        this.neuronCountAmplifier = Campeon.parseNeuronCountAmplifier(this.rawNeuronCountAmplifier);
+        this.neuronSpreadAmplifier = Campeon.parseNeuronSpreadAmplifier(this.rawNeuronSlopeAmplifier);
+        this.neuronSlopeAmplifier = Campeon.parseNeuronSlopeAmplifier(this.rawNeuronSlopeAmplifier);
 
         // Determine Layer Sizes
         this.layerSizes = this.calculateHiddenLayerSizes();
@@ -178,18 +177,40 @@ public class Campeon {
 
     // Functions
     public int calculateNeuronCountByLayerIndex(int index) {
-        double body = (double) index / this.getNeuronSpreadAmplifier();
-        double exponent = -(index * this.getNeuronSlopeAmplifier()) / this.getNeuronSpreadAmplifier();
+        return calculateNeuronCountByLayerIndex(
+                index,
+                this.getRawNeuronCountAmplifier(),
+                this.getRawNeuronSpreadAmplifier(),
+                this.getRawNeuronSlopeAmplifier()
+        );
+    }
+
+    public static int calculateNeuronCountByLayerIndex(int index, int a, int b, int c) {
+        int countAmplifier = Campeon.parseNeuronCountAmplifier(a);
+        int spreadAmplifier = Campeon.parseNeuronSpreadAmplifier(b);
+        double slopeAmplifier = Campeon.parseNeuronSlopeAmplifier(c);
+
+
+        double body = (double) index / spreadAmplifier;
+        double exponent = -(index * slopeAmplifier) / spreadAmplifier;
         double mainTerm = Math.pow(body, exponent);
-        return (int) Math.floor((this.getNeuronCountAmplifier() * mainTerm));
+        return (int) Math.floor((countAmplifier * mainTerm));
     }
 
     public ArrayList<Integer> calculateHiddenLayerSizes() {
+        return calculateHiddenLayerSizes(
+                this.getRawNeuronCountAmplifier(),
+                this.getRawNeuronSpreadAmplifier(),
+                this.getRawNeuronSlopeAmplifier()
+        );
+    }
+
+    public static ArrayList<Integer> calculateHiddenLayerSizes(int a, int b, int c) {
         ArrayList<Integer> hiddenLayerSizes = new ArrayList<>(List.of(INPUT_NODE_COUNT));
         int layerSize;
         int i = 0;
         do {
-            layerSize = this.calculateNeuronCountByLayerIndex(i++);
+            layerSize = Campeon.calculateNeuronCountByLayerIndex(i++, a, b, c);
             if (layerSize < 1) {
                 layerSize = 1;
             }
@@ -275,7 +296,7 @@ public class Campeon {
                 System.out.println("New Best move is " + move + " with a rating of " + moveRating);
                 bestMove = move;
                 bestMoveRating = moveRating;
-            }else{
+            } else {
                 System.out.println("move is " + move + " with a rating of " + moveRating);
             }
         }
@@ -284,41 +305,6 @@ public class Campeon {
         this.currentGame = null;
 
         return bestMove;
-    }
-
-    // Static Functions
-    public static int connectionCountFromMetaData(int metaData) {
-        return Functions.parseSubInt(metaData, 0, 16);
-    }
-
-    public void generateRandomConnections() {
-        for (int i = 0; i < this.connectionData.length; i++) {
-            // get a random node index
-            Random random = new Random();
-            int nodeIndex = (random.nextInt() & 0x7FFFFFFF) % this.neuronCount;
-
-            // find the layer that fits that index
-            int layerIndex = 0;
-            int cumulativeLayerCount = 0;
-            for (int j = 0; j < layerSizes.size(); j++) {
-                int layerSize = layerSizes.get(j);
-                cumulativeLayerCount += layerSize;
-
-                if (nodeIndex < cumulativeLayerCount) {
-                    layerIndex = j;
-                    break;
-                }
-            }
-
-            // use that as the starting layer
-            int connection = random.nextInt();
-            int offset = Connection.startLayerOffset;
-            int size = Connection.startLayerSize;
-
-            this.connectionData[i] = Functions.insertBits(connection, offset, size, layerIndex);
-            String binary = Functions.intToBinaryString(this.connectionData[i]);
-        }
-
     }
 
     public int getInputNeuronValue(int inputIndex) {
@@ -393,4 +379,67 @@ public class Campeon {
             default -> throw new IllegalArgumentException("Invalid index: " + index);
         };
     }
+
+    public static int parseRawNeuronCountAmplifier(int metaData) {
+        return Functions.parseSubInt(metaData, 16, 4);
+    }
+
+    public static int parseRawNeuronSpreadAmplifier(int metaData) {
+        return Functions.parseSubInt(metaData, 20, 4);
+    }
+
+    public static int parseRawNeuronSlopeAmplifier(int metaData) {
+        return Functions.parseSubInt(metaData, 24, 4);
+    }
+
+    public static int parseNeuronCountAmplifier(int raw) {
+        return 96 * (raw + 1);
+    }
+
+    public static int parseNeuronSpreadAmplifier(int raw) {
+        return raw + 2;
+    }
+
+    public static double parseNeuronSlopeAmplifier(int raw) {
+        return (double) (raw + 9) / 8;
+    }
+
+    public static int parseConnectionCountFromMetaData(int metaData) {
+        return Functions.parseSubInt(metaData, 0, 16);
+    }
+
+    public static int[] generateRandomConnections(int neuronCount, ArrayList<Integer> layerSizes, int connectionCount) {
+        int[] connectionData = new int[connectionCount];
+
+        for (int i = 0; i < connectionCount; i++) {
+            // get a random node index
+            Random random = new Random();
+            int nodeIndex = (random.nextInt() & 0x7FFFFFFF) % neuronCount;
+
+            // find the layer that fits that index
+            int layerIndex = 0;
+            int cumulativeLayerCount = 0;
+            for (int j = 0; j < layerSizes.size(); j++) {
+                int layerSize = layerSizes.get(j);
+                cumulativeLayerCount += layerSize;
+
+                if (nodeIndex < cumulativeLayerCount) {
+                    layerIndex = j;
+                    break;
+                }
+            }
+
+            // use that as the starting layer
+            int connection = random.nextInt();
+            int offset = Connection.startLayerOffset;
+            int size = Connection.startLayerSize;
+
+            connectionData[i] = Functions.insertBits(connection, offset, size, layerIndex);
+            String binary = Functions.intToBinaryString(connectionData[i]);
+
+        }
+
+        return connectionData;
+    }
+
 }

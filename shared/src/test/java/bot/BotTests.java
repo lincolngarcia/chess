@@ -6,6 +6,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -62,7 +64,10 @@ public class BotTests {
     @DisplayName("Hidden Layer Counts")
     public void hiddenLayers() {
         Campeon campeon = this.standardCampeon();
-        ArrayList<Integer> expectedCounts = new ArrayList<>(List.of(Campeon.INPUT_NODE_COUNT, 960, 2600, 2600, 1785, 960, 430, 167, 57, 17, 5, 1));
+        ArrayList<Integer> expectedCounts = new ArrayList<>(List.of(Campeon.INPUT_NODE_COUNT, 960, 1550, 1979,
+                2314, 2554, 2701, 2761, 2744, 2661, 2527, 2355, 2157, 1946, 1731, 1520, 1318, 1131, 960, 806, 671, 554,
+                453, 367, 296, 236, 187, 148, 116, 90, 69, 53, 41, 31, 23, 17, 13, 9, 7, 5, 4, 2, 2, 1));
+
         assert expectedCounts.equals(campeon.calculateHiddenLayerSizes());
     }
 
@@ -82,7 +87,7 @@ public class BotTests {
 
         int[] connectionsPerLayer = new int[campeon.getLayerSizes().size()];
         for (Connection connection : campeon.getConnections()) {
-            connectionsPerLayer[connection.getStartLayer()] += 1;
+            connectionsPerLayer[connection.getStartLayer() % campeon.getLayerSizes().size()] += 1;
         }
 
         double[] expectedConnectionsPerLayer = new double[campeon.getLayerSizes().size()];
@@ -143,6 +148,12 @@ public class BotTests {
     @Test
     @DisplayName("Read / Write Match")
     public void readWriteMatch() throws IOException {
-        Campeon writtenCampeon = Functions.createCampeonFromFile("campeon_alph_test");
+        Campeon writtenCampeon = Functions.createCampeonFromFile("campeon_alpha_test");
+
+        Functions.writeCampeonToFile(writtenCampeon, "campeon_alpha_test_1");
+
+        assert writtenCampeon.equals(Functions.createCampeonFromFile("campeon_alpha_test_1"));
+
+        Files.deleteIfExists(Path.of("campeon_alpha_test_1"));
     }
 }
