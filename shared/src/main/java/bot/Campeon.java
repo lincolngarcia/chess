@@ -296,12 +296,9 @@ public class Campeon {
             double computedRating = this.getOutputNeuron().computeValue(this.currentGame.hashCode());
             double moveRating = computedRating * game.getTeamTurn().value();
 
-            if (moveRating > bestMoveRating) {
-                System.out.println("New Best move is " + move + " with a rating of " + moveRating);
+            if (moveRating > bestMoveRating || bestMove == null) {
                 bestMove = move;
                 bestMoveRating = moveRating;
-            } else {
-                System.out.println("move is " + move + " with a rating of " + moveRating);
             }
         }
 
@@ -480,9 +477,9 @@ public class Campeon {
 
         int[] connections = new int[connectionCount];
         for (int i = 0; i < connectionCount; i++) {
-            if (i > pInput.getConnectionCount()) connections[i] = sInput.getConnections()[i].binaryData;
-            if (i > sInput.getConnectionCount()) connections[i] = pInput.getConnections()[i].binaryData;
-            if (i > pInput.getConnectionCount() && i > sInput.getConnectionCount()) {
+            if (i >= pInput.getConnectionCount()) connections[i] = sInput.getConnections()[i].binaryData;
+            if (i >= sInput.getConnectionCount()) connections[i] = pInput.getConnections()[i].binaryData;
+            if (i >= pInput.getConnectionCount() && i >= sInput.getConnectionCount()) {
                 connections[i] = random.nextInt();
                 continue;
             }

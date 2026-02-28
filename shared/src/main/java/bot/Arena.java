@@ -1,5 +1,6 @@
 package bot;
 
+import chess.ChessConverter.ChessFunctions;
 import chess.ChessGame;
 import chess.InvalidMoveException;
 
@@ -47,17 +48,20 @@ public class Arena {
 
         Campeon[] activeGeneration = new Campeon[]{};
         for (int generation = 0; generation < generations; generation++) {
-            System.out.println("executing batch " + generation);
+            System.out.println("executing generation " + generation);
+
+            System.out.println("Creating batch");
             activeGeneration = this.createBatch(activeGeneration);
+
             activeGeneration = this.executeGeneration(activeGeneration, generation);
-            System.out.println("Finished batch creation");
         }
 
         System.out.println("normal generations have finished");
-        // Tournament time
 
-        while (this.batchSize >= 2) {
+        // Final Tournament
+        while (this.batchSize >= 4) {
             this.batchSize /= 2;
+            System.out.println("Competing with batch size of " + this.batchSize);
             activeGeneration = this.executeBatch(activeGeneration);
         }
 
@@ -70,6 +74,7 @@ public class Arena {
 
     public Campeon[] executeGeneration(Campeon[] newGeneration, int generation) {
         // Store the data
+        System.out.println("Storing Data");
         for (Campeon campeon : newGeneration) {
             this.writeToFile(
                     new neuronData(
@@ -80,9 +85,9 @@ public class Arena {
                     )
             );
         }
-        System.out.println("Finished Data Storage");
 
         // Execute the batch & return the winners
+        System.out.println("Executing Batch");
         return this.executeBatch(newGeneration);
     }
 
@@ -104,9 +109,13 @@ public class Arena {
         int movesMade = 0;
         while (true) {
             if (game.isInCheckmate(ChessGame.TeamColor.WHITE)) {
+                this.writeToFile(ChessFunctions.exportGameToSAN(game));
+                System.out.println("Black won a game by checkmate");
                 return blackPlayer;
             }
             if (game.isInCheckmate(ChessGame.TeamColor.BLACK)) {
+                this.writeToFile(ChessFunctions.exportGameToSAN(game));
+                System.out.println("White won a game by checkmate");
                 return whitePlayer;
             }
             if (movesMade >= 128) {
@@ -115,15 +124,20 @@ public class Arena {
                 int blackStrength = game.getTeamValue(ChessGame.TeamColor.BLACK);
 
                 if (whiteStrength > blackStrength) {
+                    this.writeToFile(ChessFunctions.exportGameToSAN(game));
+                    System.out.println("White won a game by piece value");
                     return whitePlayer;
                 }
                 if (blackStrength > whiteStrength) {
+                    this.writeToFile(ChessFunctions.exportGameToSAN(game));
+                    System.out.println("Black won a game by piece value");
                     return blackPlayer;
                 }
 
                 // If tied, create a new strain and return it
                 System.out.println("WARNING: tie found");
-                return createStrainByParents(whitePlayer, blackPlayer);
+                this.writeToFile(ChessFunctions.exportGameToSAN(game));
+                return this.createRandomStrain();
 
             }
 
@@ -191,6 +205,17 @@ public class Arena {
 
         try (FileWriter fw = new FileWriter(filename, true)) {  // 'true' enables append mode
             fw.write(data.toString());
+        } catch (IOException e) {
+            throw new RuntimeException("IO Error");
+        }
+    }
+
+    public void writeToFile(String data) {
+        String filename = "game_data.txt";
+
+        try (FileWriter fw = new FileWriter(filename, true)) {  // 'true' enables append mode
+            fw.write("==========\n");
+            fw.write(data);
         } catch (IOException e) {
             throw new RuntimeException("IO Error");
         }
