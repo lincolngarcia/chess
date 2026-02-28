@@ -50,6 +50,12 @@ public class Functions {
         return target | shiftedValue;
     }
 
+    public static int mutateInteger(int input) {
+        int rand = new Random().nextInt(32);
+        int mutation = (1 << rand);
+        return input ^ mutation;
+    }
+
     public static String generateDot(ArrayList<Integer> layerSizes, Connection[] connections) throws IOException {
 
         StringBuilder dot = new StringBuilder();

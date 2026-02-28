@@ -3,62 +3,86 @@ package bot;
 import chess.ChessGame;
 import chess.InvalidMoveException;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
 public class Arena {
+    public static final double MUTATION_RATE = 0.05;
     int generations;
     int batchSize;
+
+    public static class neuronData {
+        int generation;
+        int a;
+        int b;
+        int c;
+
+        @Override
+        public String toString() {
+            return generation + ", " + a + ", " + b + ", " + c + "\n";
+        }
+
+        neuronData(int generation, int a, int b, int c) {
+            this.generation = generation;
+            this.a = a;
+            this.b = b;
+            this.c = c;
+        }
+    }
+
     Random random = new Random();
 
     public void main(String[] args) {
-        int generations = Integer.parseInt(args[0]);
-        int batchSize = Integer.parseInt(args[1]);
+        this.generations = Integer.parseInt(args[0]);
+        this.batchSize = Integer.parseInt(args[1]);
 
         assert generations > 0;
         assert batchSize > 0;
         assert batchSize % 2 == 0;
 
-        Campeon[] previousGenerationWinners = this.executeGeneration(new Campeon[]{});
+        // assert batch size is a power of 2
+        assert (batchSize & (batchSize - 1)) != 0;
 
-        for (int generation = 1; generation < generations; generation++) {
-            // Execute the generation
-            previousGenerationWinners = this.executeGeneration(previousGenerationWinners);
+        Campeon[] activeGeneration = new Campeon[]{};
+        for (int generation = 0; generation < generations; generation++) {
+            System.out.println("executing batch " + generation);
+            activeGeneration = this.createBatch(activeGeneration);
+            activeGeneration = this.executeGeneration(activeGeneration, generation);
+            System.out.println("Finished batch creation");
         }
 
+        System.out.println("normal generations have finished");
+        // Tournament time
 
+        while (this.batchSize >= 2) {
+            this.batchSize /= 2;
+            activeGeneration = this.executeBatch(activeGeneration);
+        }
+
+        try {
+            Functions.writeCampeonToFile(activeGeneration[0], "campeon_winner");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public Campeon[] executeGeneration(Campeon[] previousGenerationWinners) {
-        // If this is the first generation / no previous winners
-        if (previousGenerationWinners.length == 0) {
-            Campeon[] firstGeneration = new Campeon[batchSize];
-            for (int i = 0; i < batchSize; i++) {
-                firstGeneration[i] = this.createRandomStrain();
-            }
-
-            System.out.println("Finished batch creation");
-            System.out.flush();
-
-            return this.executeBatch(firstGeneration);
+    public Campeon[] executeGeneration(Campeon[] newGeneration, int generation) {
+        // Store the data
+        for (Campeon campeon : newGeneration) {
+            this.writeToFile(
+                    new neuronData(
+                            generation,
+                            campeon.getRawNeuronCountAmplifier(),
+                            campeon.getRawNeuronSpreadAmplifier(),
+                            campeon.getRawNeuronSlopeAmplifier()
+                    )
+            );
         }
+        System.out.println("Finished Data Storage");
 
-        Campeon[] newGeneration = new Campeon[batchSize];
-        // Create new strains from the winners
-        for (int i = 0; i < previousGenerationWinners.length / 2; i += 2) {
-            Campeon pInput = previousGenerationWinners[i];
-            Campeon sInput = previousGenerationWinners[i + 1];
-
-            newGeneration[i * 4] = pInput;
-            newGeneration[i * 4 + 1] = createStrainByParents(pInput, sInput);
-            newGeneration[i * 4 + 2] = sInput;
-            newGeneration[i * 4 + 3] = createStrainByParents(pInput, sInput);
-        }
-
-        // Store brain data: neuronCount, a, b, c
-
-        System.out.println("Finished batch creation");
-        System.out.flush();
+        // Execute the batch & return the winners
         return this.executeBatch(newGeneration);
     }
 
@@ -116,12 +140,7 @@ public class Arena {
     }
 
     public Campeon createStrainByParents(Campeon pInput, Campeon sInput) {
-        return new Campeon(pInput, sInput);
-    }
-
-    public Campeon mutateStrain(Campeon input) {
-
-        return null;
+        return new Campeon(pInput, sInput, Arena.MUTATION_RATE);
     }
 
     public Campeon createRandomStrain() {
@@ -140,9 +159,40 @@ public class Arena {
         return new Campeon(metaData, connections);
     }
 
-    public String getStatistics(String[] batchData) {
+    public Campeon[] createBatch(Campeon[] previousGeneration) {
+       if (previousGeneration.length == 0) {
+           Campeon[] firstGeneration = new Campeon[batchSize];
+           for (int i = 0; i < batchSize; i++) {
+               firstGeneration[i] = this.createRandomStrain();
+           }
+           return firstGeneration;
+       }
 
-        return "";
+        System.out.println("Finished batch creation");
+
+        // Create new strains from the winners
+        Campeon[] newGeneration = new Campeon[batchSize];
+        for (int i = 0; i < previousGeneration.length / 2; i += 2) {
+            Campeon pInput = previousGeneration[i];
+            Campeon sInput = previousGeneration[i + 1];
+
+            newGeneration[i * 4] = pInput;
+            newGeneration[i * 4 + 1] = createStrainByParents(pInput, sInput);
+            newGeneration[i * 4 + 2] = sInput;
+            newGeneration[i * 4 + 3] = createStrainByParents(pInput, sInput);
+        }
+
+       return newGeneration;
+    }
+
+    public void writeToFile(neuronData data) {
+        String filename = "arena_data.txt";
+
+        try (FileWriter fw = new FileWriter(filename, true)) {  // 'true' enables append mode
+            fw.write(data.toString());
+        } catch (IOException e) {
+            throw new RuntimeException("IO Error");
+        }
     }
 }
 
