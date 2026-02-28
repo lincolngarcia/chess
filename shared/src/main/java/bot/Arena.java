@@ -140,7 +140,8 @@ public class Arena {
     }
 
     public Campeon createStrainByParents(Campeon pInput, Campeon sInput) {
-        return new Campeon(pInput, sInput, Arena.MUTATION_RATE);
+        int[][] brainData = Campeon.createBrainDataFromParents(pInput, sInput, Arena.MUTATION_RATE);
+        return new Campeon(brainData);
     }
 
     public Campeon createRandomStrain() {

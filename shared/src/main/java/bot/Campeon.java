@@ -96,40 +96,8 @@ public class Campeon {
         this.generateConnections();
     }
 
-    public Campeon(Campeon pInput, Campeon sInput, double mutationRate) {
-        Random random = new Random();
-
-        int connectionCount = random.nextBoolean() ? pInput.getConnectionCount() : sInput.getConnectionCount();
-        int a = random.nextBoolean() ? pInput.getRawNeuronCountAmplifier() : sInput.getRawNeuronCountAmplifier();
-        int b = random.nextBoolean() ? pInput.getRawNeuronSpreadAmplifier() : sInput.getRawNeuronSpreadAmplifier();
-        int c = random.nextBoolean() ? pInput.getRawNeuronSlopeAmplifier() : sInput.getRawNeuronSlopeAmplifier();
-
-        int metaData = createMetaData(a, b, c);
-
-        if (random.nextDouble() < mutationRate) {
-            metaData = Functions.mutateInteger(metaData);
-        }
-
-        int[] connections = new int[connectionCount];
-        for (int i = 0; i < connectionCount; i++) {
-            if (i > pInput.getConnectionCount()) connections[i] = sInput.getConnections()[i].binaryData;
-            if (i > sInput.getConnectionCount()) connections[i] = pInput.getConnections()[i].binaryData;
-            if (i > pInput.getConnectionCount() && i > sInput.getConnectionCount()) {
-                connections[i] = random.nextInt();
-                continue;
-            }
-
-            connections[i] = random.nextBoolean() ?
-                    pInput.getConnections()[i].binaryData:
-                    sInput.getConnections()[i].binaryData;
-
-            if (random.nextDouble() < mutationRate) {
-                connections[i] = Functions.mutateInteger(connections[i]);
-            }
-
-        }
-
-        this(metaData, connections);
+    public Campeon(int[][] brainData) {
+        this(brainData[0][0], brainData[1]);
     }
 
     private static int createMetaData(int a, int b, int c) {
@@ -496,4 +464,39 @@ public class Campeon {
         return connectionData;
     }
 
+    public static int[][] createBrainDataFromParents(Campeon pInput, Campeon sInput, double mutationRate) {
+        Random random = new Random();
+
+        int connectionCount = random.nextBoolean() ? pInput.getConnectionCount() : sInput.getConnectionCount();
+        int a = random.nextBoolean() ? pInput.getRawNeuronCountAmplifier() : sInput.getRawNeuronCountAmplifier();
+        int b = random.nextBoolean() ? pInput.getRawNeuronSpreadAmplifier() : sInput.getRawNeuronSpreadAmplifier();
+        int c = random.nextBoolean() ? pInput.getRawNeuronSlopeAmplifier() : sInput.getRawNeuronSlopeAmplifier();
+
+        int metaData = createMetaData(a, b, c);
+
+        if (random.nextDouble() < mutationRate) {
+            metaData = Functions.mutateInteger(metaData);
+        }
+
+        int[] connections = new int[connectionCount];
+        for (int i = 0; i < connectionCount; i++) {
+            if (i > pInput.getConnectionCount()) connections[i] = sInput.getConnections()[i].binaryData;
+            if (i > sInput.getConnectionCount()) connections[i] = pInput.getConnections()[i].binaryData;
+            if (i > pInput.getConnectionCount() && i > sInput.getConnectionCount()) {
+                connections[i] = random.nextInt();
+                continue;
+            }
+
+            connections[i] = random.nextBoolean() ?
+                    pInput.getConnections()[i].binaryData:
+                    sInput.getConnections()[i].binaryData;
+
+            if (random.nextDouble() < mutationRate) {
+                connections[i] = Functions.mutateInteger(connections[i]);
+            }
+
+        }
+
+        return new int[][] {{metaData}, connections};
+    }
 }
