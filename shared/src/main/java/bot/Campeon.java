@@ -58,6 +58,9 @@ public class Campeon {
     @Override
     public String toString() {
         return "Campeon:\n" +
+                "id: " +
+                this.hashCode() +
+                "\n" +
                 "metaData: " +
                 this.metaData +
                 "\n" +
