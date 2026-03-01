@@ -256,6 +256,14 @@ public class ChessGame {
         return false;
     }
 
+    public int getTeamValue(ChessGame.TeamColor color) {
+        int teamValue = 0;
+        for (ChessPosition position : this.getBoard().getTeamPositions(color)) {
+            teamValue += this.getBoard().getPiece(position).getPieceType().value();
+        }
+        return teamValue;
+    }
+
     /**
      * Makes a move in a chess game
      *

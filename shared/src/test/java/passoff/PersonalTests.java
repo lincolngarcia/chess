@@ -1,6 +1,8 @@
 package passoff;
 
+import bot.Functions;
 import chess.*;
+import chess.ChessConverter.ChessFunctions;
 import chess.ChessMoveCalculators.ChessMoveCalculator;
 import chess.ChessMoveCalculators.QueenMoveCalculator;
 import org.junit.jupiter.api.DisplayName;
@@ -11,95 +13,7 @@ import java.util.Collection;
 import java.util.List;
 
 public class PersonalTests {
-    public List<ChessMove> getAllMoves(ChessGame game, ChessGame.TeamColor color) {
-        List<ChessMove> allMoves = new ArrayList<>();
-        Collection<ChessPosition> teamPositions = game.getBoard().getTeamPositions(color);
-        for (ChessPosition teamPosition : teamPositions) {
-            allMoves.addAll(game.validMoves(teamPosition));
-        }
 
-        return allMoves;
-    }
-
-    public String exportGameToSAN(ChessGame game) {
-        ChessGame temp = new ChessGame();
-        StringBuilder san = new StringBuilder();
-
-        // iterate through each move
-        int i = 1;
-        for (ChessMove move : game.getHistory()) {
-            if (++i % 2 == 0) {
-                san.append(Math.floorDiv(i, 2));
-            }
-            san.append(" ");
-
-            // Get the piece that moved
-            ChessPiece piece = temp.getBoard().getPiece(move.getStartPosition());
-
-            // make the move
-            try {
-                temp.makeMove(move);
-            } catch (InvalidMoveException e) {
-                throw new RuntimeException(e);
-            }
-
-            // Determine the suffix
-            String suffix = "";
-            if (temp.isInCheckmate(temp.getTeamTurn())) {
-                suffix = "#";
-            } else if (temp.isInCheck(temp.getTeamTurn())) {
-                suffix = "+";
-            }
-
-            san.append(convertMoveToSan(move, piece, suffix));
-
-            if (i % 2 == 1) {
-                san.append("\n");
-            }
-
-
-        }
-
-        return san.toString();
-    }
-
-    public String convertMoveToSan(ChessMove move, ChessPiece pieceMoved, String suffix) {
-        String sanMove = "";
-
-        String prefix = switch (pieceMoved.getPieceType()) {
-            case KING -> "K";
-            case QUEEN -> "Q";
-            case BISHOP -> "B";
-            case KNIGHT -> "N";
-            case ROOK -> "R";
-            case PAWN -> "";
-        };
-
-        String startPositionString = move.getStartPosition().toString().toLowerCase();
-        String endPositionString = move.getEndPosition().toString().toLowerCase();
-
-        sanMove = prefix + startPositionString + endPositionString + suffix;
-
-        if (move.getPromotionPiece() != null) {
-            String promotionPiecePrefix = switch (move.getPromotionPiece()) {
-                case KING -> "K";
-                case QUEEN -> "Q";
-                case BISHOP -> "B";
-                case KNIGHT -> "N";
-                case ROOK -> "R";
-                case PAWN -> "";
-            };
-            sanMove += "=" + promotionPiecePrefix;
-        }
-
-        /**
-         * Considerations
-         * disambiguation
-         * castling
-         */
-
-        return sanMove;
-    }
 
     @Test
     @DisplayName("Test Game Creation")
@@ -132,7 +46,7 @@ public class PersonalTests {
         try {
             int moveCount = 16;
             for (int i = 0; i < moveCount; i++) {
-                List<ChessMove> allMoves = this.getAllMoves(game, game.getTeamTurn());
+                List<ChessMove> allMoves = ChessFunctions.getAllMoves(game, game.getTeamTurn());
                 int index = Math.abs(allMoves.hashCode()) % allMoves.size();
                 game.makeMove(allMoves.get(index));
                 if (game.isInCheckmate(ChessGame.TeamColor.BLACK) || game.isInStalemate(ChessGame.TeamColor.BLACK)) {
@@ -319,25 +233,19 @@ public class PersonalTests {
         ChessGame game = new ChessGame();
         game.getBoard().resetBoard();
 
-        try {
-            int moveCount = 256;
-            int SEED = 69420;
-            for (int i = 0; i < moveCount; i++) {
-                List<ChessMove> allMoves = this.getAllMoves(game, game.getTeamTurn());
-                int index = Math.abs(allMoves.hashCode() * SEED) % allMoves.size();
-                game.makeMove(allMoves.get(index));
-                if (game.isInCheckmate(ChessGame.TeamColor.BLACK) || game.isInStalemate(ChessGame.TeamColor.BLACK)) {
-                    break;
-                }
-                if (game.isInCheckmate(ChessGame.TeamColor.WHITE) || game.isInStalemate(ChessGame.TeamColor.WHITE)) {
-                    break;
-                }
+        int moveCount = 256;
+        int SEED = 69420;
+        for (int i = 0; i < moveCount; i++) {
+            ChessFunctions.executeRandomMove(game, SEED);
+            if (game.isInCheckmate(ChessGame.TeamColor.BLACK) || game.isInStalemate(ChessGame.TeamColor.BLACK)) {
+                break;
             }
-        } catch (InvalidMoveException e) {
-            throw new RuntimeException(e);
+            if (game.isInCheckmate(ChessGame.TeamColor.WHITE) || game.isInStalemate(ChessGame.TeamColor.WHITE)) {
+                break;
+            }
         }
 
-        String san = this.exportGameToSAN(game);
+        String san = ChessFunctions.exportGameToSAN(game);
         System.out.println(san);
     }
 
