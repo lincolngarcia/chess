@@ -11,9 +11,11 @@ import java.util.Random;
 
 public class Arena {
     public static final double MUTATION_RATE = 0.05;
-    int generations;
-    int batchSize;
+    private int generations;
+    private int batchSize;
+    private int cores;
 
+    // A package for easily storing Campeon data
     public static class neuronData {
         int generation;
         int a;
@@ -43,28 +45,33 @@ public class Arena {
         assert batchSize > 0;
         assert batchSize % 2 == 0;
 
+        // Multithreading variables
+        this.cores = Runtime.getRuntime().availableProcessors();
+
         // assert batch size is a power of 2
         assert (batchSize & (batchSize - 1)) != 0;
 
+        // Perform generations
         Campeon[] activeGeneration = new Campeon[]{};
         for (int generation = 0; generation < generations; generation++) {
             System.out.println("executing generation " + generation);
 
             System.out.println("Creating batch");
             activeGeneration = this.createBatch(activeGeneration);
-
+            System.out.println("Finished Batch Creation");
             activeGeneration = this.executeGeneration(activeGeneration, generation);
         }
 
         System.out.println("normal generations have finished");
 
         // Final Tournament
-        while (this.batchSize >= 4) {
+        while (this.batchSize > 2) {
             this.batchSize /= 2;
             System.out.println("Competing with batch size of " + this.batchSize);
             activeGeneration = this.executeBatch(activeGeneration);
         }
 
+        // Write winner to file
         try {
             Functions.writeCampeonToFile(activeGeneration[0], "campeon_winner");
         } catch (IOException e) {
@@ -178,16 +185,16 @@ public class Arena {
        if (previousGeneration.length == 0) {
            Campeon[] firstGeneration = new Campeon[batchSize];
            for (int i = 0; i < batchSize; i++) {
+               System.out.println("  created " + (i + 1) + "/" + batchSize);
+               System.out.flush();
                firstGeneration[i] = this.createRandomStrain();
            }
            return firstGeneration;
        }
 
-        System.out.println("Finished batch creation");
-
         // Create new strains from the winners
         Campeon[] newGeneration = new Campeon[batchSize];
-        for (int i = 0; i < previousGeneration.length / 2; i += 2) {
+        for (int i = 0; i < (previousGeneration.length / 2); i++) {
             Campeon pInput = previousGeneration[i];
             Campeon sInput = previousGeneration[i + 1];
 
@@ -195,6 +202,9 @@ public class Arena {
             newGeneration[i * 4 + 1] = createStrainByParents(pInput, sInput);
             newGeneration[i * 4 + 2] = sInput;
             newGeneration[i * 4 + 3] = createStrainByParents(pInput, sInput);
+
+            System.out.println("  created " + (i + 1) + "-" + (i + 5) + "/" + batchSize);
+            System.out.flush();
         }
 
        return newGeneration;
