@@ -6,10 +6,7 @@ import io.javalin.*;
 import java.util.*;
 
 public class Server {
-    Map<String, ChessGame> games_db = new HashMap<>();
-    Map<String, UUID> authTokens_db = new HashMap<>();
-    Map<String, String> password_db = new HashMap<>();
-    List<String> usernames = new ArrayList<>();
+
 
 
     private final Javalin javalin;
