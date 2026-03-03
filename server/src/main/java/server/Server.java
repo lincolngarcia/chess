@@ -1,7 +1,8 @@
 package server;
 
+import com.google.gson.Gson;
 import io.javalin.Javalin;
-import io.javalin.config.JavalinConfig;
+import server.packages.*;
 
 import java.util.*;
 
@@ -16,39 +17,70 @@ public class Server {
             config.staticFiles.add("web");
         });
 
-        javalin.post("/register", ctx -> {
-            // Register user
-            ServerApiHandler.handleRegister();
+        // Register user
+        javalin.post("/user", ctx -> {
+            String body = ctx.body();
+
+            RegisterRequest registerRequest = new Gson().fromJson(body, RegisterRequest.class);
+
+            String authToken = ServerApiHandler.handleRegister(registerRequest);
+
+            String response = new Gson().toJson(authToken);
+
+            ctx.result(response);
         });
 
         // Log in User
-        javalin.post("/login", ctx -> {
-            // Register user
-            ServerApiHandler.handleLogin();
+        javalin.post("/session", ctx -> {
+            String body = ctx.body();
+
+            LoginRequest loginRequest = new Gson().fromJson(body, LoginRequest.class);
+
+            String authToken = ServerApiHandler.handleLogin(loginRequest);
+
+            String response = new Gson().toJson(authToken);
+
+            ctx.result(response);
         });
 
         // Log out User
         javalin.delete("/session", ctx -> {
-            // Register user
-            ServerApiHandler.handleLogout();
+            String body = ctx.body();
+
+            System.out.println(ctx.header("authorization"));
+
+            AuthData authData = new AuthData("authorization");
+
+            ServerApiHandler.handleLogout(authData);
+
+            ctx.status(200);
         });
 
         // List game data
         javalin.get("/game", ctx -> {
-            // Register user
-            ServerApiHandler.handleGetAllGames();
+            String body = ctx.body();
+
+            AuthData authData = new Gson().fromJson(body, AuthData.class);
+
+            ServerApiHandler.handleGetAllGames(authData);
         });
 
         // New game
         javalin.post("/game", ctx -> {
-            // Register user
-            ServerApiHandler.handleCreateGame();
+            String body = ctx.body();
+
+            CreateGameRequest createGameRequest = new Gson().fromJson(body, CreateGameRequest.class);
+
+            ServerApiHandler.handleCreateGame(createGameRequest);
         });
 
         // Join Game
         javalin.put("/game", ctx -> {
-            // Register user
-            ServerApiHandler.handleJoinGame();
+            String body = ctx.body();
+
+            JoinChesGameRequest joinChesGameRequest = new Gson().fromJson(body, JoinChesGameRequest.class);
+
+            ServerApiHandler.handleJoinGame(joinChesGameRequest);
         });
 
         // Clear all db data
@@ -56,8 +88,6 @@ public class Server {
             // Register user
             ServerApiHandler.handleDump();
         });
-
-
     }
 
     public int run(int desiredPort) {
