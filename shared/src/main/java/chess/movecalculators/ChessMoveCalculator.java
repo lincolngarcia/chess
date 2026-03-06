@@ -20,14 +20,14 @@ public abstract class ChessMoveCalculator {
     protected final ChessPiece piece;
 
     protected static final ChessDirection[] allDirections = new ChessDirection[]{
-        ChessDirection.LEFT_UP,
-                ChessDirection.UP,
-                ChessDirection.RIGHT_UP,
-                ChessDirection.LEFT,
-                ChessDirection.RIGHT,
-                ChessDirection.LEFT_DOWN,
-                ChessDirection.DOWN,
-                ChessDirection.RIGHT_DOWN
+            ChessDirection.LEFT_UP,
+            ChessDirection.UP,
+            ChessDirection.RIGHT_UP,
+            ChessDirection.LEFT,
+            ChessDirection.RIGHT,
+            ChessDirection.LEFT_DOWN,
+            ChessDirection.DOWN,
+            ChessDirection.RIGHT_DOWN
     };
 
     // Standard Overrides
