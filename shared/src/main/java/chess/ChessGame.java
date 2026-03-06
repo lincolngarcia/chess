@@ -199,25 +199,6 @@ public class ChessGame {
     }
 
     /**
-     * Prints the game history in an easy-to-read way
-     */
-    public void printHistory() {
-        ChessGame temp = new ChessGame();
-
-        int i = 1;
-        for (ChessMove move : this.getHistory()) {
-            try {
-                temp.makeMove(move);
-                System.out.println(Math.floorDiv(++i, 2) + " =====");
-                System.out.println(move);
-                System.out.print(temp);
-            } catch (InvalidMoveException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    /**
      * Alternate the team to move
      */
     public void toggleTeamTurn() {
