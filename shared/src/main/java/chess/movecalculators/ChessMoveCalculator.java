@@ -54,62 +54,46 @@ public abstract class ChessMoveCalculator {
 
         StringBuilder board = new StringBuilder();
         board.append("   A B C D E F G H\n");
-        for (int row = 7; row >= 0; row--) {
-            board.append(row + 1);
-            board.append(" |");
-            for (int col = 0; col < 8; col++) {
 
-                String characterCode = ".";
-                ChessPosition position = new ChessPosition(row + 1, col + 1);
-                ChessPiece targetCell = this.board.getPiece(position);
+        for (int index = 0; index < 64; index++) {
+            int row = index % 8;
+            int col = index / 8;
 
-                // Normal Cells
-                if (targetCell != null) {
-                    characterCode = switch (targetCell.getPieceType()) {
-                        case KING -> "K";
-                        case QUEEN -> "Q";
-                        case ROOK -> "R";
-                        case BISHOP -> "B";
-                        case KNIGHT -> "N";
-                        case PAWN -> "P";
-                    };
-                    // White is UpperCase
-                    if (ChessFunctions.isBlack(targetCell.getTeamColor())) {
-                        characterCode = characterCode.toLowerCase();
-                    }
+            if (col == 0) {
+                board.append(row + 1);
+                board.append(" |");
+            }
+
+            String characterCode = ".";
+            ChessPosition position = new ChessPosition(row + 1, col + 1);
+            ChessPiece targetCell = this.board.getPiece(position);
+
+            // Normal Cells
+            if (targetCell != null) {
+                characterCode = switch (targetCell.getPieceType()) {
+                    case KING -> "K";
+                    case QUEEN -> "Q";
+                    case ROOK -> "R";
+                    case BISHOP -> "B";
+                    case KNIGHT -> "N";
+                    case PAWN -> "P";
+                };
+                // White is UpperCase
+                if (ChessFunctions.isBlack(targetCell.getTeamColor())) {
+                    characterCode = characterCode.toLowerCase();
                 }
+            }
 
-                // Targeted Cells
-                if (endPositions.contains(position)) {
-                    if (targetCell == null) {
-                        characterCode = "⊗";
-                    } else {
-                        String[] targetedSymbols;
-                        if (ChessFunctions.isWhite(targetCell.getTeamColor())) {
-                            targetedSymbols = new String[]{"Ⓚ", "Ⓠ", "Ⓡ", "Ⓑ", "Ⓝ", "Ⓟ"};
-                        } else {
-                            targetedSymbols = new String[]{"ⓚ", "ⓠ", "ⓡ", "ⓑ", "ⓝ", "ⓟ"};
-                        }
-
-                        characterCode = switch (targetCell.getPieceType()) {
-                            case KING -> targetedSymbols[0];
-                            case QUEEN -> targetedSymbols[1];
-                            case ROOK -> targetedSymbols[2];
-                            case BISHOP -> targetedSymbols[3];
-                            case KNIGHT -> targetedSymbols[4];
-                            case PAWN -> targetedSymbols[5];
-                        };
-                    }
-                }
-
-                // Piece in question
-                if (this.getPosition().equals(position) && targetCell != null) {
+            // Targeted Cells
+            if (endPositions.contains(position)) {
+                if (targetCell == null) {
+                    characterCode = "⊗";
+                } else {
                     String[] targetedSymbols;
                     if (ChessFunctions.isWhite(targetCell.getTeamColor())) {
-                        targetedSymbols = new String[]{"𝕂", "ℚ", "ℝ", "𝔹", "ℕ", "ℙ"};
-
+                        targetedSymbols = new String[]{"Ⓚ", "Ⓠ", "Ⓡ", "Ⓑ", "Ⓝ", "Ⓟ"};
                     } else {
-                        targetedSymbols = new String[]{"𝕜", "𝕢", "𝕣", "𝕓", "𝕟", "𝕡"};
+                        targetedSymbols = new String[]{"ⓚ", "ⓠ", "ⓡ", "ⓑ", "ⓝ", "ⓟ"};
                     }
 
                     characterCode = switch (targetCell.getPieceType()) {
@@ -121,14 +105,38 @@ public abstract class ChessMoveCalculator {
                         case PAWN -> targetedSymbols[5];
                     };
                 }
-
-                board.append(characterCode);
-                board.append("|");
             }
-            board.append(" ");
-            board.append(row + 1);
-            board.append("\n");
+
+            // Piece in question
+            if (this.getPosition().equals(position) && targetCell != null) {
+                String[] targetedSymbols;
+                if (ChessFunctions.isWhite(targetCell.getTeamColor())) {
+                    targetedSymbols = new String[]{"𝕂", "ℚ", "ℝ", "𝔹", "ℕ", "ℙ"};
+
+                } else {
+                    targetedSymbols = new String[]{"𝕜", "𝕢", "𝕣", "𝕓", "𝕟", "𝕡"};
+                }
+
+                characterCode = switch (targetCell.getPieceType()) {
+                    case KING -> targetedSymbols[0];
+                    case QUEEN -> targetedSymbols[1];
+                    case ROOK -> targetedSymbols[2];
+                    case BISHOP -> targetedSymbols[3];
+                    case KNIGHT -> targetedSymbols[4];
+                    case PAWN -> targetedSymbols[5];
+                };
+            }
+
+            board.append(characterCode);
+            board.append("|");
+
+            if (col == 7) {
+                board.append(" ");
+                board.append(row + 1);
+                board.append("\n");
+            }
         }
+
         board.append("   A B C D E F G H\n");
         return board.toString();
     }
@@ -157,7 +165,8 @@ public abstract class ChessMoveCalculator {
         this.setMovementDistance();
     }
 
-    // Getters
+// Getters
+
     /**
      * @return ChessBoard the board associated with the calculator
      */
@@ -179,7 +188,8 @@ public abstract class ChessMoveCalculator {
         return this.teamColor;
     }
 
-    // Setters
+// Setters
+
     /**
      * Set directions a piece can move in
      */
