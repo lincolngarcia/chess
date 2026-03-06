@@ -4,7 +4,7 @@ import chess.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import passoff.phase0.TestUtilities;
+import passoff.game.TestUtilities;
 
 /**
  * Tests if the ChessGame implementation can handle En Passant moves

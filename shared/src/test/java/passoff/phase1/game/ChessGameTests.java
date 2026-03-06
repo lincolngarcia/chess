@@ -4,8 +4,8 @@ import chess.ChessGame;
 import chess.ChessMove;
 import chess.ChessPosition;
 import chess.InvalidMoveException;
-import passoff.phase0.EqualsTestingUtility;
-import passoff.phase0.TestUtilities;
+import passoff.game.EqualsTestingUtility;
+import passoff.game.TestUtilities;
 
 import java.util.ArrayList;
 import java.util.Collection;

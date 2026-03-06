@@ -1,4 +1,4 @@
-package passoff.phase0;
+package passoff.game;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
