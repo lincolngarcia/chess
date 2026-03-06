@@ -1,7 +1,7 @@
 package chess;
 
-import chess.ChessConverter.ChessFunctions;
-import chess.ChessMoveCalculators.SuperQueenMoveCalculator;
+import chess.converter.ChessFunctions;
+import chess.movecalculators.SuperQueenMoveCalculator;
 
 import java.util.ArrayList;
 import java.util.Collection;

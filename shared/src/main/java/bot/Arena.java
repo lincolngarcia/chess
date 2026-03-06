@@ -1,6 +1,6 @@
 package bot;
 
-import chess.ChessConverter.ChessFunctions;
+import chess.converter.ChessFunctions;
 import chess.ChessGame;
 import chess.InvalidMoveException;
 
@@ -16,7 +16,7 @@ public class Arena {
     private int cores;
 
     // A package for easily storing Campeon data
-    public static class neuronData {
+    public static class NeuronData {
         int generation;
         int a;
         int b;
@@ -27,7 +27,7 @@ public class Arena {
             return generation + ", " + a + ", " + b + ", " + c + "\n";
         }
 
-        neuronData(int generation, int a, int b, int c) {
+        NeuronData(int generation, int a, int b, int c) {
             this.generation = generation;
             this.a = a;
             this.b = b;
@@ -84,7 +84,7 @@ public class Arena {
         System.out.println("Storing Data");
         for (Campeon campeon : newGeneration) {
             this.writeToFile(
-                    new neuronData(
+                    new NeuronData(
                             generation,
                             campeon.getRawNeuronCountAmplifier(),
                             campeon.getRawNeuronSpreadAmplifier(),
@@ -210,7 +210,7 @@ public class Arena {
        return newGeneration;
     }
 
-    public void writeToFile(neuronData data) {
+    public void writeToFile(NeuronData data) {
         String filename = "arena_data.txt";
 
         try (FileWriter fw = new FileWriter(filename, true)) {  // 'true' enables append mode

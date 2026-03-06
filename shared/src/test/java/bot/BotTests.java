@@ -1,7 +1,7 @@
 package bot;
 
 import chess.*;
-import chess.ChessConverter.*;
+import chess.converter.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

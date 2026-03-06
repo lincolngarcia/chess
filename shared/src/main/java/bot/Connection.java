@@ -5,9 +5,9 @@ package bot;
  */
 public class Connection {
     // Class Variables
-    public static final int amplifierBitCount = 2;
-    public static final int startLayerOffset = 24;
-    public static final int startLayerSize = 6;
+    public static final int AMPLIFIER_BIT_COUNT = 2;
+    public static final int START_LAYER_OFFSET = 24;
+    public static final int START_LAYER_SIZE = 6;
 
     public final int binaryData;
 
@@ -22,7 +22,7 @@ public class Connection {
         this.fromAddress = Functions.parseSubInt(binaryData, 0, 12);
         this.toAddress = Functions.parseSubInt(binaryData, 12, 12);
         this.startLayer = Functions.parseSubInt(binaryData, 24, 6);
-        this.amplifier = Functions.parseSubInt(binaryData, 30, amplifierBitCount);
+        this.amplifier = Functions.parseSubInt(binaryData, 30, AMPLIFIER_BIT_COUNT);
         // 4 bits remaining;
     }
 
@@ -45,7 +45,7 @@ public class Connection {
 
     // Functions
     public double computeValue(double input) {
-        double exponent = 1 - ( this.getAmplifier() / ((double) Connection.amplifierBitCount / 2));
+        double exponent = 1 - ( this.getAmplifier() / ((double) Connection.AMPLIFIER_BIT_COUNT / 2));
         double amplifier = Math.pow(0.5, exponent);
 
         return input * amplifier;

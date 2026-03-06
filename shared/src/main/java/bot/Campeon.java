@@ -1,7 +1,7 @@
 package bot;
 
 import chess.*;
-import chess.ChessConverter.ChessFunctions;
+import chess.converter.ChessFunctions;
 
 import java.util.*;
 
@@ -453,8 +453,8 @@ public class Campeon {
 
             // use that as the starting layer
             int connection = random.nextInt();
-            int offset = Connection.startLayerOffset;
-            int size = Connection.startLayerSize;
+            int offset = Connection.START_LAYER_OFFSET;
+            int size = Connection.START_LAYER_SIZE;
 
             connectionData[i] = Functions.insertBits(connection, offset, size, layerIndex);
             String binary = Functions.intToBinaryString(connectionData[i]);
