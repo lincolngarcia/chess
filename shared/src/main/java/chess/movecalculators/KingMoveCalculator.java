@@ -9,7 +9,7 @@ public class KingMoveCalculator extends ChessMoveCalculator {
     // Standard Overrides
     @Override
     void setMovementDirections() {
-        this.movementDirections = allDirections;
+        this.movementDirections = ALL_DIRECTIONS;
     }
 
     @Override

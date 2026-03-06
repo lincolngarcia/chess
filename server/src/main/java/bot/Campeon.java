@@ -103,22 +103,19 @@ public class Campeon {
     private static int createMetaData(int a, int b, int c) {
         int metaData = 0;
 
-        metaData = Functions.insertBits(
-                metaData,
+        metaData = Functions.insertBits(metaData,
                 RAW_NEURON_COUNT_AMPLIFIER_OFFSET,
                 RAW_NEURON_COUNT_AMPLIFIER_SIZE,
                 a
         );
 
-        metaData = Functions.insertBits(
-                metaData,
+        metaData = Functions.insertBits(metaData,
                 RAW_NEURON_SPREAD_AMPLIFIER_OFFSET,
                 RAW_NEURON_SPREAD_AMPLIFIER_SIZE,
                 b
         );
 
-        metaData = Functions.insertBits(
-                metaData,
+        metaData = Functions.insertBits(metaData,
                 RAW_NEURON_SLOPE_AMPLIFIER_OFFSET,
                 RAW_NEURON_SLOPE_AMPLIFIER_SIZE,
                 c
@@ -304,7 +301,6 @@ public class Campeon {
 
         // Delete the local copy of the game
         this.currentGame = null;
-
         return bestMove;
     }
 
@@ -368,7 +364,6 @@ public class Campeon {
             case 3 -> new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.BISHOP);
             case 4 -> new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KNIGHT);
             case 5 -> new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.PAWN);
-
             // Black pieces
             case 6 -> new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.KING);
             case 7 -> new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.QUEEN);
@@ -396,8 +391,7 @@ public class Campeon {
     }
 
     public static int parseRawNeuronSlopeAmplifier(int metaData) {
-        return Functions.parseSubInt(
-                metaData,
+        return Functions.parseSubInt(metaData,
                 RAW_NEURON_SLOPE_AMPLIFIER_OFFSET,
                 RAW_NEURON_SLOPE_AMPLIFIER_SIZE
         );

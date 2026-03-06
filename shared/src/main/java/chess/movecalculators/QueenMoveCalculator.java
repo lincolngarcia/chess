@@ -1,14 +1,13 @@
 package chess.movecalculators;
 
 import chess.ChessBoard;
-import chess.ChessDirection;
 import chess.ChessPosition;
 
 public class QueenMoveCalculator extends ChessMoveCalculator{
     // Standard Overrides
     @Override
     void setMovementDirections() {
-        this.movementDirections = allDirections;
+        this.movementDirections = ALL_DIRECTIONS;
     }
 
     @Override

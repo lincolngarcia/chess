@@ -19,7 +19,7 @@ public abstract class ChessMoveCalculator {
     protected final ChessPosition position;
     protected final ChessPiece piece;
 
-    protected static final ChessDirection[] allDirections = new ChessDirection[]{
+    protected static final ChessDirection[] ALL_DIRECTIONS = new ChessDirection[]{
             ChessDirection.LEFT_UP,
             ChessDirection.UP,
             ChessDirection.RIGHT_UP,
