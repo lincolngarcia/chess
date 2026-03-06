@@ -36,7 +36,10 @@ public abstract class ChessMoveCalculator {
         if (!(o instanceof ChessMoveCalculator that)) {
             return false;
         }
-        return movementDistance == that.movementDistance && Objects.deepEquals(movementDirections, that.movementDirections) && Objects.equals(board, that.board) && Objects.equals(position, that.position);
+        return movementDistance == that.movementDistance &&
+                Objects.deepEquals(movementDirections, that.movementDirections) &&
+                Objects.equals(board, that.board) &&
+                Objects.equals(position, that.position);
     }
 
     @Override

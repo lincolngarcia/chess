@@ -14,8 +14,7 @@ public class Campeon {
     public static final int INPUT_NODE_COUNT = 778;
     public static final int CUSTOM_INPUT_NODE_COUNT = 10;
 
-    public static final int RAW_CONNECTION_COUNT_SIZE = 16;
-    public static final int RAW_CONNECTION_COUNT_OFFSET = 0;
+    // RAW_CONNECTION_COUNT_SIZE = 16, RAW_CONNECTION_COUNT_OFFSET = 0;
     public static final int RAW_NEURON_COUNT_AMPLIFIER_SIZE = 4;
     public static final int RAW_NEURON_COUNT_AMPLIFIER_OFFSET = 16;
     public static final int RAW_NEURON_SPREAD_AMPLIFIER_SIZE = 4;
@@ -58,11 +57,11 @@ public class Campeon {
     @Override
     public String toString() {
         return """
-Campeon:
-    id: %d
-    metaData: %s
-    neuronCount: %d
-    connectionCount: %d""".formatted(
+                Campeon:
+                    id: %d
+                    metaData: %s
+                    neuronCount: %d
+                    connectionCount: %d""".formatted(
                 this.hashCode(),
                 this.metaData,
                 this.neuronCount,
@@ -128,10 +127,6 @@ Campeon:
     }
 
     // Getters
-    public String getBinaryMetaData() {
-        return Functions.intToBinaryString(metaData);
-    }
-
     public int getConnectionCount() {
         return connectionCount;
     }
@@ -156,10 +151,6 @@ Campeon:
         return metaData;
     }
 
-    public int getNeuronCount() {
-        return neuronCount;
-    }
-
     public Neuron[][] getNeurons() {
         return neurons;
     }
@@ -181,15 +172,6 @@ Campeon:
     }
 
     // Functions
-    public int calculateNeuronCountByLayerIndex(int index) {
-        return calculateNeuronCountByLayerIndex(
-                index,
-                this.getRawNeuronCountAmplifier(),
-                this.getRawNeuronSpreadAmplifier(),
-                this.getRawNeuronSlopeAmplifier()
-        );
-    }
-
     public static int calculateNeuronCountByLayerIndex(int index, int a, int b, double c) {
         int countAmplifier = Campeon.parseNeuronCountAmplifier(a);
         int spreadAmplifier = Campeon.parseNeuronSpreadAmplifier(b);
@@ -413,7 +395,7 @@ Campeon:
     }
 
     public static double parseNeuronSlopeAmplifier(double raw) {
-        return (double) (raw + 3) / 2;
+        return (raw + 3) / 2;
     }
 
     public static int parseConnectionCountFromMetaData(int metaData) {
@@ -476,15 +458,19 @@ Campeon:
 
         int[] connections = new int[connectionCount];
         for (int i = 0; i < connectionCount; i++) {
-            if (i >= pInput.getConnectionCount()) connections[i] = sInput.getConnections()[i].binaryData;
-            if (i >= sInput.getConnectionCount()) connections[i] = pInput.getConnections()[i].binaryData;
+            if (i >= pInput.getConnectionCount()) {
+                connections[i] = sInput.getConnections()[i].binaryData;
+            }
+            if (i >= sInput.getConnectionCount()) {
+                connections[i] = pInput.getConnections()[i].binaryData;
+            }
             if (i >= pInput.getConnectionCount() && i >= sInput.getConnectionCount()) {
                 connections[i] = random.nextInt();
                 continue;
             }
 
             connections[i] = random.nextBoolean() ?
-                    pInput.getConnections()[i].binaryData:
+                    pInput.getConnections()[i].binaryData :
                     sInput.getConnections()[i].binaryData;
 
             if (random.nextDouble() < mutationRate) {
@@ -493,6 +479,6 @@ Campeon:
 
         }
 
-        return new int[][] {{metaData}, connections};
+        return new int[][]{{metaData}, connections};
     }
 }
