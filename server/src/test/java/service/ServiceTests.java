@@ -14,7 +14,7 @@ import java.util.Objects;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ServiceTests {
-    private static final int PORT_NUMBER = 8080;
+    private static final int PORT_NUMBER = 49620;
     private static Server server;
 
     public static String authToken;
@@ -144,14 +144,14 @@ public class ServiceTests {
     @Order(4)
     @DisplayName("Logout Confirmation")
     public void logoutConfirmation() {
-        String LoginData = """
+        String loginData = """
                 {
                   "username": "firstUser",
                   "password": "password"
                 }
                 """;
 
-        HttpResponse<String> login = makeRequest("/session", "POST", null, LoginData);
+        HttpResponse<String> login = makeRequest("/session", "POST", null, loginData);
         String authToken = getValue(login.body(), "authToken");
         HttpResponse<String> response = makeRequest(
                 "/session",
