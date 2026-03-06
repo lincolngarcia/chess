@@ -57,19 +57,17 @@ public class Campeon {
 
     @Override
     public String toString() {
-        return "Campeon:\n" +
-                "id: " +
-                this.hashCode() +
-                "\n" +
-                "metaData: " +
-                this.metaData +
-                "\n" +
-                "neuronCount: " +
-                this.neuronCount +
-                "\n" +
-                "connectionCount: " +
-                this.connectionCount +
-                "\n";
+        return """
+Campeon:
+    id: %d
+    metaData: %s
+    neuronCount: %d
+    connectionCount: %d""".formatted(
+                this.hashCode(),
+                this.metaData,
+                this.neuronCount,
+                this.connectionCount
+        );
     }
 
     public Campeon(int metaData, int[] connectionData) {
@@ -457,8 +455,6 @@ public class Campeon {
             int size = Connection.START_LAYER_SIZE;
 
             connectionData[i] = Functions.insertBits(connection, offset, size, layerIndex);
-            String binary = Functions.intToBinaryString(connectionData[i]);
-
         }
 
         return connectionData;
