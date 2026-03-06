@@ -127,6 +127,10 @@ public class Campeon {
     }
 
     // Getters
+    public String getBinaryMetaData() {
+        return Functions.intToBinaryString(metaData);
+    }
+
     public int getConnectionCount() {
         return connectionCount;
     }
@@ -151,6 +155,10 @@ public class Campeon {
         return metaData;
     }
 
+    public int getNeuronCount() {
+        return neuronCount;
+    }
+
     public Neuron[][] getNeurons() {
         return neurons;
     }
@@ -172,6 +180,15 @@ public class Campeon {
     }
 
     // Functions
+    public int calculateNeuronCountByLayerIndex(int index) {
+        return calculateNeuronCountByLayerIndex(
+                index,
+                this.getRawNeuronCountAmplifier(),
+                this.getRawNeuronSpreadAmplifier(),
+                this.getRawNeuronSlopeAmplifier()
+        );
+    }
+
     public static int calculateNeuronCountByLayerIndex(int index, int a, int b, double c) {
         int countAmplifier = Campeon.parseNeuronCountAmplifier(a);
         int spreadAmplifier = Campeon.parseNeuronSpreadAmplifier(b);
