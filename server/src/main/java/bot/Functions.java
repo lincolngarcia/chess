@@ -4,7 +4,6 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.function.BinaryOperator;
 
 public class Functions {
     public static String intToBinaryString(int integer) {
