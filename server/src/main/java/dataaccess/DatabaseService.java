@@ -51,4 +51,12 @@ public class DatabaseService {
         authTokensDatabase.remove(authToken);
     }
 
+    public static void createUser(String username, String password) {
+        passwordDatabase.put(username, password);
+    }
+
+    public static boolean isValidLoginRequest(String username, String password) {
+        return DatabaseService.passwordDatabase.get(username).equals(password);
+    }
+
 }

@@ -22,7 +22,7 @@ public class ServerApiHandler {
 
         String authToken = UUID.randomUUID().toString();
         DatabaseService.createSession(authToken, username);
-        DatabaseService.passwordDatabase.put(username, password);
+        DatabaseService.createUser(username, password);
 
         return new LoginResponse(username, authToken);
     }
@@ -39,7 +39,7 @@ public class ServerApiHandler {
             return new LoginResponse(401);
         }
 
-        if (!DatabaseService.passwordDatabase.get(username).equals(password)) {
+        if (!DatabaseService.isValidLoginRequest(username, password)) {
             return new LoginResponse(401);
         }
 
