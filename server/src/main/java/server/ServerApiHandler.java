@@ -1,9 +1,10 @@
 package server;
 
 import chess.ChessGame;
-import dataaccess.Database;
+import dataaccess.DatabaseService;
 import server.packages.*;
 
+import javax.xml.crypto.Data;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -16,13 +17,13 @@ public class ServerApiHandler {
             return new LoginResponse(400);
         }
 
-        if (Database.usernameExists(username)) {
+        if (DatabaseService.usernameExists(username)) {
             return new LoginResponse(403);
         }
 
         String authToken = UUID.randomUUID().toString();
-        Database.authTokensDatabase.put(authToken, username);
-        Database.passwordDatabase.put(username, password);
+        DatabaseService.authTokensDatabase.put(authToken, username);
+        DatabaseService.passwordDatabase.put(username, password);
 
         return new LoginResponse(username, authToken);
     }
@@ -35,38 +36,38 @@ public class ServerApiHandler {
             return new LoginResponse(400);
         }
 
-        if (!Database.usernameExists(username)) {
+        if (!DatabaseService.usernameExists(username)) {
             return new LoginResponse(401);
         }
 
-        if (!Database.passwordDatabase.get(username).equals(password)) {
+        if (!DatabaseService.passwordDatabase.get(username).equals(password)) {
             return new LoginResponse(401);
         }
 
         String authToken = UUID.randomUUID().toString();
-        Database.authTokensDatabase.put(authToken, username);
+        DatabaseService.authTokensDatabase.put(authToken, username);
         return new LoginResponse(username, authToken);
     }
 
     public static LogoutResponse handleLogout(AuthData body) {
         String authToken = body.authToken;
 
-        if (!Database.authTokensDatabase.containsKey(authToken)) {
+        if (!DatabaseService.authTokensDatabase.containsKey(authToken)) {
             return new LogoutResponse(401);
         }
 
-        Database.authTokensDatabase.remove(authToken);
+        DatabaseService.authTokensDatabase.remove(authToken);
         return new LogoutResponse(200);
     }
 
     public static GetAllGamesResponse handleGetAllGames(AuthData body) {
         String authToken = body.authToken;
 
-        if (!Database.authTokensDatabase.containsKey(authToken)) {
+        if (!DatabaseService.authTokensDatabase.containsKey(authToken)) {
             return new GetAllGamesResponse(null, 401);
         }
 
-        return new GetAllGamesResponse(Database.gamesDatabase, 200);
+        return new GetAllGamesResponse(DatabaseService.getAllGames(), 200);
     }
 
     public static CreateGameResponse handleCreateGame(AuthData body, CreateGameRequest data) {
@@ -78,17 +79,17 @@ public class ServerApiHandler {
         }
 
         int hash = gameName.hashCode() & 0x7FFFFFFF;
-        if (!Database.authTokensDatabase.containsKey(authToken)) {
+        if (!DatabaseService.authTokensDatabase.containsKey(authToken)) {
             return new CreateGameResponse(401);
         }
 
-        if (Database.gamesDatabase.containsKey(hash)) {
+        if (DatabaseService.doesGameExist(hash)) {
             return new CreateGameResponse(400);
         }
 
         ChessGame newGame = new ChessGame();
         ChessGameData responseData = new ChessGameData(hash, gameName, null, null, newGame);
-        Database.gamesDatabase.put(hash, responseData);
+        DatabaseService.addGame(responseData);
         return new CreateGameResponse(gameName, hash);
     }
 
@@ -101,26 +102,26 @@ public class ServerApiHandler {
             return new JoinGameResponse(400);
         }
 
-        if (!Database.authTokensDatabase.containsKey(authToken)) {
+        if (!DatabaseService.authTokensDatabase.containsKey(authToken)) {
             return new JoinGameResponse(401);
         }
 
-        if (!Database.gamesDatabase.containsKey(gameID)) {
+        if (!DatabaseService.doesGameExist(gameID)) {
             return new JoinGameResponse(400);
         }
 
         int index = Objects.equals(playerColor, "WHITE") ? 0 : 1;
-        if (Database.gamesDatabase.get(gameID).playerUsernames[index] != null) {
+        if (DatabaseService.getGameById(gameID).playerUsernames[index] != null) {
             return new JoinGameResponse(403);
         }
 
-        Database.gamesDatabase.get(gameID).playerUsernames[index] = Database.authTokensDatabase.get(authToken);
+        DatabaseService.getGameById(gameID).playerUsernames[index] = DatabaseService.authTokensDatabase.get(authToken);
 
         return new JoinGameResponse(200);
     }
 
     public static DbDumpResponse handleDump(AuthData body) {
-        Database.dumpDatabase();
+        DatabaseService.dumpDatabase();
 
         return new DbDumpResponse(200);
     }
