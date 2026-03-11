@@ -51,7 +51,7 @@ public class ServerApiHandler {
     public static LogoutResponse handleLogout(AuthData body) {
         String authToken = body.authToken;
 
-        if (!DatabaseService.isLoggedIn(authToken)) {
+        if (DatabaseService.isInvalidAuth(authToken)) {
             return new LogoutResponse(401);
         }
 
@@ -62,7 +62,7 @@ public class ServerApiHandler {
     public static GetAllGamesResponse handleGetAllGames(AuthData body) {
         String authToken = body.authToken;
 
-        if (!DatabaseService.isLoggedIn(authToken)) {
+        if (DatabaseService.isInvalidAuth(authToken)) {
             return new GetAllGamesResponse(null, 401);
         }
 
@@ -78,7 +78,7 @@ public class ServerApiHandler {
         }
 
         int hash = gameName.hashCode() & 0x7FFFFFFF;
-        if (!DatabaseService.isLoggedIn(authToken)) {
+        if (DatabaseService.isInvalidAuth(authToken)) {
             return new CreateGameResponse(401);
         }
 
@@ -101,7 +101,7 @@ public class ServerApiHandler {
             return new JoinGameResponse(400);
         }
 
-        if (!DatabaseService.isLoggedIn(authToken)) {
+        if (DatabaseService.isInvalidAuth(authToken)) {
             return new JoinGameResponse(401);
         }
 

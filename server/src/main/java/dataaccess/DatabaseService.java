@@ -39,8 +39,8 @@ public class DatabaseService {
         return authTokensDatabase.get(authToken);
     }
 
-    public static boolean isLoggedIn(String authToken) {
-        return authTokensDatabase.containsKey(authToken);
+    public static boolean isInvalidAuth(String authToken) {
+        return !authTokensDatabase.containsKey(authToken);
     }
 
     public static void createSession(String authToken, String username) {
