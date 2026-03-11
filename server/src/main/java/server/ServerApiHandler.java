@@ -21,8 +21,8 @@ public class ServerApiHandler {
         }
 
         String authToken = UUID.randomUUID().toString();
-        DatabaseService.createSession(authToken, username);
         DatabaseService.createUser(username, password);
+        DatabaseService.createSession(authToken, username);
 
         return new LoginResponse(username, authToken);
     }
