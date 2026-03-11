@@ -35,4 +35,20 @@ public class DatabaseService {
         return gamesDatabase;
     }
 
+    public static String getUsernameByAuthToken(String authToken) {
+        return authTokensDatabase.get(authToken);
+    }
+
+    public static boolean isLoggedIn(String authToken) {
+        return authTokensDatabase.containsKey(authToken);
+    }
+
+    public static void createSession(String authToken, String username) {
+        authTokensDatabase.put(authToken, username);
+    }
+
+    public static void logoutSession(String authToken) {
+        authTokensDatabase.remove(authToken);
+    }
+
 }

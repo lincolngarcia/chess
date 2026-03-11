@@ -4,7 +4,6 @@ import chess.ChessGame;
 import dataaccess.DatabaseService;
 import server.packages.*;
 
-import javax.xml.crypto.Data;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -22,7 +21,7 @@ public class ServerApiHandler {
         }
 
         String authToken = UUID.randomUUID().toString();
-        DatabaseService.authTokensDatabase.put(authToken, username);
+        DatabaseService.createSession(authToken, username);
         DatabaseService.passwordDatabase.put(username, password);
 
         return new LoginResponse(username, authToken);
@@ -45,25 +44,25 @@ public class ServerApiHandler {
         }
 
         String authToken = UUID.randomUUID().toString();
-        DatabaseService.authTokensDatabase.put(authToken, username);
+        DatabaseService.createSession(authToken, username);
         return new LoginResponse(username, authToken);
     }
 
     public static LogoutResponse handleLogout(AuthData body) {
         String authToken = body.authToken;
 
-        if (!DatabaseService.authTokensDatabase.containsKey(authToken)) {
+        if (!DatabaseService.isLoggedIn(authToken)) {
             return new LogoutResponse(401);
         }
 
-        DatabaseService.authTokensDatabase.remove(authToken);
+        DatabaseService.logoutSession(authToken);
         return new LogoutResponse(200);
     }
 
     public static GetAllGamesResponse handleGetAllGames(AuthData body) {
         String authToken = body.authToken;
 
-        if (!DatabaseService.authTokensDatabase.containsKey(authToken)) {
+        if (!DatabaseService.isLoggedIn(authToken)) {
             return new GetAllGamesResponse(null, 401);
         }
 
@@ -79,7 +78,7 @@ public class ServerApiHandler {
         }
 
         int hash = gameName.hashCode() & 0x7FFFFFFF;
-        if (!DatabaseService.authTokensDatabase.containsKey(authToken)) {
+        if (!DatabaseService.isLoggedIn(authToken)) {
             return new CreateGameResponse(401);
         }
 
@@ -102,7 +101,7 @@ public class ServerApiHandler {
             return new JoinGameResponse(400);
         }
 
-        if (!DatabaseService.authTokensDatabase.containsKey(authToken)) {
+        if (!DatabaseService.isLoggedIn(authToken)) {
             return new JoinGameResponse(401);
         }
 
@@ -115,7 +114,7 @@ public class ServerApiHandler {
             return new JoinGameResponse(403);
         }
 
-        DatabaseService.getGameById(gameID).playerUsernames[index] = DatabaseService.authTokensDatabase.get(authToken);
+        DatabaseService.getGameById(gameID).playerUsernames[index] = DatabaseService.getUsernameByAuthToken(authToken);
 
         return new JoinGameResponse(200);
     }
