@@ -9,7 +9,6 @@ public class Server {
     private final Javalin javalin;
 
     public Server() {
-
         // Register your endpoints and exception handlers here.
         javalin = Javalin.create(config -> config.staticFiles.add("web"));
 
@@ -17,11 +16,8 @@ public class Server {
         javalin.post("/user", ctx -> {
             try {
                 String body = ctx.body();
-
                 RegisterRequest registerRequest = new Gson().fromJson(body, RegisterRequest.class);
-
                 LoginResponse response = ServerApiHandler.handleRegister(registerRequest);
-
                 ctx.status(response.statusCode);
                 ctx.result(response.toString());
             }catch (Exception e){
@@ -34,14 +30,10 @@ public class Server {
         javalin.post("/session", ctx -> {
             try {
             String body = ctx.body();
-
             LoginRequest loginRequest = new Gson().fromJson(body, LoginRequest.class);
-
             LoginResponse response = ServerApiHandler.handleLogin(loginRequest);
-
             ctx.status(response.statusCode);
             ctx.result(response.toString());
-
             }catch (Exception e){
                 ctx.status(500);
                 ctx.result("{\"message\":\"" + "Error: " + e.getMessage() + "\"}");
@@ -52,12 +44,9 @@ public class Server {
         javalin.delete("/session", ctx -> {
             try {
             AuthData authData = new AuthData(ctx.header("authorization"));
-
             LogoutResponse response = ServerApiHandler.handleLogout(authData);
-
             ctx.status(response.statusCode);
             ctx.result(response.toString());
-
             }catch (Exception e){
                 ctx.status(500);
                 ctx.result("{\"message\":\"" + "Error: " + e.getMessage() + "\"}");
@@ -68,12 +57,9 @@ public class Server {
         javalin.get("/game", ctx -> {
             try {
             AuthData authData = new AuthData(ctx.header("authorization"));
-
             GetAllGamesResponse games = ServerApiHandler.handleGetAllGames(authData);
-
             ctx.status(games.statusCode);
             ctx.result(games.toString());
-
             }catch (Exception e){
                 ctx.status(500);
                 ctx.result("{\"message\":\"" + "Error: " + e.getMessage() + "\"}");
@@ -86,10 +72,8 @@ public class Server {
             AuthData authData = new AuthData(ctx.header("authorization"));
             CreateGameRequest request = new Gson().fromJson(ctx.body(), CreateGameRequest.class);
             CreateGameResponse response = ServerApiHandler.handleCreateGame(authData, request);
-
             ctx.status(response.statusCode);
             ctx.result(response.toString());
-
             }catch (Exception e){
                 ctx.status(500);
                 ctx.result("{\"message\":\"" + "Error: " + e.getMessage() + "\"}");
@@ -102,10 +86,8 @@ public class Server {
             AuthData authData = new AuthData(ctx.header("authorization"));
             JoinGameRequest joinChesGameRequest = new Gson().fromJson(ctx.body(), JoinGameRequest.class);
             JoinGameResponse response = ServerApiHandler.handleJoinGame(joinChesGameRequest, authData);
-
             ctx.status(response.statusCode);
             ctx.result(response.toString());
-
             }catch (Exception e){
                 ctx.status(500);
                 ctx.result("{\"message\":\"" + "Error: " + e.getMessage() + "\"}");
@@ -118,7 +100,6 @@ public class Server {
             DbDumpResponse response = ServerApiHandler.handleDump();
             ctx.status(response.statusCode);
             ctx.result(" ");
-
             }catch (Exception e){
                 ctx.status(500);
                 ctx.result("{\"message\":\"" + "Error: " + e.getMessage() + "\"}");
