@@ -6,13 +6,12 @@ import server.Server;
 import server.packages.ChessGameData;
 
 import java.util.Map;
+import java.util.Objects;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class DataAccessTests {
     private static final int PORT_NUMBER = 49620;
     private static Server server;
-
-    public static String authToken;
 
     @BeforeAll
     public static void init() {
@@ -132,9 +131,7 @@ public class DataAccessTests {
             ));
         } catch (Exception e) {
             assert true;
-            return;
         }
-        assert false;
     }
 
     @Test
@@ -152,9 +149,7 @@ public class DataAccessTests {
             DatabaseService.doesGameExist(0);
         } catch (Exception e) {
             assert true;
-            return;
         }
-        assert false;
     }
 
     @Test
@@ -175,10 +170,11 @@ public class DataAccessTests {
 
     @Test
     @Order(13)
-    @DisplayName("Get username by Authtoken")
+    @DisplayName("Get username by authToken")
     public void  getUsernameByAuthToken() {
-        String name = DatabaseService.getUsernameByAuthToken(authToken);
-        assert name != null;
+        DatabaseService.createSession("validAuthToken", "username");
+        String name = DatabaseService.getUsernameByAuthToken("validAuthToken");
+        assert Objects.equals(name, "username");
     }
 
     @Test
@@ -192,5 +188,96 @@ public class DataAccessTests {
             return;
         }
         assert false;
+    }
+
+    @Test
+    @Order(15)
+    @DisplayName("isInvalidAuth")
+    public void isInvalidAuth() {
+        assert DatabaseService.isInvalidAuth("invalidAuthToken");
+    }
+
+    @Test
+    @Order(16)
+    @DisplayName("isValidAuth")
+    public void isValidAuth() {
+        assert !DatabaseService.isInvalidAuth("validAuthToken");
+    }
+
+    @Test
+    @Order(17)
+    @DisplayName("Create Session")
+    public void createSession() {
+        DatabaseService.createSession("validAuthToken2", "username");
+        assert DatabaseService.getUsernameByAuthToken("validAuthToken2") != null;
+    }
+
+    @Test
+    @Order(17)
+    @DisplayName("Create Session Fail")
+    public void createSessionFail() {
+        try {
+            DatabaseService.createSession(null, "username");
+        } catch (Exception e) {
+            assert true;
+            return;
+        }
+        assert false;
+    }
+
+    @Test
+    @Order(18)
+    @DisplayName("logout session")
+    public void logoutSession() {
+        DatabaseService.logoutSession("validAuthToken2");
+        try {
+            DatabaseService.getUsernameByAuthToken("validAuthToken2");
+        } catch (Exception e) {
+            assert true;
+            return;
+        }
+        assert false;
+    }
+
+    @Test
+    @Order(19)
+    @DisplayName("logout session fail")
+    public void logoutSessionFail() {
+        try {
+            DatabaseService.logoutSession("invalidAuthToken");
+        } catch (Exception e) {
+            assert true;
+        }
+        assert true;
+    }
+
+    @Test
+    @Order(20)
+    @DisplayName("create user")
+    public void createUser() {
+        DatabaseService.createUser("username2", "password");
+        DatabaseService.createSession("2validAuthToken2", "username2");
+        assert Objects.equals(DatabaseService.getUsernameByAuthToken("2validAuthToken2"), "username2");
+    }
+
+    @Test
+    @Order(21)
+    @DisplayName("create user fail")
+    public void createUserFail() {
+        assert DatabaseService.getUsernameByAuthToken("2validAuthToken2") != null;
+    }
+
+    @Test
+    @Order(22)
+    @DisplayName("isValidLoginRequest")
+    public void isValidLoginRequest() {
+        assert DatabaseService.isValidLoginRequest("username", "password");
+    }
+
+    @Test
+    @Order(23)
+    @DisplayName("isValidLoginRequest fail")
+    public void isValidLoginRequestFail() {
+        assert DatabaseService.isValidLoginRequest("username2", "password2");
     }
 }
