@@ -1,5 +1,7 @@
 package dataaccess;
 
+import chess.ChessGame;
+import com.google.gson.Gson;
 import server.packages.ChessGameData;
 
 import java.sql.ResultSet;
@@ -7,9 +9,6 @@ import java.sql.SQLException;
 import java.util.*;
 
 public class DatabaseService {
-    public static Map<Integer, ChessGameData> gamesDatabase = new HashMap<>();
-    public static Map<String, String> authTokensDatabase = new HashMap<>();
-
     static {
         try {
             DatabaseService.createTables();
@@ -19,30 +18,54 @@ public class DatabaseService {
     }
 
     static void createTables() throws DataAccessException {
-        String statement = """
+        String createPasswordTable = """
                 CREATE TABLE IF NOT EXISTS passwords (
                     username VARCHAR(50) PRIMARY KEY,
                     password VARCHAR(50) NOT NULL
-                    );
+                    );""";
+        String createGameDataTable = """
+                CREATE TABLE IF NOT EXISTS game_data (
+                    gameId INT PRIMARY KEY,
+                    gameName VARCHAR(50) NOT NULL,
+                    whiteUsername VARCHAR(50),
+                    blackUsername VARCHAR(50),
+                    game TEXT NOT NULL
+                )
                 """;
+        String createAuthTokenTable = """
+                CREATE TABLE IF NOT EXISTS auth_tokens (
+                    authToken VARCHAR(50) PRIMARY KEY,
+                    username VARCHAR(50) NOT NULL
+                    )
+                """;
+
         try (var conn = DatabaseManager.getConnection()) {
-            conn.prepareStatement(statement).executeUpdate();
+            conn.prepareStatement(createPasswordTable).executeUpdate();
+            conn.prepareStatement(createGameDataTable).executeUpdate();
+            conn.prepareStatement(createAuthTokenTable).executeUpdate();
         } catch (Exception e) {
-            throw new DataAccessException("Message");
+            throw new DataAccessException("Create Tables Failed");
         }
     }
 
     public static void dumpDatabase() {
-        String statement = """
+        String dropPasswordTable = """
                 DROP TABLE IF EXISTS passwords;
                 """;
+        String dropGameDataTable = """
+                DROP TABLE IF EXISTS game_data;
+                """;
+        String dropAuthTokenTable = """
+                DROP TABLE IF EXISTS auth_tokens;
+                """;
+
         try (var conn = DatabaseManager.getConnection()) {
-            conn.prepareStatement(statement).executeUpdate();
+            conn.prepareStatement(dropPasswordTable).executeUpdate();
+            conn.prepareStatement(dropGameDataTable).executeUpdate();
+            conn.prepareStatement(dropAuthTokenTable).executeUpdate();
         } catch (SQLException | DataAccessException e) {
             throw new RuntimeException(e);
         }
-        gamesDatabase.clear();
-        authTokensDatabase.clear();
     }
 
     public static boolean usernameExists(String username) {
@@ -64,35 +87,151 @@ public class DatabaseService {
     }
 
     public static void addGame(ChessGameData data) {
-        DatabaseService.gamesDatabase.put(data.gameID, data);
+        Gson gson = new Gson();
+        String game = gson.toJson(data.game);
+        String whitePlayer = gson.toJson(data.playerUsernames[0]);
+        String blackPlayer = gson.toJson(data.playerUsernames[1]);
+
+        String statement = String.format("""
+                INSERT INTO game_data (gameId, gameName, whiteUsername, blackUsername, game) VALUES (
+                %d, '%s',  '%s', '%s', '%s');
+                """, data.gameID, data.gameName, whitePlayer, blackPlayer, game);
+
+        try (var conn = DatabaseManager.getConnection()) {
+            conn.prepareStatement(statement).executeUpdate();
+        } catch (SQLException | DataAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static ChessGameData getGameById(Integer gameId) {
-        return gamesDatabase.get(gameId);
+        String statement = String.format("""
+                SELECT 1 FROM game_data where gameId = %d;"
+                """, gameId);
+
+        try (var conn = DatabaseManager.getConnection()) {
+            ResultSet rs = conn.prepareStatement(statement).executeQuery();
+
+            if (rs.next()) {
+                Gson gson = new Gson();
+                return new ChessGameData(
+                        rs.getInt("gameId"),
+                        rs.getString("gameName"),
+                        rs.getString("whiteUsername"),
+                        rs.getString("blackUsername"),
+                        gson.fromJson(rs.getString("game"), ChessGame.class)
+                );
+            } else {
+                throw new DataAccessException("gameId returned no results");
+            }
+
+        } catch (SQLException | DataAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public static boolean doesGameExist(Integer gameId)  {
-        return gamesDatabase.containsKey(gameId);
+    public static boolean doesGameExist(Integer gameId) {
+        String statement = String.format("""
+                SELECT 1 FROM game_data WHERE gameId = '%d';
+                """, gameId);
+
+        try (var conn = DatabaseManager.getConnection()) {
+            ResultSet rs = conn.createStatement().executeQuery(statement);
+
+            if (rs.next()) {
+                return true;
+            }
+        } catch (SQLException | DataAccessException e) {
+            throw new RuntimeException(e);
+        }
+
+        return false;
     }
 
-    public static Map<Integer, ChessGameData>  getAllGames() {
-        return gamesDatabase;
+    public static Map<Integer, ChessGameData> getAllGames() {
+        Map<Integer, ChessGameData> map = new HashMap<>();
+
+        String statement = """
+                SELECT * FROM game_data;
+                """;
+
+        try (var conn = DatabaseManager.getConnection()) {
+            ResultSet rs = conn.prepareStatement(statement).executeQuery();
+            Gson gson = new Gson();
+
+            while (rs.next()) {
+                map.put(
+                        rs.getInt("gameId"),
+                        new ChessGameData(
+                                rs.getInt("gameId"),
+                                rs.getString("gameName"),
+                                rs.getString("whiteUsername"),
+                                rs.getString("blackUsername"),
+                                gson.fromJson(rs.getString("game"), ChessGame.class))
+                );
+            }
+
+        } catch (SQLException | DataAccessException e) {
+            throw new RuntimeException(e);
+        }
+        return map;
     }
 
     public static String getUsernameByAuthToken(String authToken) {
-        return authTokensDatabase.get(authToken);
+        String statement = String.format("""
+                SELECT 1 FROM auth_tokens WHERE authToken = '%s';
+                """, authToken);
+
+        try (var conn = DatabaseManager.getConnection()) {
+            ResultSet rs = conn.prepareStatement(statement).executeQuery();
+
+            if (rs.next()) {
+                return rs.getString("username");
+            } else {
+                throw new DataAccessException("gameId returned no results");
+            }
+
+        } catch (SQLException | DataAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static boolean isInvalidAuth(String authToken) {
-        return !authTokensDatabase.containsKey(authToken);
+        String statement = String.format("""
+                SELECT 1 FROM auth_tokens WHERE authToken = '%s';
+                """, authToken);
+
+        try (var conn = DatabaseManager.getConnection()) {
+            ResultSet rs = conn.prepareStatement(statement).executeQuery();
+            return !rs.next();
+
+        } catch (SQLException | DataAccessException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     public static void createSession(String authToken, String username) {
-        authTokensDatabase.put(authToken, username);
+        String statement = String.format("""
+                INSERT INTO auth_tokens (authToken, username) VALUES ('%s', '%s');
+                """, authToken, username);
+
+        try (var conn = DatabaseManager.getConnection()) {
+            conn.prepareStatement(statement).executeUpdate();
+        } catch (SQLException | DataAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static void logoutSession(String authToken) {
-        authTokensDatabase.remove(authToken);
+        String statement = String.format("""
+                DELETE FROM auth_tokens WHERE authToken = '%s';
+                """, authToken);
+        try (var conn = DatabaseManager.getConnection()) {
+            conn.prepareStatement(statement).executeUpdate();
+        } catch (SQLException | DataAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static void createUser(String username, String password) {

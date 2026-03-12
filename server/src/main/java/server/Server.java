@@ -85,9 +85,7 @@ public class Server {
 
         // Clear all db data
         javalin.delete("/db", ctx -> {
-            AuthData authData = new AuthData(ctx.header("authorization"));
-
-            DbDumpResponse response = ServerApiHandler.handleDump(authData);
+            DbDumpResponse response = ServerApiHandler.handleDump();
             ctx.status(response.statusCode);
             ctx.result(" ");
         });

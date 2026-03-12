@@ -119,7 +119,7 @@ public class ServerApiHandler {
         return new JoinGameResponse(200);
     }
 
-    public static DbDumpResponse handleDump(AuthData body) {
+    public static DbDumpResponse handleDump() {
         DatabaseService.dumpDatabase();
 
         return new DbDumpResponse(200);
