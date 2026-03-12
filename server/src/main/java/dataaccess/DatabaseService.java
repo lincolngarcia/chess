@@ -4,6 +4,7 @@ import chess.ChessGame;
 import com.google.gson.Gson;
 import server.packages.ChessGameData;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -69,12 +70,14 @@ public class DatabaseService {
     }
 
     public static boolean usernameExists(String username) {
-        String statement = String.format("""
-                SELECT 1 FROM passwords WHERE username = '%s';
-                """, username);
+        String statement = """
+                SELECT 1 FROM passwords WHERE username = ?;
+                """;
 
         try (var conn = DatabaseManager.getConnection()) {
-            ResultSet rs = conn.createStatement().executeQuery(statement);
+            PreparedStatement ps = conn.prepareStatement(statement);
+            ps.setString(1, username);
+            ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
                 return true;
@@ -88,37 +91,51 @@ public class DatabaseService {
 
     public static void addGame(ChessGameData data) {
         Gson gson = new Gson();
-        String game = gson.toJson(data.game);
-        String whitePlayer = data.playerUsernames[0];
-        String blackPlayer = data.playerUsernames[1];
+        String gameJson = gson.toJson(data.game);
 
-        String statement = String.format("""
-                INSERT INTO game_data (gameId, gameName, whiteUsername, blackUsername, game) VALUES (
-                %d, '%s',  '%s', '%s', '%s');
-                """, data.gameID, data.gameName, whitePlayer, blackPlayer, game);
+        String whitePlayer = data.playerUsernames.length > 0 ? data.playerUsernames[0] : "";
+        String blackPlayer = data.playerUsernames.length > 1 ? data.playerUsernames[1] : "";
 
-        try (var conn = DatabaseManager.getConnection()) {
-            conn.prepareStatement(statement).executeUpdate();
+        String sql = """
+        INSERT INTO game_data (gameId, gameName, whiteUsername, blackUsername, game)
+        VALUES (?, ?, ?, ?, ?);
+        """;
+
+        try (var conn = DatabaseManager.getConnection();
+             var ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, data.gameID);
+            ps.setString(2, data.gameName);
+            ps.setString(3, whitePlayer);
+            ps.setString(4, blackPlayer);
+            ps.setString(5, gameJson);
+            ps.executeUpdate();
         } catch (SQLException | DataAccessException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error inserting game data", e);
         }
     }
 
     public static ChessGameData getGameById(Integer gameId) {
-        String statement = String.format("""
-                SELECT * FROM game_data WHERE gameId = %d;
-                """, gameId);
+        String statement = """
+                SELECT * FROM game_data WHERE gameId = ?;
+                """;
 
         try (var conn = DatabaseManager.getConnection()) {
-            ResultSet rs = conn.prepareStatement(statement).executeQuery();
+            PreparedStatement ps = conn.prepareStatement(statement);
+            ps.setInt(1, gameId);
+            ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
                 Gson gson = new Gson();
+
+                String whiteUsername = !Objects.equals(rs.getString("whiteUsername"), "null") ?  rs.getString("whiteUsername") : null;
+                String blackUsername = !Objects.equals(rs.getString("blackUsername"), "null") ?  rs.getString("blackUsername") : null;
+
                 return new ChessGameData(
                         rs.getInt("gameId"),
                         rs.getString("gameName"),
-                        rs.getString("whiteUsername"),
-                        rs.getString("blackUsername"),
+                        whiteUsername,
+                        blackUsername,
                         gson.fromJson(rs.getString("game"), ChessGame.class)
                 );
             } else {
@@ -134,30 +151,39 @@ public class DatabaseService {
         Gson gson = new Gson();
         String game = gson.toJson(data.game);
 
-        String statement = String.format("""
+        String statement = """
                 UPDATE game_data SET
-                    gameId = '%d',
-                    gameName = '%s',
-                    whiteUsername = '%s',
-                    blackUsername = '%s',
-                    game = '%s'
-                WHERE gameId = %d;
-                """, data.gameID, data.gameName, data.playerUsernames[0], data.playerUsernames[1], game, data.gameID);
+                    gameId = ?,
+                    gameName = ?,
+                    whiteUsername = ?,
+                    blackUsername = ?,
+                    game = ?
+                WHERE gameId = ?
+                """;
 
         try (var conn = DatabaseManager.getConnection()) {
-            conn.prepareStatement(statement).executeUpdate();
+            PreparedStatement ps = conn.prepareStatement(statement);
+            ps.setInt(1, data.gameID);
+            ps.setString(2, data.gameName);
+            ps.setString(3, data.playerUsernames[0]);
+            ps.setString(4, data.playerUsernames[1]);
+            ps.setString(5, game);
+            ps.setInt(6, data.gameID);
+            ps.executeUpdate();
         } catch (SQLException | DataAccessException e) {
             throw new RuntimeException(e);
         }
     }
 
     public static boolean doesGameExist(Integer gameId) {
-        String statement = String.format("""
-                SELECT 1 FROM game_data WHERE gameId = '%d';
-                """, gameId);
+        String statement = """
+                SELECT 1 FROM game_data WHERE gameId = ?;
+                """;
 
         try (var conn = DatabaseManager.getConnection()) {
-            ResultSet rs = conn.createStatement().executeQuery(statement);
+            PreparedStatement ps = conn.prepareStatement(statement);
+            ps.setInt(1, gameId);
+            ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
                 return true;
@@ -199,12 +225,14 @@ public class DatabaseService {
     }
 
     public static String getUsernameByAuthToken(String authToken) {
-        String statement = String.format("""
-                SELECT * FROM auth_tokens WHERE authToken = '%s';
-                """, authToken);
+        String statement = """
+                SELECT * FROM auth_tokens WHERE authToken = ?;
+                """;
 
         try (var conn = DatabaseManager.getConnection()) {
-            ResultSet rs = conn.prepareStatement(statement).executeQuery();
+            PreparedStatement ps = conn.prepareStatement(statement);
+            ps.setString(1, authToken);
+            ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
                 return rs.getString("username");
@@ -218,12 +246,14 @@ public class DatabaseService {
     }
 
     public static boolean isInvalidAuth(String authToken) {
-        String statement = String.format("""
-                SELECT 1 FROM auth_tokens WHERE authToken = '%s';
-                """, authToken);
+        String statement = """
+                SELECT 1 FROM auth_tokens WHERE authToken = ?;
+                """;
 
         try (var conn = DatabaseManager.getConnection()) {
-            ResultSet rs = conn.prepareStatement(statement).executeQuery();
+            PreparedStatement ps = conn.prepareStatement(statement);
+            ps.setString(1, authToken);
+            ResultSet rs = ps.executeQuery();
             return !rs.next();
 
         } catch (SQLException | DataAccessException e) {
@@ -233,46 +263,57 @@ public class DatabaseService {
     }
 
     public static void createSession(String authToken, String username) {
-        String statement = String.format("""
-                INSERT INTO auth_tokens (authToken, username) VALUES ('%s', '%s');
-                """, authToken, username);
+        String statement = """
+                INSERT INTO auth_tokens (authToken, username) VALUES (?, ?);
+                """;
 
         try (var conn = DatabaseManager.getConnection()) {
-            conn.prepareStatement(statement).executeUpdate();
+            PreparedStatement ps = conn.prepareStatement(statement);
+            ps.setString(1, authToken);
+            ps.setString(2, username);
+            ps.executeUpdate();
         } catch (SQLException | DataAccessException e) {
             throw new RuntimeException(e);
         }
     }
 
     public static void logoutSession(String authToken) {
-        String statement = String.format("""
-                DELETE FROM auth_tokens WHERE authToken = '%s';
-                """, authToken);
+        String statement = """
+                DELETE FROM auth_tokens WHERE authToken = ?;
+                """;
         try (var conn = DatabaseManager.getConnection()) {
-            conn.prepareStatement(statement).executeUpdate();
+            PreparedStatement ps = conn.prepareStatement(statement);
+            ps.setString(1, authToken);
+            ps.executeUpdate();
         } catch (SQLException | DataAccessException e) {
             throw new RuntimeException(e);
         }
     }
 
     public static void createUser(String username, String password) {
-        String statement = String.format("""
-                INSERT INTO passwords (username, password) VALUES ('%s', '%s');
-                """, username, password);
+        String statement = """
+                INSERT INTO passwords (username, password) VALUES (?, ?);
+                """;
 
         try (var conn = DatabaseManager.getConnection()) {
-            conn.prepareStatement(statement).executeUpdate();
+            PreparedStatement ps = conn.prepareStatement(statement);
+            ps.setString(1, username);
+            ps.setString(2, password);
+            ps.executeUpdate();
         } catch (SQLException | DataAccessException e) {
             throw new RuntimeException(e);
         }
     }
 
     public static boolean isValidLoginRequest(String username, String password) {
-        String statement = String.format("""
-                SELECT EXISTS (SELECT 1 FROM passwords WHERE username = '%s' AND password = '%s');
-                """, username, password);
+        String statement = """
+                SELECT EXISTS (SELECT 1 FROM passwords WHERE username = ? AND password = ?);
+                """;
         try (var conn = DatabaseManager.getConnection()) {
-            ResultSet rs = conn.prepareStatement(statement).executeQuery();
+            PreparedStatement ps = conn.prepareStatement(statement);
+            ps.setString(1, username);
+            ps.setString(2, password);
+            ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
                 return rs.getInt(1) == 1;

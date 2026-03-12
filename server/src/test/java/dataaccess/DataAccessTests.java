@@ -1,4 +1,4 @@
-package DaoTests;
+package dataaccess;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -13,7 +13,7 @@ import java.net.http.HttpResponse;
 import java.util.Objects;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class DaoTests {
+public class DataAccessTests {
     private static final int PORT_NUMBER = 49620;
     private static Server server;
 
@@ -23,13 +23,13 @@ public class DaoTests {
 
     @BeforeAll
     public static void init() {
-        DaoTests.server = new Server();
-        DaoTests.server.run(PORT_NUMBER);
+        DataAccessTests.server = new Server();
+        DataAccessTests.server.run(PORT_NUMBER);
     }
 
     @AfterAll
     public static void stop() {
-        DaoTests.server.stop();
+        DataAccessTests.server.stop();
     }
 
     public static HttpResponse<String> makeRequest(String endpoint, String type, String authorization, String data) {
@@ -121,7 +121,7 @@ public class DaoTests {
 
         HttpResponse<String> res = makeRequest("/session", "POST", null, data);
         assert getValue(res.body(), "authToken") != null;
-        DaoTests.authToken = getValue(res.body(), "authToken");
+        DataAccessTests.authToken = getValue(res.body(), "authToken");
     }
 
     @Test

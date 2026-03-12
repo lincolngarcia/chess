@@ -4,6 +4,7 @@ import chess.ChessGame;
 import dataaccess.DatabaseService;
 import server.packages.*;
 
+import javax.xml.crypto.Data;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -111,7 +112,8 @@ public class ServerApiHandler {
         }
 
         int index = Objects.equals(playerColor, "WHITE") ? 0 : 1;
-        if (!Objects.equals(DatabaseService.getGameById(gameID).playerUsernames[index], "null")) {
+        ChessGameData test = DatabaseService.getGameById(gameID);
+        if (DatabaseService.getGameById(gameID).playerUsernames[index] != null) {
             return new JoinGameResponse(403);
         }
 
