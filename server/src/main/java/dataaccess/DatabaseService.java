@@ -50,13 +50,13 @@ public class DatabaseService {
 
     public static void dumpDatabase() {
         String dropPasswordTable = """
-                DROP TABLE IF EXISTS passwords;
+                TRUNCATE TABLE passwords;
                 """;
         String dropGameDataTable = """
-                DROP TABLE IF EXISTS game_data;
+                TRUNCATE TABLE game_data;
                 """;
         String dropAuthTokenTable = """
-                DROP TABLE IF EXISTS auth_tokens;
+                TRUNCATE TABLE auth_tokens;
                 """;
 
         try (var conn = DatabaseManager.getConnection()) {
@@ -89,8 +89,8 @@ public class DatabaseService {
     public static void addGame(ChessGameData data) {
         Gson gson = new Gson();
         String game = gson.toJson(data.game);
-        String whitePlayer = gson.toJson(data.playerUsernames[0]);
-        String blackPlayer = gson.toJson(data.playerUsernames[1]);
+        String whitePlayer = data.playerUsernames[0];
+        String blackPlayer = data.playerUsernames[1];
 
         String statement = String.format("""
                 INSERT INTO game_data (gameId, gameName, whiteUsername, blackUsername, game) VALUES (
@@ -106,7 +106,7 @@ public class DatabaseService {
 
     public static ChessGameData getGameById(Integer gameId) {
         String statement = String.format("""
-                SELECT 1 FROM game_data where gameId = %d;"
+                SELECT * FROM game_data WHERE gameId = %d;
                 """, gameId);
 
         try (var conn = DatabaseManager.getConnection()) {
@@ -125,6 +125,27 @@ public class DatabaseService {
                 throw new DataAccessException("gameId returned no results");
             }
 
+        } catch (SQLException | DataAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void updateGame(ChessGameData data) {
+        Gson gson = new Gson();
+        String game = gson.toJson(data.game);
+
+        String statement = String.format("""
+                UPDATE game_data SET
+                    gameId = '%d',
+                    gameName = '%s',
+                    whiteUsername = '%s',
+                    blackUsername = '%s',
+                    game = '%s'
+                WHERE gameId = %d;
+                """, data.gameID, data.gameName, data.playerUsernames[0], data.playerUsernames[1], game, data.gameID);
+
+        try (var conn = DatabaseManager.getConnection()) {
+            conn.prepareStatement(statement).executeUpdate();
         } catch (SQLException | DataAccessException e) {
             throw new RuntimeException(e);
         }
@@ -179,7 +200,7 @@ public class DatabaseService {
 
     public static String getUsernameByAuthToken(String authToken) {
         String statement = String.format("""
-                SELECT 1 FROM auth_tokens WHERE authToken = '%s';
+                SELECT * FROM auth_tokens WHERE authToken = '%s';
                 """, authToken);
 
         try (var conn = DatabaseManager.getConnection()) {

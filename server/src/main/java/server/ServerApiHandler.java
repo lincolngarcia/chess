@@ -21,7 +21,8 @@ public class ServerApiHandler {
         }
 
         String authToken = UUID.randomUUID().toString();
-        DatabaseService.createUser(username, password);
+
+        DatabaseService.createUser(username, String.valueOf(password.hashCode()));
         DatabaseService.createSession(authToken, username);
 
         return new LoginResponse(username, authToken);
@@ -39,7 +40,7 @@ public class ServerApiHandler {
             return new LoginResponse(401);
         }
 
-        if (!DatabaseService.isValidLoginRequest(username, password)) {
+        if (!DatabaseService.isValidLoginRequest(username, String.valueOf(password.hashCode()))) {
             return new LoginResponse(401);
         }
 
@@ -110,11 +111,29 @@ public class ServerApiHandler {
         }
 
         int index = Objects.equals(playerColor, "WHITE") ? 0 : 1;
-        if (DatabaseService.getGameById(gameID).playerUsernames[index] != null) {
+        if (!Objects.equals(DatabaseService.getGameById(gameID).playerUsernames[index], "null")) {
             return new JoinGameResponse(403);
         }
 
-        DatabaseService.getGameById(gameID).playerUsernames[index] = DatabaseService.getUsernameByAuthToken(authToken);
+        String whiteUsername = DatabaseService.getGameById(gameID).playerUsernames[index];
+        String blackUsername = DatabaseService.getGameById(gameID).playerUsernames[index];
+
+        if (index == 0) {
+            whiteUsername = DatabaseService.getUsernameByAuthToken(authToken);
+        }else{
+            blackUsername = DatabaseService.getUsernameByAuthToken(authToken);
+        }
+
+        ChessGameData currentData = DatabaseService.getGameById(gameID);
+        ChessGameData gameData = new ChessGameData(
+                currentData.gameID,
+                currentData.gameName,
+                whiteUsername,
+                blackUsername,
+                currentData.game
+        );
+
+        DatabaseService.updateGame(gameData);
 
         return new JoinGameResponse(200);
     }
