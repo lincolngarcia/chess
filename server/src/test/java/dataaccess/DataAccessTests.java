@@ -1,16 +1,11 @@
 package dataaccess;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import chess.ChessGame;
 import org.junit.jupiter.api.*;
 import server.Server;
+import server.packages.ChessGameData;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.util.Objects;
+import java.util.Map;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class DataAccessTests {
@@ -18,8 +13,6 @@ public class DataAccessTests {
     private static Server server;
 
     public static String authToken;
-    public static String invalidAuthToken = "invalidAuthToken";
-    public static String gameID;
 
     @BeforeAll
     public static void init() {
@@ -32,222 +25,172 @@ public class DataAccessTests {
         DataAccessTests.server.stop();
     }
 
-    public static HttpResponse<String> makeRequest(String endpoint, String type, String authorization, String data) {
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:" + PORT_NUMBER + endpoint));
-
-        switch (type) {
-            case "GET":
-                requestBuilder.GET();
-                break;
-            case "POST", "PUT":
-                requestBuilder.POST(HttpRequest.BodyPublishers.ofString(data));
-                break;
-            case "DELETE":
-                requestBuilder.DELETE();
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid request type");
-        }
-
-        if (authorization != null) {
-            requestBuilder.header("Authorization", authorization);
-        }
-
-        HttpRequest request = requestBuilder.build();
-
-        try {
-            return client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static String getValue(String json, String getter) {
-        System.out.println(json);
-        JsonObject obj = JsonParser.parseString(json).getAsJsonObject();
-        try {
-            return obj.get(getter).getAsString();
-        } catch (NullPointerException e) {
-            return null;
-        }
-    }
-
     // Register
     @Test
     @Order(0)
-    @DisplayName("Register Confirmation")
-    public void registerConfirmation() {
-        String data = """
-                {
-                  "username": "firstUser",
-                  "password": "password",
-                  "email": "email@example.com"
-                }
-                """;
-
-        HttpResponse<String> res = makeRequest("/user", "POST", null, data);
-        assert Objects.equals(getValue(res.body(), "username"), "firstUser");
+    @DisplayName("Dump DB")
+    public void dbDump() {
+        DatabaseService.dumpDatabase();
+        assert DatabaseService.getAllGames().isEmpty();
     }
 
     @Test
     @Order(1)
-    @DisplayName("Register Denial")
-    public void registerDenial() {
-        String data = """
-                {
-                  "username": "firstUser",
-                  "password": "password",
-                  "email": "email@example.com"
-                }
-                """;
-
-        HttpResponse<String> res = makeRequest("/user", "POST", null, data);
-        assert res.statusCode() != 200;
+    @DisplayName("Username Exists")
+    public void usernameExists() {
+        DatabaseService.createUser("username", "password");
+        assert DatabaseService.usernameExists("username");
     }
 
-    // Login
     @Test
     @Order(2)
-    @DisplayName("Login Confirmation")
-    public void loginConfirmation() {
-        String data = """
-                {
-                  "username": "firstUser",
-                  "password": "password"
-                }
-                """;
-
-        HttpResponse<String> res = makeRequest("/session", "POST", null, data);
-        assert getValue(res.body(), "authToken") != null;
-        DataAccessTests.authToken = getValue(res.body(), "authToken");
+    @DisplayName("Username Doesn't Exist")
+    public void usernameDoesNotExist() {
+        assert !DatabaseService.usernameExists("fakeUsername");
     }
 
     @Test
     @Order(3)
-    @DisplayName("Login Denial")
-    public void loginDenial() {
-        String data = """
-                {
-                  "username": "firstUser",
-                  "password": "invalidPassword",
-                }
-                """;
+    @DisplayName("Add Game")
+    public void addGame() {
+        DatabaseService.addGame(new ChessGameData(
+                1,
+                "new game",
+                null,
+                null,
+                new ChessGame()
+        ));
 
-        HttpResponse<String> res = makeRequest("/session", "POST", null, data);
-        assert res.statusCode() != 200;
+        assert DatabaseService.getGameById(1).game.equals(new ChessGame());
     }
 
-    // Logout
     @Test
     @Order(4)
-    @DisplayName("Logout Confirmation")
-    public void logoutConfirmation() {
-        String loginData = """
-                {
-                  "username": "firstUser",
-                  "password": "password"
-                }
-                """;
-
-        HttpResponse<String> login = makeRequest("/session", "POST", null, loginData);
-        String authToken = getValue(login.body(), "authToken");
-        HttpResponse<String> response = makeRequest(
-                "/session",
-                "DELETE",
-                authToken,
-                null
-        );
-        assert response.statusCode() == 200;
+    @DisplayName("Add Game Fail")
+    public void addGameFail() {
+        try {
+            DatabaseService.addGame(new ChessGameData(
+                    1,
+                    "new game",
+                    null,
+                    null,
+                    new ChessGame()
+            ));
+        }catch (Exception e) {
+            assert true;
+            return;
+        }
+        assert false;
     }
 
     @Test
     @Order(5)
-    @DisplayName("Logout Denail")
-    public void logoutDenial() {
-        HttpResponse<String> res = makeRequest("/session", "DELETE", invalidAuthToken, null);
-        assert res.statusCode() != 200;
+    @DisplayName("getGameById")
+    public void getGameById() {
+        DatabaseService.getGameById(1);
+        assert DatabaseService.getGameById(1).game.equals(new ChessGame());
     }
 
-    // List Games
     @Test
     @Order(6)
-    @DisplayName("List Games Confirmation")
-    public void listGamesConfirmation() {
-        HttpResponse<String> res = makeRequest("/game", "GET", authToken, null);
-        assert res.statusCode() == 200;
+    @DisplayName("Get Game Fail")
+    public void getGameFail() {
+        try {
+            DatabaseService.getGameById(0);
+        } catch (Exception e) {
+            assert true;
+            return;
+        }
+        assert false;
     }
 
     @Test
     @Order(7)
-    @DisplayName("List Games Denial")
-    public void listGamesDenial() {
-        HttpResponse<String> res = makeRequest("/game", "GET", invalidAuthToken, null);
-        assert res.statusCode() != 200;
+    @DisplayName("updateGame")
+    public void updateGame() {
+        DatabaseService.updateGame(new ChessGameData(
+                1,
+                "new game with a new name",
+                null,
+                null,
+                new ChessGame()
+        ));
+        assert DatabaseService.getGameById(1).gameName.equals("new game with a new name");
     }
 
-    // Create Game
     @Test
     @Order(8)
-    @DisplayName("Create Game Confirmation")
-    public void createGameConfirmation() {
-        String data = """
-                {"gameName":  "firstGame"}
-                """;
-        HttpResponse<String> res = makeRequest("/game", "POST", authToken, data);
-        assert res.statusCode() == 200;
-        gameID = getValue(res.body(), "gameID");
+    @DisplayName("updateGameFail")
+    public void getGames() {
+        try {
+            DatabaseService.updateGame(new ChessGameData(
+                    0,
+                    "new game with a new name",
+                    null,
+                    null,
+                    new ChessGame()
+            ));
+        } catch (Exception e) {
+            assert true;
+            return;
+        }
+        assert false;
     }
 
     @Test
     @Order(9)
-    @DisplayName("Create Game Denial")
-    public void createGameDenial() {
-        String data = """
-                {"gameName":  "firstGame"}
-                """;
-        HttpResponse<String> res = makeRequest("/game", "POST", authToken, data);
-        assert getValue(res.body(), "gameID") == null;
+    @DisplayName("Does game exist")
+    public void doesGameExist() {
+        assert DatabaseService.doesGameExist(1);
     }
 
-    // Join Game
     @Test
     @Order(10)
-    @DisplayName("Join Game Confirmation")
-    public void joinGameConfirmation() {
-        String data = String.format("""
-                {"gameID":  "%s", "playerColor": "BLACK"}
-                """, gameID);
-        HttpResponse<String> res = makeRequest("/game", "PUT", authToken, data);
-        assert getValue(res.body(), "gameID") == null;
+    @DisplayName("Does game exist fail")
+    public void doesGameExistFail() {
+        try {
+            DatabaseService.doesGameExist(0);
+        } catch (Exception e) {
+            assert true;
+            return;
+        }
+        assert false;
     }
 
     @Test
     @Order(11)
-    @DisplayName("Join Game Denial")
-    public void joinGameDenial() {
-        String data = String.format("""
-                {"gameID":  "%s", "playerColor": "RED"}
-                """, gameID);
-        HttpResponse<String> res = makeRequest("/game", "PUT", authToken, data);
-        assert res.statusCode() != 200;
+    @DisplayName("Get All Games")
+    public void getAllGames() {
+        Map<Integer, ChessGameData> results = DatabaseService.getAllGames();
+        assert !results.isEmpty();
     }
 
-    // DB Dump
     @Test
     @Order(12)
-    @DisplayName("DB Dump Confirmation")
-    public void dbDumpConfirmation() {
-        HttpResponse<String> res = makeRequest("/db", "DELETE", authToken, null);
-        assert res.statusCode() == 200;
+    @DisplayName("Get all games fail")
+    public void getAllGamesFail() {
+        Map<Integer,  ChessGameData> results = DatabaseService.getAllGames();
+        assert results.get(1).game != null;
     }
 
     @Test
     @Order(13)
-    @DisplayName("DB Dump Denial")
-    public void dbDumpDenial() {
-        HttpResponse<String> res = makeRequest("/db", "DELETE", authToken, null);
-        assert res.statusCode() != 400;
+    @DisplayName("Get username by Authtoken")
+    public void  getUsernameByAuthToken() {
+        String name = DatabaseService.getUsernameByAuthToken(authToken);
+        assert name != null;
+    }
+
+    @Test
+    @Order(14)
+    @DisplayName("Get Username by AuthToken Fail")
+    public void getUsernameByAuthTokenFail() {
+        try {
+            DatabaseService.getUsernameByAuthToken("invalidAuthToken");
+        } catch (Exception e) {
+            assert true;
+            return;
+        }
+        assert false;
     }
 }
