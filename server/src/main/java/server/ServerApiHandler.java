@@ -4,7 +4,6 @@ import chess.ChessGame;
 import dataaccess.DatabaseService;
 import server.packages.*;
 
-import javax.xml.crypto.Data;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -112,13 +111,12 @@ public class ServerApiHandler {
         }
 
         int index = Objects.equals(playerColor, "WHITE") ? 0 : 1;
-        ChessGameData test = DatabaseService.getGameById(gameID);
         if (DatabaseService.getGameById(gameID).playerUsernames[index] != null) {
             return new JoinGameResponse(403);
         }
 
-        String whiteUsername = DatabaseService.getGameById(gameID).playerUsernames[index];
-        String blackUsername = DatabaseService.getGameById(gameID).playerUsernames[index];
+        String whiteUsername = DatabaseService.getGameById(gameID).playerUsernames[0];
+        String blackUsername = DatabaseService.getGameById(gameID).playerUsernames[1];
 
         if (index == 0) {
             whiteUsername = DatabaseService.getUsernameByAuthToken(authToken);
