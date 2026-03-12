@@ -128,8 +128,10 @@ public class DatabaseService {
             if (rs.next()) {
                 Gson gson = new Gson();
 
-                String whiteUsername = !Objects.equals(rs.getString("whiteUsername"), "null") ?  rs.getString("whiteUsername") : null;
-                String blackUsername = !Objects.equals(rs.getString("blackUsername"), "null") ?  rs.getString("blackUsername") : null;
+                String whiteUsername = !Objects.equals(rs.getString("whiteUsername"), "null") ?
+                        rs.getString("whiteUsername") : null;
+                String blackUsername = !Objects.equals(rs.getString("blackUsername"), "null") ?
+                        rs.getString("blackUsername") : null;
 
                 return new ChessGameData(
                         rs.getInt("gameId"),
