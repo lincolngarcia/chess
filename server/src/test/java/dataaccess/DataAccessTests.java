@@ -75,7 +75,7 @@ public class DataAccessTests {
                     null,
                     new ChessGame()
             ));
-        }catch (Exception e) {
+        } catch (Exception e) {
             assert true;
             return;
         }
@@ -164,14 +164,14 @@ public class DataAccessTests {
     @Order(12)
     @DisplayName("Get all games fail")
     public void getAllGamesFail() {
-        Map<Integer,  ChessGameData> results = DatabaseService.getAllGames();
+        Map<Integer, ChessGameData> results = DatabaseService.getAllGames();
         assert results.get(1).game != null;
     }
 
     @Test
     @Order(13)
     @DisplayName("Get username by authToken")
-    public void  getUsernameByAuthToken() {
+    public void getUsernameByAuthToken() {
         DatabaseService.createSession("validAuthToken", "username");
         String name = DatabaseService.getUsernameByAuthToken("validAuthToken");
         assert Objects.equals(name, "username");
@@ -279,5 +279,14 @@ public class DataAccessTests {
     @DisplayName("isValidLoginRequest fail")
     public void isValidLoginRequestFail() {
         assert DatabaseService.isValidLoginRequest("username2", "password2");
+    }
+
+    @Test
+    @Order(24)
+    @DisplayName("dpDump negative")
+    public void dbDumpFail() {
+        assert !DatabaseService.getAllGames().isEmpty();
+        DatabaseService.dumpDatabase();
+        assert DatabaseService.getAllGames().isEmpty();
     }
 }
