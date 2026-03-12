@@ -6,7 +6,7 @@ public class ChessGameData {
     public Integer gameID;
     public String gameName;
     public String[] playerUsernames = new String[] {null, null};
-    ChessGame game;
+    public ChessGame game;
 
     public ChessGameData(Integer gameID, String gameName, String whiteUsername, String blackUsername, ChessGame game) {
         this.gameID = gameID;
