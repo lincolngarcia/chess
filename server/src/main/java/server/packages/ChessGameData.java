@@ -18,8 +18,13 @@ public class ChessGameData {
 
     @Override
     public String toString() {
-        String whiteUsername = playerUsernames[0] != null ? ",\"whiteUsername\": \"" + this.playerUsernames[0] + "\"" : "";
-        String blackUsername = playerUsernames[1] != null ? ",\"blackUsername\": \"" + this.playerUsernames[1] + "\"" : "";
-        return "{\"gameID\": \"" + this.gameID + "\", \"gameName\": \"" + this.gameName + "\"" + whiteUsername + blackUsername + "}";
+        String whiteUsername = "\"whiteUsername\": " +
+                (playerUsernames[0] != null ? "\"" + this.playerUsernames[0] + "\"" : "null");
+
+        String blackUsername = ", \"blackUsername\": " +
+                (playerUsernames[1] != null ? "\"" + this.playerUsernames[1] + "\"" : "null");
+
+        return "{\"gameID\": \"" + this.gameID + "\", \"gameName\": \"" + this.gameName + "\", "
+                + whiteUsername + blackUsername + "}";
     }
 }

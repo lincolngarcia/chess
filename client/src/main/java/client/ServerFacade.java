@@ -1,5 +1,7 @@
 package client;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import server.Server;
@@ -11,12 +13,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Arrays;
-import java.util.Objects;
 
 public class ServerFacade {
     boolean postLogin = false;
     String sessionToken = null;
-    private Server server = new Server();
     int PORT_NUMBER = 8094;
 
     String[] command_options = new String[]{
@@ -28,7 +28,8 @@ public class ServerFacade {
 
     public ServerFacade() {
         // Initialize the pre-login
-        this.server.run(this.PORT_NUMBER);
+        Server server = new Server();
+        server.run(this.PORT_NUMBER);
         TUI.clear();
         TUI.write("Welcome to my CS240 Chess Project");
 
@@ -131,7 +132,7 @@ public class ServerFacade {
                             EscapeSequences.SET_TEXT_COLOR_BLUE
                     });
                     TUI.write(formatted);
-                    this.server.stop();
+                    server.stop();
                     return;
 
                 case "logout":
@@ -184,7 +185,27 @@ public class ServerFacade {
 
                     HttpResponse<String> listResponse = makeRequest("/game", "GET", this.sessionToken, null);
                     if (listResponse.statusCode() == 200) {
-                        TUI.write(listResponse.body());
+                        Gson gson = new Gson();
+                        JsonObject json = gson.fromJson(listResponse.body(), JsonObject.class);
+                        JsonArray games = json.getAsJsonArray("games");
+
+                        for (int i = 0; i < games.size(); i++) {
+                            JsonObject game = games.get(i).getAsJsonObject();
+                            String gameID = game.get("gameID").getAsString();
+                            String gameName = game.get("gameName").getAsString();
+
+                            String whiteUsername = "None";
+                            if (!game.get("whiteUsername").isJsonNull()) {
+                                whiteUsername = game.get("whiteUsername").getAsString();
+                            }
+
+                            String blackUsername = "None";
+                            if (!game.get("blackUsername").isJsonNull()) {
+                                blackUsername = game.get("blackUsername").getAsString();
+                            }
+
+                            TUI.write(String.format("%d. %s (%s) W: %s, B: %s", i + 1, gameName, gameID, whiteUsername, blackUsername));
+                        }
                     }
                     break;
 
