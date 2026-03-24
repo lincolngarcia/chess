@@ -160,10 +160,7 @@ public class ServerFacade {
                         login <USERNAME> <PASSWORD> - to play chess
                         exit - playing chess
                         help - with possible commands""";
-
-                formatted = EscapeSequences.format(helpText, new String[]{
-                        EscapeSequences.SET_TEXT_COLOR_BLUE
-                });
+                formatted = EscapeSequences.format(helpText, new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE});
                 TUI.write(formatted);
                 break;
 
@@ -189,12 +186,7 @@ public class ServerFacade {
                 String createData = "{\"gameName\": \"" + args[1] + "\"}";
                 HttpResponse<String> createResponse = makeRequest("/game", "POST", this.sessionToken, createData);
                 if (createResponse.statusCode() == 200) {
-                    TUI.write(
-                            EscapeSequences.format(
-                                    "game created.",
-                                    new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
-                            )
-                    );
+                    TUI.write(EscapeSequences.format("game created.", new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}));
                 } else {
                     TUI.error("Invalid credentials");
                 }
@@ -206,23 +198,7 @@ public class ServerFacade {
                 }
                 HttpResponse<String> listResponse = makeRequest("/game", "GET", this.sessionToken, null);
                 if (listResponse.statusCode() == 200) {
-                    Gson gson = new Gson();
-                    JsonObject json = gson.fromJson(listResponse.body(), JsonObject.class);
-                    JsonArray games = json.getAsJsonArray("games");
-                    for (int i = 0; i < games.size(); i++) {
-                        JsonObject game = games.get(i).getAsJsonObject();
-                        String gameID = game.get("gameID").getAsString();
-                        String gameName = game.get("gameName").getAsString();
-                        String whiteUsername = "None";
-                        if (!game.get("whiteUsername").isJsonNull()) {
-                            whiteUsername = game.get("whiteUsername").getAsString();
-                        }
-                        String blackUsername = "None";
-                        if (!game.get("blackUsername").isJsonNull()) {
-                            blackUsername = game.get("blackUsername").getAsString();
-                        }
-                        TUI.write(String.format("%d. %s (%s) W: %s, B: %s", i + 1, gameName, gameID, whiteUsername, blackUsername));
-                    }
+                    printGamesFromJSON(listResponse.body());
                 }
                 break;
             case "join":
@@ -268,6 +244,26 @@ public class ServerFacade {
                 return false;
         }
         return true;
+    }
+
+    private void printGamesFromJSON(String jsonString) {
+        Gson gson = new Gson();
+        JsonObject json = gson.fromJson(jsonString, JsonObject.class);
+        JsonArray games = json.getAsJsonArray("games");
+        for (int i = 0; i < games.size(); i++) {
+            JsonObject game = games.get(i).getAsJsonObject();
+            String gameID = game.get("gameID").getAsString();
+            String gameName = game.get("gameName").getAsString();
+            String whiteUsername = "None";
+            if (!game.get("whiteUsername").isJsonNull()) {
+                whiteUsername = game.get("whiteUsername").getAsString();
+            }
+            String blackUsername = "None";
+            if (!game.get("blackUsername").isJsonNull()) {
+                blackUsername = game.get("blackUsername").getAsString();
+            }
+            TUI.write(String.format("%d. %s (%s) W: %s, B: %s", i + 1, gameName, gameID, whiteUsername, blackUsername));
+        }
     }
 
     private void enablePostLoginUI(String sessionToken) {
