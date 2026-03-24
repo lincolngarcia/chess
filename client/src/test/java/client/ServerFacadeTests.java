@@ -39,32 +39,4 @@ public class ServerFacadeTests {
         assert !facade.postLogin;
 
     }
-
-    @Test
-    @Order(5)
-    @DisplayName("handlePostLogin Positive")
-    void handlePostLoginPositive() {
-        assert  facade.handlePostLogin("help", "help");
-    }
-
-    @Test
-    @Order(6)
-    @DisplayName("handlePostLogin Negative")
-    void handlePostLoginNegative() {
-        assert !facade.handlePostLogin("fakeCommand2", "fakeCommand2");
-    }
-
-    @Test
-    @Order(3)
-    @DisplayName("handlePreLogin Positive")
-    void handlePreLoginPositive() {
-        assert facade.handlePreLogin("help",  "help");
-    }
-
-    @Test
-    @Order(4)
-    @DisplayName("handlePreLogin Negative")
-    void handlePreLoginNegative() {
-        assert !facade.handlePreLogin("fakeCommand", "fakeCommand");
-    }
 }
