@@ -8,10 +8,12 @@ import server.Server;
 public class ServerFacadeTests {
 
     private static Server server;
+    private static ServerFacade facade;
 
     @BeforeAll
     public static void init() {
         server = new Server();
+        facade = new ServerFacade();
         var port = server.run(0);
         System.out.println("Started test HTTP server on " + port);
     }
@@ -26,55 +28,42 @@ public class ServerFacadeTests {
     @Order(1)
     @DisplayName("Init Server Facade")
     void initServerFacade() throws InterruptedException {
-        ServerFacade facade = new ServerFacade();
-        assert true;
+        assert facade.command_options != null;
     }
 
     @Test
     @Order(2)
     @DisplayName("ServerFacade Negative")
     void serverFacadeNegative() throws InterruptedException {
-//        ServerFacade
+        assert !facade.postLogin;
 
     }
 
     @Test
-    @Order(3)
-    @DisplayName("handlePostLogin Positive")
-    void handlePostLoginPositive() throws InterruptedException {}
-
-    @Test
-    @Order(4)
-    @DisplayName("handlePostLogin Negative")
-    void handlePostLoginNegative() throws InterruptedException {}
-
-    @Test
     @Order(5)
-    @DisplayName("handlePreLogin Positive")
-    void handlePreLoginPositive() throws InterruptedException {}
+    @DisplayName("handlePostLogin Positive")
+    void handlePostLoginPositive() throws InterruptedException {
+        assert  facade.handlePostLogin("help");
+    }
 
     @Test
     @Order(6)
+    @DisplayName("handlePostLogin Negative")
+    void handlePostLoginNegative() throws InterruptedException {
+        assert !facade.handlePostLogin("fakeCommand");
+    }
+
+    @Test
+    @Order(3)
+    @DisplayName("handlePreLogin Positive")
+    void handlePreLoginPositive() throws InterruptedException {
+        assert facade.handlePreLogin("help");
+    }
+
+    @Test
+    @Order(4)
     @DisplayName("handlePreLogin Negative")
-    void handlePreLoginNegative() throws InterruptedException {}
-
-    @Test
-    @Order(7)
-    @DisplayName("enablePostLoginUI Positive")
-    void enablePostLoginUIPositive() throws InterruptedException {}
-
-    @Test
-    @Order(8)
-    @DisplayName("enablePostLoginUI Negative")
-    void enablePostLoginUINegative() throws InterruptedException {}
-
-    @Test
-    @Order(9)
-    @DisplayName("disablePostLoginUI Positive")
-    void disablePostLoginUIPositive() throws InterruptedException {}
-
-    @Test
-    @Order(10)
-    @DisplayName("disablePostLoginUI Negative")
-    void disablePostLoginUINegative() throws InterruptedException {}
+    void handlePreLoginNegative() throws InterruptedException {
+        assert !facade.handlePreLogin("fakeCommand");
+    }
 }

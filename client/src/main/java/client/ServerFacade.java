@@ -71,6 +71,7 @@ public class ServerFacade {
     public boolean handlePostLogin(String command) {
         String formatted;
         String[] args = command.split(" ");
+
         switch (command) {
             case "help":
                 String helpText = """
@@ -150,6 +151,7 @@ public class ServerFacade {
                 });
                 TUI.write(formatted);
                 this.server.stop();
+            default:
                 return false;
         }
 
