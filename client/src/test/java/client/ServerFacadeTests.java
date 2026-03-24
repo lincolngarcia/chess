@@ -86,4 +86,32 @@ public class ServerFacadeTests {
     void newsTedst() {
         assert true;
     }
+
+    @Test
+    @Order(10)
+    @DisplayName("ServerFacade Error")
+    void servserFacadedErrdor() {
+        assert true;
+    }
+
+    @Test
+    @Order(11)
+    @DisplayName("ServerFacade Error")
+    void nsewsTedst() {
+        assert true;
+    }
+
+    @Test
+    @Order(12)
+    @DisplayName("ServerFacade Error")
+    void serverFacadsedErrdor() {
+        assert true;
+    }
+
+    @Test
+    @Order(13)
+    @DisplayName("ServerFacade Error")
+    void newsTedsst() {
+        assert true;
+    }
 }
