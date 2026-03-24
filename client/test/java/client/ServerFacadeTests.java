@@ -13,7 +13,7 @@ public class ServerFacadeTests {
     @BeforeAll
     public static void init() {
         server = new Server();
-        facade = new ServerFacade();
+        facade = new ServerFacade(0);
         var port = server.run(0);
         System.out.println("Started test HTTP server on " + port);
     }

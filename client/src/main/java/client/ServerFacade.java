@@ -16,7 +16,7 @@ public class ServerFacade {
     boolean postLogin = false;
     Server server;
     String sessionToken = null;
-    int PORT_NUMBER = 8094;
+    int PORT_NUMBER;
 
     String[] command_options = new String[]{
             "help",
@@ -25,10 +25,10 @@ public class ServerFacade {
             "register"
     };
 
-    public ServerFacade() {
+    public ServerFacade(int port) {
         // Initialize the pre-login
         this.server = new Server();
-        this.server.run(this.PORT_NUMBER);
+        this.PORT_NUMBER = port;
 
         ServerFunctions.PORT_NUMBER = this.PORT_NUMBER;
 
