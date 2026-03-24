@@ -150,10 +150,10 @@ public class ServerFacade {
         return true;
     }
 
-    public boolean handlePostLogin(String command, String command_type) {
+    public boolean handlePostLogin(String command, String commandType) {
         String formatted;
         String[] args = command.split(" ");
-        switch (command_type) {
+        switch (commandType) {
             case "help":
                 String helpText = """
                         register <USERNAME> <PASSWORD> <EMAIL> - to create an account
