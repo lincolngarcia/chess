@@ -19,7 +19,7 @@ public class ServerFacade {
 
     String[] commandOptions = new String[]{
             "help",
-            "exit",
+            "quit",
             "login",
             "register"
     };
@@ -72,7 +72,7 @@ public class ServerFacade {
                         list - games
                         join <ID> [WHITE|BLACK] - a game
                         logout - when you are done
-                        exit - playing chess
+                        quit - playing chess
                         help - with possible commands""";
 
                 formatted = EscapeSequences.format(helpText, new String[]{
@@ -138,7 +138,7 @@ public class ServerFacade {
 
                 break;
 
-            case "exit":
+            case "quit":
                 formatted = EscapeSequences.format("Thanks for playing", new String[]{
                         EscapeSequences.SET_TEXT_COLOR_BLUE
                 });
@@ -158,7 +158,7 @@ public class ServerFacade {
                 String helpText = """
                         register <USERNAME> <PASSWORD> <EMAIL> - to create an account
                         login <USERNAME> <PASSWORD> - to play chess
-                        exit - playing chess
+                        quit - playing chess
                         help - with possible commands""";
                 formatted = EscapeSequences.format(helpText, new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE});
                 TUI.write(formatted);
@@ -235,7 +235,7 @@ public class ServerFacade {
                 }
                 TUI.printBoard();
                 break;
-            case "exit":
+            case "quit":
                 formatted = EscapeSequences.format("Thanks for playing", new String[]{
                         EscapeSequences.SET_TEXT_COLOR_BLUE
                 });
@@ -286,7 +286,7 @@ public class ServerFacade {
         this.sessionToken = null;
         commandOptions = new String[]{
                 "help",
-                "exit",
+                "quit",
                 "login",
                 "register"
         };
