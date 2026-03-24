@@ -39,4 +39,9 @@ public class ServerFacadeTests {
         assert !facade.postLogin;
 
     }
+
+    @Test
+    @Order(3)
+    @DisplayName("ServerFacade Positive")
+    void serverFacadePositive() {}
 }

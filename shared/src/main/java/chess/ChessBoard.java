@@ -45,7 +45,7 @@ public class ChessBoard {
         StringBuilder board = new StringBuilder();
 
         board.append(EscapeSequences.SET_BG_COLOR_LIGHT_GREY);
-        board.append("   A  B  C  D  E  F  G  H     ");
+        board.append("    A  B  C  D  E  F  G  H    ");
         board.append(EscapeSequences.RESET_BG_COLOR);
         board.append("\n");
 
@@ -110,7 +110,7 @@ public class ChessBoard {
         }
 
         board.append(EscapeSequences.SET_BG_COLOR_LIGHT_GREY);
-        board.append("   A  B  C  D  E  F  G  H     ");
+        board.append("    A  B  C  D  E  F  G  H    ");
         board.append(EscapeSequences.RESET_BG_COLOR);
         board.append("\n");
 

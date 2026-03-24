@@ -20,8 +20,11 @@ public class ServerFunctions {
             case "GET":
                 requestBuilder.GET();
                 break;
-            case "POST", "PUT":
+            case "POST":
                 requestBuilder.POST(HttpRequest.BodyPublishers.ofString(data));
+                break;
+            case "PUT":
+                requestBuilder.PUT(HttpRequest.BodyPublishers.ofString(data));
                 break;
             case "DELETE":
                 requestBuilder.DELETE();
