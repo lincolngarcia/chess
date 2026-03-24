@@ -3,6 +3,7 @@ package client;
 import chess.ChessBoard;
 import ui.EscapeSequences;
 
+import java.util.Objects;
 import java.util.Scanner;
 
 public class TUI {
@@ -42,9 +43,18 @@ public class TUI {
         System.out.print(EscapeSequences.RESET_TEXT_COLOR);
     }
 
-    public static void printBoard() {
+    public static void printBoard(String perspective) {
         ChessBoard board = new ChessBoard();
         board.resetBoard();
-        write(board.toString());
+        String boardString = board.toString();
+
+        int startRow = Objects.equals(perspective, "WHITE") ? 0 : 9;
+        int iterator = Objects.equals(perspective, "WHITE") ? 1 : -1;
+
+        String[] rows = boardString.split("\n");
+        for (int i = 0; i < 10; i++) {
+            write(rows[startRow]);
+            startRow += iterator;
+        }
     }
 }

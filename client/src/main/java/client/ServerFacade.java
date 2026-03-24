@@ -68,10 +68,8 @@ public class ServerFacade {
         switch (commandType) {
             case "help":
                 String helpText = """
-                        create <NAME> - a game
-                        list - games
-                        join <ID> [WHITE|BLACK] - a game
-                        logout - when you are done
+                        register <USERNAME> <PASSWORD> <EMAIL> - to create an account
+                        login <USERNAME> <PASSWORD> - to play chess
                         quit - playing chess
                         help - with possible commands""";
 
@@ -105,7 +103,7 @@ public class ServerFacade {
                             )
                     );
                 } else {
-                    TUI.write("Invalid credentials");
+                    TUI.write("Invalid Request");
                 }
                 break;
 
@@ -133,7 +131,7 @@ public class ServerFacade {
                             )
                     );
                 } else {
-                    TUI.write("Invalid credentials");
+                    TUI.write("Invalid Request");
                 }
 
                 break;
@@ -156,9 +154,12 @@ public class ServerFacade {
         switch (commandType) {
             case "help":
                 String helpText = """
-                        register <USERNAME> <PASSWORD> <EMAIL> - to create an account
-                        login <USERNAME> <PASSWORD> - to play chess
+                        create <NAME> - a game
+                        list - games
+                        join <ID> [WHITE|BLACK] - a game
+                        logout - when you are done
                         quit - playing chess
+                        observe - a game
                         help - with possible commands""";
                 formatted = EscapeSequences.format(helpText, new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE});
                 TUI.write(formatted);
@@ -166,7 +167,8 @@ public class ServerFacade {
 
             case "logout":
                 if (args.length != 1) {
-                    TUI.error("Invalid arguments, try command 'help'"); break;
+                    TUI.error("Invalid arguments, try command 'help'");
+                    break;
                 }
                 HttpResponse<String> logoutResponse = makeRequest("/session", "DELETE", this.sessionToken, null);
                 if (logoutResponse.statusCode() == 200) {
@@ -176,19 +178,20 @@ public class ServerFacade {
                     ));
                     disablePostLoginUI();
                 } else {
-                    TUI.error("Invalid credentials");
+                    TUI.error("Invalid Request");
                 }
                 break;
             case "create":
                 if (args.length != 2) {
-                    TUI.error("Invalid arguments, try command 'help'"); break;
+                    TUI.error("Invalid arguments, try command 'help'");
+                    break;
                 }
                 String createData = "{\"gameName\": \"" + args[1] + "\"}";
                 HttpResponse<String> createResponse = makeRequest("/game", "POST", this.sessionToken, createData);
                 if (createResponse.statusCode() == 200) {
                     TUI.write(EscapeSequences.format("game created.", new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}));
                 } else {
-                    TUI.error("Invalid credentials");
+                    TUI.error("Invalid Request");
                 }
                 break;
             case "list":
@@ -196,26 +199,14 @@ public class ServerFacade {
                     TUI.error("Invalid arguments, try command 'help'");
                     break;
                 }
-                HttpResponse<String> listResponse = makeRequest("/game", "GET", this.sessionToken, null);
-                if (listResponse.statusCode() == 200) {
-                    printGamesFromJSON(listResponse.body());
-                }
+                TUI.write(listGames());
                 break;
             case "join":
                 if (args.length != 3) {
                     TUI.error("Invalid arguments, try command 'help'");
                     break;
                 }
-                String joinData = "{\"playerColor\": \"" + args[1] + "\", \"gameID\": \"" + args[2] + "\"}";
-                HttpResponse<String> joinResponse = makeRequest("/game", "PUT", this.sessionToken, joinData);
-                if (joinResponse.statusCode() == 200) {
-                    TUI.write(
-                            EscapeSequences.format(
-                                    "You have joined the game",
-                                    new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
-                            ));
-                }
-                TUI.printBoard();
+                handleJoinGame(args);
                 break;
             case "observe":
                 if (args.length != 2) {
@@ -231,9 +222,9 @@ public class ServerFacade {
                             )
                     );
                 } else {
-                    TUI.error("Invalid credentials");
+                    TUI.error("Invalid Request");
                 }
-                TUI.printBoard();
+                TUI.printBoard(args[1]);
                 break;
             case "quit":
                 formatted = EscapeSequences.format("Thanks for playing", new String[]{
@@ -246,10 +237,27 @@ public class ServerFacade {
         return true;
     }
 
-    private void printGamesFromJSON(String jsonString) {
-        Gson gson = new Gson();
-        JsonObject json = gson.fromJson(jsonString, JsonObject.class);
-        JsonArray games = json.getAsJsonArray("games");
+    private void handleJoinGame(String[] args) {
+        String gameID = getGames().get(Integer.parseInt(args[1]) - 1).getAsJsonObject().get("gameID").getAsString();
+        String joinData = "{\"playerColor\": \"" + args[2] + "\", \"gameID\": " + gameID + "}";
+        HttpResponse<String> joinResponse = makeRequest("/game", "PUT", this.sessionToken, joinData);
+        if (joinResponse.statusCode() == 200) {
+            TUI.write(
+                    EscapeSequences.format(
+                            "You have joined the game",
+                            new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
+                    ));
+            TUI.printBoard(args[2]);
+        } else {
+            TUI.error("Invalid Request");
+        }
+    }
+
+    private String listGames() {
+        JsonArray games = getGames();
+
+        StringBuilder builder = new StringBuilder();
+        if (games == null) return null;
         for (int i = 0; i < games.size(); i++) {
             JsonObject game = games.get(i).getAsJsonObject();
             String gameID = game.get("gameID").getAsString();
@@ -262,8 +270,20 @@ public class ServerFacade {
             if (!game.get("blackUsername").isJsonNull()) {
                 blackUsername = game.get("blackUsername").getAsString();
             }
-            TUI.write(String.format("%d. %s (%s) W: %s, B: %s", i + 1, gameName, gameID, whiteUsername, blackUsername));
+            builder.append(String.format("%d. %s (%s) W: %s, B: %s", i + 1, gameName, gameID, whiteUsername, blackUsername));
+            if (i != games.size() - 1) {
+                builder.append("\n");
+            }
         }
+        return builder.toString();
+    }
+
+    private JsonArray getGames() {
+        HttpResponse<String> listResponse = makeRequest("/game", "GET", this.sessionToken, null);
+
+        Gson gson = new Gson();
+        JsonObject json = gson.fromJson(listResponse.body(), JsonObject.class);
+        return json.getAsJsonArray("games");
     }
 
     private void enablePostLoginUI(String sessionToken) {
@@ -291,5 +311,4 @@ public class ServerFacade {
                 "register"
         };
     }
-
 }
