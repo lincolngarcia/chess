@@ -57,6 +57,12 @@ public class TUI {
         terminal.writer().println(text);
     }
 
+    public static void error(String text) {
+        terminal.writer().print(EscapeSequences.SET_TEXT_COLOR_RED);
+        terminal.writer().println(text);
+        terminal.writer().print(EscapeSequences.RESET_TEXT_COLOR);
+    }
+
     public static void printBoard() {
         ChessBoard board = new ChessBoard();
         board.resetBoard();
