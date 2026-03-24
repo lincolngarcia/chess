@@ -10,6 +10,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Arrays;
 import java.util.Objects;
 
 public class ServerFacade {
@@ -18,25 +19,29 @@ public class ServerFacade {
     private Server server = new Server();
     int PORT_NUMBER = 8094;
 
+    String[] command_options = new String[] {
+            "help",
+            "exit",
+            "login",
+            "register",
+            "pb"
+    };
+
     public ServerFacade() {
         // Initialize the pre-login
         this.server.run(this.PORT_NUMBER);
         TUI.clear();
         TUI.write("Welcome to my CS240 Chess Project");
 
-        String[] preLoginOptions = new String[]{
-                "help",
-                "exit",
-                "login",
-                "register",
-                "pb"
-        };
-
-        String command = "";
-        while (!Objects.equals(command, "exit")) {
-            command = TUI.prompt("please enter a command:", preLoginOptions);
+        while (true) {
+            String command = TUI.prompt("please enter a command:", command_options);
             String[] args = command.split(" ");
             String command_type = command.split(" ")[0].toLowerCase();
+
+            if (!Arrays.asList(command_options).contains(command_type)) {
+                TUI.error("Invalid command: '" + command_type + "'");
+                continue;
+            }
 
             String formatted;
             switch (command_type) {
@@ -46,8 +51,7 @@ public class ServerFacade {
                                     register <USERNAME> <PASSWORD> <EMAIL> - to create an account
                                     login <USERNAME> <PASSWORD> - to play chess
                                     quit - playing chess
-                                    help - with possible commands
-                                    """, new String[]{
+                                    help - with possible commands""", new String[]{
                                     EscapeSequences.SET_TEXT_COLOR_BLUE
                             });
                     TUI.write(formatted);
@@ -69,8 +73,7 @@ public class ServerFacade {
 
                     if (registerResponse.statusCode() == 200) {
                         String registerResponseBody = registerResponse.body();
-                        this.sessionToken = getValue(registerResponseBody, "authToken");
-                        this.postLogin = true;
+                        enablePostLoginUI(getValue(registerResponseBody, "authToken"));
                         TUI.write(
                                 EscapeSequences.format(
                                         "ok fine... you're registered now.",
@@ -97,8 +100,8 @@ public class ServerFacade {
                     HttpResponse<String> loginResponse = makeRequest("/session", "POST", null, loginData);
 
                     if (loginResponse.statusCode() == 200) {
-                        String loginRspResponseBody = loginResponse.body();
-                        this.sessionToken = getValue(loginRspResponseBody, "authToken");
+                        String loginResponseBody = loginResponse.body();
+                        enablePostLoginUI(getValue(loginResponseBody, "authToken"));
                         TUI.write(
                                 EscapeSequences.format(
                                         "ok fine... you're logged in now.",
@@ -118,12 +121,33 @@ public class ServerFacade {
                     TUI.write(formatted);
                     TUI.printBoard();
                 case "exit":
+                    formatted = EscapeSequences.format("Thanks for playing", new String[]{
+                            EscapeSequences.SET_TEXT_COLOR_BLUE
+                    });
+                    TUI.write(formatted);
+                    this.server.stop();
+                    return;
                 default:
                     break;
             }
 
             TUI.write("");
         }
+
+    }
+
+    private void enablePostLoginUI(String sessionToken) {
+        this.sessionToken = sessionToken;
+        this.postLogin = true;
+
+        command_options = new String[] {
+                "help",
+                "logout",
+                "create",
+                "list",
+                "join",
+                "observe"
+        };
 
     }
 
