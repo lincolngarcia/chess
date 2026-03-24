@@ -77,9 +77,9 @@ public class EscapeSequences {
     public static final String BLACK_PAWN = " ♟ ";
     public static final String EMPTY = " \u2003 ";
 
-    public static String CURSOR_UP = UNICODE_ESCAPE + "[1A";
-    public static String CURSOR_DOWN = UNICODE_ESCAPE + "[1B";
-    public static String CURSOR_START_OF_LINE = "\r";
+    public static final String CURSOR_UP = UNICODE_ESCAPE + "[1A";
+    public static final String CURSOR_DOWN = UNICODE_ESCAPE + "[1B";
+    public static final String CURSOR_START_OF_LINE = "\r";
     public static String moveCursorToLocation(int x, int y) {
         return UNICODE_ESCAPE + "[" + y + ";" + x + "H";
     }

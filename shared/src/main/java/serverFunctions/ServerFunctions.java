@@ -1,4 +1,4 @@
-package client;
+package serverFunctions;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -10,7 +10,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 public class ServerFunctions {
-    static int PORT_NUMBER;
+    public static int PORT_NUMBER;
     public static HttpResponse<String> makeRequest(String endpoint, String type, String authorization, String data) {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
