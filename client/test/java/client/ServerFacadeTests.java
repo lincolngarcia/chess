@@ -14,7 +14,8 @@ public class ServerFacadeTests {
     public static void init() {
         server = new Server();
         facade = new ServerFacade(0);
-        var port = server.run(0);
+
+        int port = server.run(0);
         System.out.println("Started test HTTP server on " + port);
     }
 
@@ -28,7 +29,7 @@ public class ServerFacadeTests {
     @Order(1)
     @DisplayName("Init Server Facade")
     void initServerFacade() {
-        assert facade.command_options != null;
+        assert facade.commandOptions != null;
     }
 
     @Test
@@ -64,6 +65,6 @@ public class ServerFacadeTests {
     @Order(4)
     @DisplayName("handlePreLogin Negative")
     void handlePreLoginNegative() {
-        assert !facade.handlePreLogin("fakeCommand",  "fakeCommand");
+        assert !facade.handlePreLogin("fakeCommand", "fakeCommand");
     }
 }
