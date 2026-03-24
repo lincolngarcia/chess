@@ -3,14 +3,14 @@ package client;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import serverFunctions.ServerFunctions;
+import serverfunctions.ServerFunctions;
 import ui.EscapeSequences;
 
 import java.net.http.HttpResponse;
 import java.util.Arrays;
 
-import static serverFunctions.ServerFunctions.getValue;
-import static serverFunctions.ServerFunctions.makeRequest;
+import static serverfunctions.ServerFunctions.getValue;
+import static serverfunctions.ServerFunctions.makeRequest;
 
 public class ServerFacade {
     boolean postLogin = false;
@@ -27,7 +27,7 @@ public class ServerFacade {
     public ServerFacade(int port) {
         // Initialize the pre-login
         this.portNumber = port;
-        ServerFunctions.PORT_NUMBER = this.portNumber;
+        ServerFunctions.portNumber = this.portNumber;
 
 
         TUI.clear();
@@ -61,11 +61,11 @@ public class ServerFacade {
 
     }
 
-    public boolean handlePreLogin(String command, String command_type) {
+    public boolean handlePreLogin(String command, String commandType) {
         String formatted;
         String[] args = command.split(" ");
 
-        switch (command_type) {
+        switch (commandType) {
             case "help":
                 String helpText = """
                         create <NAME> - a game
