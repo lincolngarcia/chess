@@ -3,11 +3,10 @@ package client;
 import chess.ChessBoard;
 import ui.EscapeSequences;
 
-import java.io.*;
 import java.util.Scanner;
 
 public class TUI {
-    static String pre_prompt = "    > ";
+    static String prePrompt = "    > ";
 
     public static void clear() {
         System.out.print(EscapeSequences.ERASE_SCREEN);
@@ -27,7 +26,7 @@ public class TUI {
                 });
 
         System.out.println(helpText);
-        System.out.print(pre_prompt);
+        System.out.print(prePrompt);
         Scanner scanner = new Scanner(System.in);
 
         return scanner.nextLine();

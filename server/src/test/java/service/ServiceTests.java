@@ -6,7 +6,7 @@ import server.Server;
 import java.net.http.HttpResponse;
 import java.util.Objects;
 
-import static serverFunctions.ServerFunctions.*;
+import static serverfunctions.ServerFunctions.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ServiceTests {
