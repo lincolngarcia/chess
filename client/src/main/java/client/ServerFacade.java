@@ -14,6 +14,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Arrays;
 
+import static client.ServerFunctions.getValue;
+import static client.ServerFunctions.makeRequest;
+
 public class ServerFacade {
     boolean postLogin = false;
     Server server;
@@ -31,8 +34,15 @@ public class ServerFacade {
         // Initialize the pre-login
         this.server = new Server();
         this.server.run(this.PORT_NUMBER);
+
+        ServerFunctions.PORT_NUMBER = this.PORT_NUMBER;
+
         TUI.clear();
         TUI.write("Welcome to my CS240 Chess Project");
+
+    }
+
+    public void run() {
 
         while (true) {
             String command = TUI.prompt("please enter a command:", command_options);
@@ -315,44 +325,5 @@ public class ServerFacade {
         };
     }
 
-    public HttpResponse<String> makeRequest(String endpoint, String type, String authorization, String data) {
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:" + this.PORT_NUMBER + endpoint));
 
-        switch (type) {
-            case "GET":
-                requestBuilder.GET();
-                break;
-            case "POST", "PUT":
-                requestBuilder.POST(HttpRequest.BodyPublishers.ofString(data));
-                break;
-            case "DELETE":
-                requestBuilder.DELETE();
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid request type");
-        }
-
-        if (authorization != null) {
-            requestBuilder.header("Authorization", authorization);
-        }
-
-        HttpRequest request = requestBuilder.build();
-
-        try {
-            return client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static String getValue(String json, String getter) {
-        JsonObject obj = JsonParser.parseString(json).getAsJsonObject();
-        try {
-            return obj.get(getter).getAsString();
-        } catch (NullPointerException e) {
-            return null;
-        }
-    }
 }
