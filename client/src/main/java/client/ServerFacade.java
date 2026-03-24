@@ -27,7 +27,13 @@ public class ServerFacade
             String formatted;
             switch (command) {
                 case "help":
-                    formatted = EscapeSequences.format("What do you want help for?", new String[] {
+                    formatted = EscapeSequences.format(
+                            """
+                            register <USERNAME> <PASSWORD> <EMAIL> - to create an account
+                            login <USERNAME> <PASSWORD> - to play chess
+                            quit - playing chess
+                            help - with possible commands
+                            """, new String[] {
                             EscapeSequences.SET_TEXT_COLOR_BLUE
                     });
                     TUI.write(formatted);
