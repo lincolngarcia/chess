@@ -1,39 +1,20 @@
 package client;
 
 import chess.ChessBoard;
-import org.jline.reader.LineReader;
-import org.jline.reader.LineReaderBuilder;
-import org.jline.terminal.Terminal;
-import org.jline.terminal.TerminalBuilder;
-import org.jline.utils.InfoCmp;
 import ui.EscapeSequences;
 
-import java.io.IOException;
+import java.io.*;
+import java.util.Scanner;
 
 public class TUI {
-    static Terminal terminal;
     static String pre_prompt = "    > ";
 
-    static {
-        try {
-            terminal = TerminalBuilder.builder()
-                    .system(true)
-                    .build();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public static void clear() {
-        terminal.puts(InfoCmp.Capability.clear_screen);
-    }
-
-    public static String prompt(String prompt) {
-        return prompt(prompt, new String[]{});
+        System.out.print(EscapeSequences.ERASE_SCREEN);
     }
 
     public static String prompt(String prompt, String[] commands) {
-        terminal.writer().println(prompt);
+        System.out.println(prompt);
 
         if (commands == null) {
             return "Invalid help text";
@@ -45,22 +26,21 @@ public class TUI {
                         EscapeSequences.SET_TEXT_COLOR_LIGHT_GREY
                 });
 
-        terminal.writer().println(helpText);
-        LineReader reader = LineReaderBuilder.builder()
-                .terminal(terminal)
-                .build();
+        System.out.println(helpText);
+        System.out.print(pre_prompt);
+        Scanner scanner = new Scanner(System.in);
 
-        return reader.readLine(pre_prompt);
+        return scanner.nextLine();
     }
 
     public static void write(String text) {
-        terminal.writer().println(text);
+        System.out.println(text);
     }
 
     public static void error(String text) {
-        terminal.writer().print(EscapeSequences.SET_TEXT_COLOR_RED);
-        terminal.writer().println(text);
-        terminal.writer().print(EscapeSequences.RESET_TEXT_COLOR);
+        System.out.print(EscapeSequences.SET_TEXT_COLOR_RED);
+        System.out.println(text);
+        System.out.print(EscapeSequences.RESET_TEXT_COLOR);
     }
 
     public static void printBoard() {

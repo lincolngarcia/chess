@@ -3,7 +3,6 @@ package client;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import server.Server;
 import ui.EscapeSequences;
 
 import java.net.http.HttpResponse;
@@ -14,7 +13,6 @@ import static client.ServerFunctions.makeRequest;
 
 public class ServerFacade {
     boolean postLogin = false;
-    Server server;
     String sessionToken = null;
     int PORT_NUMBER;
 
@@ -27,10 +25,8 @@ public class ServerFacade {
 
     public ServerFacade(int port) {
         // Initialize the pre-login
-        this.server = new Server();
         this.PORT_NUMBER = port;
         ServerFunctions.PORT_NUMBER = this.PORT_NUMBER;
-        this.server.run(port);
 
 
         TUI.clear();
@@ -146,7 +142,6 @@ public class ServerFacade {
                         EscapeSequences.SET_TEXT_COLOR_BLUE
                 });
                 TUI.write(formatted);
-                this.server.stop();
             default:
                 return false;
         }
@@ -291,7 +286,6 @@ public class ServerFacade {
                         EscapeSequences.SET_TEXT_COLOR_BLUE
                 });
                 TUI.write(formatted);
-                this.server.stop();
             default:
                 return false;
         }
@@ -324,6 +318,5 @@ public class ServerFacade {
                 "register"
         };
     }
-
 
 }
