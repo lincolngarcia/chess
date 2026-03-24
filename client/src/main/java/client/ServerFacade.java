@@ -257,7 +257,9 @@ public class ServerFacade {
         JsonArray games = getGames();
 
         StringBuilder builder = new StringBuilder();
-        if (games == null) return null;
+        if (games == null) {
+            return null;
+        }
         for (int i = 0; i < games.size(); i++) {
             JsonObject game = games.get(i).getAsJsonObject();
             String gameID = game.get("gameID").getAsString();
