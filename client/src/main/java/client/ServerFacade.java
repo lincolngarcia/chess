@@ -29,8 +29,9 @@ public class ServerFacade {
         // Initialize the pre-login
         this.server = new Server();
         this.PORT_NUMBER = port;
-
         ServerFunctions.PORT_NUMBER = this.PORT_NUMBER;
+        this.server.run(port);
+
 
         TUI.clear();
         TUI.write("Welcome to my CS240 Chess Project");
@@ -49,11 +50,11 @@ public class ServerFacade {
             }
 
             if (this.postLogin) {
-                if (!handlePostLogin(command)) {
+                if (!handlePostLogin(command, command_type)) {
                     return;
                 }
             } else {
-                if (!handlePreLogin(command)) {
+                if (!handlePreLogin(command, command_type)) {
                     return;
                 }
             }
@@ -63,11 +64,11 @@ public class ServerFacade {
 
     }
 
-    public boolean handlePostLogin(String command) {
+    public boolean handlePreLogin(String command, String command_type) {
         String formatted;
         String[] args = command.split(" ");
 
-        switch (command) {
+        switch (command_type) {
             case "help":
                 String helpText = """
                         create <NAME> - a game
@@ -153,10 +154,10 @@ public class ServerFacade {
         return true;
     }
 
-    public boolean handlePreLogin(String command) {
+    public boolean handlePostLogin(String command, String command_type) {
         String formatted;
         String[] args = command.split(" ");
-        switch (command) {
+        switch (command_type) {
             case "help":
                 String helpText = """
                         register <USERNAME> <PASSWORD> <EMAIL> - to create an account
@@ -261,6 +262,7 @@ public class ServerFacade {
                             ));
                 }
 
+                TUI.printBoard();
                 break;
 
             case "observe":
@@ -281,6 +283,7 @@ public class ServerFacade {
                     TUI.error("Invalid credentials");
                 }
 
+                TUI.printBoard();
                 break;
 
             case "exit":
