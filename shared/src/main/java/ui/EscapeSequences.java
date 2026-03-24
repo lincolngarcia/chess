@@ -1,5 +1,7 @@
 package ui;
 
+import java.util.Map;
+
 /**
  * This class contains constants and functions relating to ANSI Escape Sequences that are useful in the Client display
  */
@@ -11,6 +13,9 @@ public class EscapeSequences {
     public static final String ERASE_SCREEN = UNICODE_ESCAPE + "[H" + UNICODE_ESCAPE + "[2J";
     public static final String ERASE_LINE = UNICODE_ESCAPE + "[2K";
 
+    public static final String DEFAULT_FOREGROUND = "\u001B[38;5;0m";
+    public static final String DEFAULT_BACKGROUND = "\u001B[38;5;0m";
+
     public static final String SET_TEXT_BOLD = UNICODE_ESCAPE + "[1m";
     public static final String SET_TEXT_FAINT = UNICODE_ESCAPE + "[2m";
     public static final String RESET_TEXT_BOLD_FAINT = UNICODE_ESCAPE + "[22m";
@@ -20,6 +25,17 @@ public class EscapeSequences {
     public static final String RESET_TEXT_UNDERLINE = UNICODE_ESCAPE + "[24m";
     public static final String SET_TEXT_BLINKING = UNICODE_ESCAPE + "[5m";
     public static final String RESET_TEXT_BLINKING = UNICODE_ESCAPE + "[25m";
+
+    public static final Map<String, String> OPPOSITE_STYLE = Map.of(
+            SET_TEXT_BOLD, RESET_TEXT_BOLD_FAINT,
+            SET_TEXT_FAINT, RESET_TEXT_BOLD_FAINT,
+            SET_TEXT_ITALIC, RESET_TEXT_ITALIC,
+            RESET_TEXT_ITALIC, SET_TEXT_ITALIC,
+            SET_TEXT_UNDERLINE, RESET_TEXT_UNDERLINE,
+            RESET_TEXT_UNDERLINE, SET_TEXT_UNDERLINE,
+            SET_TEXT_BLINKING, RESET_TEXT_BLINKING,
+            RESET_TEXT_BLINKING, SET_TEXT_BLINKING
+    );
 
     private static final String SET_TEXT_COLOR = UNICODE_ESCAPE + "[38;5;";
     private static final String SET_BG_COLOR = UNICODE_ESCAPE + "[48;5;";
@@ -61,5 +77,30 @@ public class EscapeSequences {
     public static final String BLACK_PAWN = " ♟ ";
     public static final String EMPTY = " \u2003 ";
 
-    public static String moveCursorToLocation(int x, int y) { return UNICODE_ESCAPE + "[" + y + ";" + x + "H"; }
+    public static String CURSOR_UP = UNICODE_ESCAPE + "[1A";
+    public static String CURSOR_DOWN = UNICODE_ESCAPE + "[1B";
+    public static String CURSOR_START_OF_LINE = "\r";
+    public static String moveCursorToLocation(int x, int y) {
+        return UNICODE_ESCAPE + "[" + y + ";" + x + "H";
+    }
+
+
+    public static String format(String string, String[] commands) {
+        StringBuilder builder = new StringBuilder();
+        for (String command : commands) {
+            builder.append(command);
+        }
+        builder.append(string);
+        for (String command : commands) {
+            if (OPPOSITE_STYLE.containsKey(command)) {
+                builder.append(OPPOSITE_STYLE.get(command));
+            }
+        }
+
+        builder.append(RESET_TEXT_COLOR);
+        builder.append(RESET_BG_COLOR);
+
+        return builder.toString();
+    }
+
 }

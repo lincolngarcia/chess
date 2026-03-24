@@ -1,6 +1,7 @@
 package chess;
 
 import chess.converter.ChessFunctions;
+import ui.EscapeSequences;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,36 +43,79 @@ public class ChessBoard {
     @Override
     public String toString() {
         StringBuilder board = new StringBuilder();
-        board.append("   A B C D E F G H\n");
-        for (int row = 7; row >= 0; row--) {
-            board.append(row + 1);
-            board.append(" |");
-            for (int col = 0; col < 8; col++) {
-                String characterCode = ".";
-                ChessPiece targetCell = this.getPiece(new ChessPosition(row + 1, col + 1));
-                if (targetCell != null) {
-                    characterCode = switch (targetCell.getPieceType()) {
-                        case KING -> "K";
-                        case QUEEN -> "Q";
-                        case ROOK -> "R";
-                        case BISHOP -> "B";
-                        case KNIGHT -> "N";
-                        case PAWN -> "P";
-                    };
-                    // White is UpperCase
-                    if (targetCell.getTeamColor() == ChessGame.TeamColor.BLACK) {
-                        characterCode = characterCode.toLowerCase();
-                    }
-                }
-                board.append(characterCode);
-                board.append("|");
+
+        board.append(EscapeSequences.SET_BG_COLOR_LIGHT_GREY);
+        board.append("   A  B  C  D  E  F  G  H     ");
+        board.append(EscapeSequences.RESET_BG_COLOR);
+        board.append("\n");
+
+        for (int index = 0; index < 64; index++) {
+            int row = 7 - index / 8;
+            int col = index % 8;
+
+            if (col == 0) {
+                board.append(EscapeSequences.SET_BG_COLOR_LIGHT_GREY);
+                board.append(" ");
+                board.append(row + 1);
+                board.append(" ");
+                board.append(EscapeSequences.RESET_BG_COLOR);
             }
-            board.append(" ");
-            board.append(row + 1);
-            board.append("\n");
+
+            if ((row + col) % 2 == 0) {
+                board.append(EscapeSequences.SET_TEXT_COLOR_WHITE);
+                board.append(EscapeSequences.SET_BG_COLOR_DARK_GREY);
+            }else{
+                board.append(EscapeSequences.SET_TEXT_COLOR_DARK_GREY);
+                board.append(EscapeSequences.SET_BG_COLOR_WHITE);
+            }
+
+            String charCode = "   ";
+
+            ChessPiece targetCell = this.getPiece(new ChessPosition(row + 1, col + 1));
+            if (targetCell != null) {
+                ChessGame.TeamColor teamColor = targetCell.getTeamColor();
+                charCode = switch (targetCell.getPieceType()) {
+                    case KING -> ChessFunctions.isWhite(teamColor) ?
+                            EscapeSequences.WHITE_KING :
+                            EscapeSequences.BLACK_KING;
+                    case QUEEN -> ChessFunctions.isWhite(teamColor) ?
+                            EscapeSequences.WHITE_QUEEN :
+                            EscapeSequences.BLACK_QUEEN;
+                    case BISHOP -> ChessFunctions.isWhite(teamColor) ?
+                            EscapeSequences.WHITE_BISHOP :
+                            EscapeSequences.BLACK_BISHOP;
+                    case KNIGHT -> ChessFunctions.isWhite(teamColor) ?
+                            EscapeSequences.WHITE_KNIGHT :
+                            EscapeSequences.BLACK_KNIGHT;
+                    case ROOK -> ChessFunctions.isWhite(teamColor) ?
+                            EscapeSequences.WHITE_ROOK :
+                            EscapeSequences.BLACK_ROOK;
+                    case PAWN -> ChessFunctions.isWhite(teamColor) ?
+                            EscapeSequences.WHITE_PAWN :
+                            EscapeSequences.BLACK_PAWN;
+                };
+            }
+
+            board.append(charCode);
+
+            if (col == 7) {
+                board.append(EscapeSequences.RESET_TEXT_COLOR);
+                board.append(EscapeSequences.SET_BG_COLOR_LIGHT_GREY);
+                board.append(" ");
+                board.append(row + 1);
+                board.append(" ");
+                board.append(EscapeSequences.RESET_BG_COLOR);
+                board.append("\n");
+            }
         }
-        board.append("   A B C D E F G H\n");
+
+        board.append(EscapeSequences.SET_BG_COLOR_LIGHT_GREY);
+        board.append("   A  B  C  D  E  F  G  H     ");
+        board.append(EscapeSequences.RESET_BG_COLOR);
+        board.append("\n");
+
         return board.toString();
+
     }
 
     // Constructors
@@ -122,6 +166,7 @@ public class ChessBoard {
     }
 
     // Getters
+
     /**
      * Returns the position of the enPassant square
      *
@@ -181,6 +226,7 @@ public class ChessBoard {
     }
 
     // Setters
+
     /**
      * Sets the enPassant square
      *
@@ -222,6 +268,7 @@ public class ChessBoard {
     }
 
     // Other Functions
+
     /**
      * Adds a chess piece to the chessboard
      *
@@ -302,6 +349,7 @@ public class ChessBoard {
     }
 
     // Logic Heavy Functions
+
     /**
      * Performs the necessary calculators to move
      * and update the board. Updates rook's have moved
