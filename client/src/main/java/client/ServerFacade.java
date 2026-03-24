@@ -3,14 +3,9 @@ package client;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import server.Server;
 import ui.EscapeSequences;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Arrays;
 
@@ -256,7 +251,6 @@ public class ServerFacade {
                 }
 
                 String joinData = "{\"playerColor\": \"" + args[1] + "\", \"gameID\": \"" + args[2] + "\"}";
-                ;
                 HttpResponse<String> joinResponse = makeRequest("/game", "PUT", this.sessionToken, joinData);
 
                 if (joinResponse.statusCode() == 200) {
@@ -295,6 +289,7 @@ public class ServerFacade {
                 });
                 TUI.write(formatted);
                 this.server.stop();
+            default:
                 return false;
         }
 

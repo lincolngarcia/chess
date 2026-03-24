@@ -27,14 +27,14 @@ public class ServerFacadeTests {
     @Test
     @Order(1)
     @DisplayName("Init Server Facade")
-    void initServerFacade() throws InterruptedException {
+    void initServerFacade() {
         assert facade.command_options != null;
     }
 
     @Test
     @Order(2)
     @DisplayName("ServerFacade Negative")
-    void serverFacadeNegative() throws InterruptedException {
+    void serverFacadeNegative() {
         assert !facade.postLogin;
 
     }
@@ -42,28 +42,28 @@ public class ServerFacadeTests {
     @Test
     @Order(5)
     @DisplayName("handlePostLogin Positive")
-    void handlePostLoginPositive() throws InterruptedException {
+    void handlePostLoginPositive() {
         assert  facade.handlePostLogin("help");
     }
 
     @Test
     @Order(6)
     @DisplayName("handlePostLogin Negative")
-    void handlePostLoginNegative() throws InterruptedException {
-        assert !facade.handlePostLogin("fakeCommand");
+    void handlePostLoginNegative() {
+        assert !facade.handlePostLogin("fakeCommand2");
     }
 
     @Test
     @Order(3)
     @DisplayName("handlePreLogin Positive")
-    void handlePreLoginPositive() throws InterruptedException {
+    void handlePreLoginPositive() {
         assert facade.handlePreLogin("help");
     }
 
     @Test
     @Order(4)
     @DisplayName("handlePreLogin Negative")
-    void handlePreLoginNegative() throws InterruptedException {
+    void handlePreLoginNegative() {
         assert !facade.handlePreLogin("fakeCommand");
     }
 }
