@@ -21,7 +21,8 @@ public class ServerFacade {
             "help",
             "quit",
             "login",
-            "register"
+            "register",
+            "pb"
     };
 
     public ServerFacade(int port) {
@@ -66,6 +67,10 @@ public class ServerFacade {
         String[] args = command.split(" ");
 
         switch (commandType) {
+            case "pb":
+                TUI.printBoard("WHITE");
+                TUI.write("");
+                TUI.printBoard("BLACK");
             case "help":
                 String helpText = """
                         register <USERNAME> <PASSWORD> <EMAIL> - to create an account
