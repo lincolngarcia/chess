@@ -82,7 +82,7 @@ public class ChessFunctions {
     }
 
     static public String convertMoveToSan(ChessMove move, ChessPiece pieceMoved, String suffix) {
-        String sanMove = "";
+        String sanMove;
 
         String prefix = switch (pieceMoved.getPieceType()) {
             case KING -> "K";
@@ -96,7 +96,7 @@ public class ChessFunctions {
         String startPositionString = move.getStartPosition().toString().toLowerCase();
         String endPositionString = move.getEndPosition().toString().toLowerCase();
 
-        sanMove = prefix + startPositionString + endPositionString + suffix;
+        sanMove = prefix + startPositionString + endPositionString;
 
         if (move.getPromotionPiece() != null) {
             String promotionPiecePrefix = switch (move.getPromotionPiece()) {
@@ -107,7 +107,7 @@ public class ChessFunctions {
                 case ROOK -> "R";
                 case PAWN -> "";
             };
-            sanMove += "=" + promotionPiecePrefix;
+            sanMove += "=" + promotionPiecePrefix + suffix;
         }
 
         return sanMove;
