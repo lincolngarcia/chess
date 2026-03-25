@@ -1,6 +1,10 @@
 package client;
 
 import chess.ChessBoard;
+import chess.ChessGame;
+import chess.ChessPiece;
+import chess.ChessPosition;
+import chess.converter.ChessFunctions;
 import ui.EscapeSequences;
 
 import java.util.Objects;
@@ -46,15 +50,103 @@ public class TUI {
     public static void printBoard(String perspective) {
         ChessBoard board = new ChessBoard();
         board.resetBoard();
-        String boardString = board.toString();
 
-        int startRow = Objects.equals(perspective, "WHITE") ? 0 : 9;
-        int iterator = Objects.equals(perspective, "WHITE") ? 1 : -1;
+        String[] columnLabels = {"A", "B", "C", "D", "E", "F", "G", "H"};
 
-        String[] rows = boardString.split("\n");
-        for (int i = 0; i < 10; i++) {
-            write(rows[startRow]);
-            startRow += iterator;
+        int directionIterator = Objects.equals(perspective, "WHITE") ? 1 : -1;
+
+        // Print the Header
+        int headerStartIndex = Objects.equals(perspective, "WHITE") ? 0 : 7;
+        StringBuilder header = new StringBuilder();
+        header.append("    ");
+        for (int i = headerStartIndex; i < 8 && i >= 0; i+= directionIterator) {
+            header.append(columnLabels[i]);
+            header.append("  ");
         }
+        header.append("  ");
+        write(EscapeSequences.format(header.toString(), new String[]{EscapeSequences.SET_BG_COLOR_LIGHT_GREY}));
+
+        StringBuilder boardString = new StringBuilder();
+        int startIndex = Objects.equals(perspective, "WHITE") ? 0 : 63;
+        for (int index = startIndex; index < 64 && index >= 0; index+= directionIterator) {
+            int row, col;
+
+            if (perspective.equals("WHITE")) {
+                row = 7 - index / 8;
+                col = index % 8;
+            }else{
+                row = 7 - (index) / 8;
+                col = (index) % 8;
+            }
+
+            int startLineColumn = perspective.equals("WHITE") ? 0 : 7;
+            if (col == startLineColumn) {
+                boardString.append(EscapeSequences.SET_BG_COLOR_LIGHT_GREY);
+                boardString.append(" ");
+                boardString.append(row + 1);
+                boardString.append(" ");
+                boardString.append(EscapeSequences.RESET_BG_COLOR);
+            }
+
+            if ((row + col) % 2 == 0) {
+                boardString.append(EscapeSequences.SET_TEXT_COLOR_WHITE);
+                boardString.append(EscapeSequences.SET_BG_COLOR_DARK_GREY);
+            } else {
+                boardString.append(EscapeSequences.SET_TEXT_COLOR_DARK_GREY);
+                boardString.append(EscapeSequences.SET_BG_COLOR_WHITE);
+            }
+
+            String charCode = "   ";
+
+            ChessPiece targetCell = board.getPiece(new ChessPosition(row + 1, col + 1));
+            if (targetCell != null) {
+                ChessGame.TeamColor teamColor = targetCell.getTeamColor();
+                charCode = switch (targetCell.getPieceType()) {
+                    case KING -> ChessFunctions.isWhite(teamColor) ?
+                            EscapeSequences.WHITE_KING :
+                            EscapeSequences.BLACK_KING;
+                    case QUEEN -> ChessFunctions.isWhite(teamColor) ?
+                            EscapeSequences.WHITE_QUEEN :
+                            EscapeSequences.BLACK_QUEEN;
+                    case BISHOP -> ChessFunctions.isWhite(teamColor) ?
+                            EscapeSequences.WHITE_BISHOP :
+                            EscapeSequences.BLACK_BISHOP;
+                    case KNIGHT -> ChessFunctions.isWhite(teamColor) ?
+                            EscapeSequences.WHITE_KNIGHT :
+                            EscapeSequences.BLACK_KNIGHT;
+                    case ROOK -> ChessFunctions.isWhite(teamColor) ?
+                            EscapeSequences.WHITE_ROOK :
+                            EscapeSequences.BLACK_ROOK;
+                    case PAWN -> ChessFunctions.isWhite(teamColor) ?
+                            EscapeSequences.WHITE_PAWN :
+                            EscapeSequences.BLACK_PAWN;
+                };
+            }
+
+            boardString.append(charCode);
+
+            int endLineColumn = perspective.equals("WHITE") ? 7 : 0;
+            if (col == endLineColumn) {
+                boardString.append(EscapeSequences.RESET_TEXT_COLOR);
+                boardString.append(EscapeSequences.SET_BG_COLOR_LIGHT_GREY);
+                boardString.append(" ");
+                boardString.append(row + 1);
+                boardString.append(" ");
+                boardString.append(EscapeSequences.RESET_BG_COLOR);
+                boardString.append("\n");
+            }
+        }
+
+        System.out.print(boardString);
+
+        int footerStartIndex = Objects.equals(perspective, "WHITE") ? 0 : 7;
+        StringBuilder footer = new StringBuilder();
+        footer.append("    ");
+        for (int i = footerStartIndex; i < 8 && i >= 0; i+= directionIterator) {
+            footer.append(columnLabels[i]);
+            footer.append("  ");
+        }
+        footer.append("  ");
+        write(EscapeSequences.format(footer.toString(), new String[]{EscapeSequences.SET_BG_COLOR_LIGHT_GREY}));
     }
 }
