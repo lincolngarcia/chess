@@ -213,18 +213,7 @@ public class ServerFacade {
                     TUI.error("Invalid arguments, try command 'help'");
                     break;
                 }
-                HttpResponse<String> observeResponse = makeRequest("/game", "GET", this.sessionToken, null);
-                if (observeResponse.statusCode() == 200) {
-                    TUI.write(
-                            EscapeSequences.format(
-                                    "you are now observing this game:",
-                                    new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
-                            )
-                    );
-                } else {
-                    TUI.error("Invalid Request");
-                }
-                TUI.printBoard(args[1]);
+                handleObserveGame(args);
                 break;
             case "quit":
                 formatted = EscapeSequences.format("Thanks for playing", new String[]{
@@ -238,7 +227,20 @@ public class ServerFacade {
     }
 
     private void handleJoinGame(String[] args) {
-        String gameID = getGames().get(Integer.parseInt(args[1]) - 1).getAsJsonObject().get("gameID").getAsString();
+        JsonArray games = getGames();
+
+        int gameIndex;
+        try {
+            gameIndex = Integer.parseInt(args[1]) - 1;
+            if (gameIndex >= games.size()) {
+                throw new AssertionError();
+            }
+        }catch (NumberFormatException | AssertionError e) {
+            TUI.error("Invalid Game Number");
+            return;
+        }
+
+        String gameID = games.get(gameIndex).getAsJsonObject().get("gameID").getAsString();
         String joinData = "{\"playerColor\": \"" + args[2] + "\", \"gameID\": " + gameID + "}";
         HttpResponse<String> joinResponse = makeRequest("/game", "PUT", this.sessionToken, joinData);
         if (joinResponse.statusCode() == 200) {
@@ -253,6 +255,23 @@ public class ServerFacade {
         }
     }
 
+    private void handleObserveGame(String[] args) {
+        JsonArray games = getGames();
+        int gameIndex;
+
+        try {
+            gameIndex = Integer.parseInt(args[1]) - 1;
+            if (gameIndex >= games.size()) {
+                throw new AssertionError();
+            }
+        } catch (NumberFormatException | AssertionError e) {
+            TUI.error("Invalid Game Number");
+            return;
+        }
+
+        TUI.printBoard("WHITE");
+    }
+
     private String listGames() {
         JsonArray games = getGames();
 
@@ -262,7 +281,6 @@ public class ServerFacade {
         }
         for (int i = 0; i < games.size(); i++) {
             JsonObject game = games.get(i).getAsJsonObject();
-            String gameID = game.get("gameID").getAsString();
             String gameName = game.get("gameName").getAsString();
             String whiteUsername = "None";
             if (!game.get("whiteUsername").isJsonNull()) {
@@ -272,7 +290,7 @@ public class ServerFacade {
             if (!game.get("blackUsername").isJsonNull()) {
                 blackUsername = game.get("blackUsername").getAsString();
             }
-            builder.append(String.format("%d. %s (%s) W: %s, B: %s", i + 1, gameName, gameID, whiteUsername, blackUsername));
+            builder.append(String.format("%d. %s W: %s, B: %s", i + 1, gameName, whiteUsername, blackUsername));
             if (i != games.size() - 1) {
                 builder.append("\n");
             }
