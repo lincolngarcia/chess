@@ -7,6 +7,8 @@ import chess.InvalidMoveException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Random;
 
 public class Arena {
@@ -14,6 +16,11 @@ public class Arena {
     private int generations;
     private int batchSize;
     private int cores;
+
+    private final int CHECKMATE_POINTS = 200;
+    private final int PIECE_CAPTURE_POINTS = 5;
+
+    Random random = new Random();
 
     // A package for easily storing Campeon data
     public static class NeuronData {
@@ -35,9 +42,20 @@ public class Arena {
         }
     }
 
-    Random random = new Random();
+    public static class GameResult {
+        public Campeon winner;
+        public int points;
 
+        public GameResult(Campeon winner, int points) {
+            this.winner = winner;
+            this.points = points;
+        }
+
+    }
+
+    // A package for easily storing game result data
     public void main(String[] args) {
+        assert args.length == 2;
         this.generations = Integer.parseInt(args[0]);
         this.batchSize = Integer.parseInt(args[1]);
 
@@ -52,14 +70,15 @@ public class Arena {
         assert (batchSize & (batchSize - 1)) != 0;
 
         // Perform generations
+        GameResult[] previousBatchResults = new GameResult[]{};
         Campeon[] activeGeneration = new Campeon[]{};
         for (int generation = 0; generation < generations; generation++) {
             System.out.println("executing generation " + generation);
 
             System.out.println("Creating batch");
-            activeGeneration = this.createBatch(activeGeneration);
+            activeGeneration = this.createBatch(previousBatchResults, batchSize);
             System.out.println("Finished Batch Creation");
-            activeGeneration = this.executeGeneration(activeGeneration, generation);
+            previousBatchResults = this.executeGeneration(activeGeneration, generation);
         }
 
         System.out.println("normal generations have finished");
@@ -68,7 +87,8 @@ public class Arena {
         while (this.batchSize > 2) {
             this.batchSize /= 2;
             System.out.println("Competing with batch size of " + this.batchSize);
-            activeGeneration = this.executeBatch(activeGeneration);
+            previousBatchResults = this.executeBatch(activeGeneration);
+            activeGeneration = this.createBatch(previousBatchResults, batchSize);
         }
 
         // Write winner to file
@@ -79,7 +99,7 @@ public class Arena {
         }
     }
 
-    public Campeon[] executeGeneration(Campeon[] newGeneration, int generation) {
+    public GameResult[] executeGeneration(Campeon[] newGeneration, int generation) {
         // Store the data
         System.out.println("Storing Data");
         for (Campeon campeon : newGeneration) {
@@ -98,8 +118,8 @@ public class Arena {
         return this.executeBatch(newGeneration);
     }
 
-    public Campeon[] executeBatch(Campeon[] batch) {
-        Campeon[] winners = new Campeon[batchSize / 2];
+    public GameResult[] executeBatch(Campeon[] batch) {
+        GameResult[] winners = new GameResult[batchSize / 2];
 
         for (int i = 0; i < batchSize; i += 2) {
             Campeon whitePlayer = batch[i];
@@ -110,22 +130,21 @@ public class Arena {
         return winners;
     }
 
-    public Campeon executeGame(Campeon whitePlayer, Campeon blackPlayer) {
+    public GameResult executeGame(Campeon whitePlayer, Campeon blackPlayer) {
         ChessGame game = new ChessGame();
 
         int movesMade = 0;
         while (true) {
-            if (game.isInCheckmate(ChessGame.TeamColor.WHITE)) {
+            if (game.isInCheckmate(game.getTeamTurn())) {
+                System.out.println(game.getOffTeamColor() == ChessGame.TeamColor.WHITE ? "WHITE" : "BLACK" +
+                        " won by Checkmate");
+                Campeon winner = game.getTeamTurn() == ChessGame.TeamColor.WHITE ? blackPlayer : whitePlayer;
                 this.writeToFile(ChessFunctions.exportGameToSAN(game));
-                System.out.println("Black won a game by checkmate");
-                return blackPlayer;
-            }
-            if (game.isInCheckmate(ChessGame.TeamColor.BLACK)) {
-                this.writeToFile(ChessFunctions.exportGameToSAN(game));
-                System.out.println("White won a game by checkmate");
-                return whitePlayer;
-            }
-            if (movesMade >= 128) {
+                return new GameResult(winner, CHECKMATE_POINTS);
+
+            } else if (game.isInStalemate(game.getTeamTurn()) || movesMade >= 128) {
+                System.out.println("Stalemate after " + movesMade + " moves");
+
                 // Decide who captured more pieces
                 int whiteStrength = game.getTeamValue(ChessGame.TeamColor.WHITE);
                 int blackStrength = game.getTeamValue(ChessGame.TeamColor.BLACK);
@@ -133,24 +152,26 @@ public class Arena {
                 if (whiteStrength > blackStrength) {
                     this.writeToFile(ChessFunctions.exportGameToSAN(game));
                     System.out.println("White won a game by piece value");
-                    return whitePlayer;
+                    return new GameResult(whitePlayer, PIECE_CAPTURE_POINTS * (whiteStrength - blackStrength));
                 }
                 if (blackStrength > whiteStrength) {
                     this.writeToFile(ChessFunctions.exportGameToSAN(game));
                     System.out.println("Black won a game by piece value");
-                    return blackPlayer;
+                    return new GameResult(blackPlayer, PIECE_CAPTURE_POINTS * (blackStrength - whiteStrength));
                 }
 
-                // If tied, create a new strain and return it
+                // If tied, that sucks.
                 System.out.println("WARNING: tie found");
                 this.writeToFile(ChessFunctions.exportGameToSAN(game));
-                return this.createRandomStrain();
-
+                return new GameResult(blackPlayer, movesMade / 10);
             }
 
             try {
-                game.makeMove(whitePlayer.getBestMove(game));
-                game.makeMove(blackPlayer.getBestMove(game));
+                game.makeMove(
+                        game.getTeamTurn() == ChessGame.TeamColor.WHITE ?
+                                whitePlayer.getBestMove(game) :
+                                blackPlayer.getBestMove(game)
+                );
             } catch (InvalidMoveException e) {
                 throw new RuntimeException(e);
             }
@@ -181,33 +202,87 @@ public class Arena {
         return new Campeon(metaData, connections);
     }
 
-    public Campeon[] createBatch(Campeon[] previousGeneration) {
-       if (previousGeneration.length == 0) {
-           Campeon[] firstGeneration = new Campeon[batchSize];
-           for (int i = 0; i < batchSize; i++) {
-               System.out.println("  created " + (i + 1) + "/" + batchSize);
-               System.out.flush();
-               firstGeneration[i] = this.createRandomStrain();
-           }
-           return firstGeneration;
-       }
+    public Campeon[] createBatch(GameResult[] previousGeneration, int batchSize) {
+        if (previousGeneration.length == 0) {
+            Campeon[] firstGeneration = new Campeon[batchSize];
+            for (int i = 0; i < batchSize; i++) {
+                System.out.println("  created " + (i + 1) + "/" + batchSize);
+                System.out.flush();
+                firstGeneration[i] = this.createRandomStrain();
+            }
+            return firstGeneration;
+        }
 
+        int totalPointsWon = 0;
+        for (GameResult gameResult : previousGeneration) {
+            totalPointsWon += gameResult.points;
+        }
+
+        int remainingSlots = batchSize * 2;
         // Create new strains from the winners
+        HashMap<GameResult, Integer> newGenerationData = new HashMap<>();
+        for (GameResult gameResult : previousGeneration) {
+            if (remainingSlots == 0) {
+                break;
+            }
+            double percentage = (double) gameResult.points / totalPointsWon;
+            int count = (int) Math.round(percentage * batchSize * 2);
+            remainingSlots -= count;
+
+            newGenerationData.put(gameResult, count);
+        }
+
+        GameResult[] newGenerationDataKeys = newGenerationData.keySet().toArray(new GameResult[0]);
+        if (remainingSlots > 0) {
+            System.out.println("Found an extra " + remainingSlots + " slots");
+            for (int i = remainingSlots; i > 0; i--) {
+                GameResult gameResult = newGenerationDataKeys[random.nextInt(newGenerationDataKeys.length)];
+                newGenerationData.compute(gameResult, (k, currentOffspring) ->
+                        (currentOffspring == null ? 0 : currentOffspring) + 1
+                );
+            }
+        }
+
+
         Campeon[] newGeneration = new Campeon[batchSize];
-        for (int i = 0; i < (previousGeneration.length / 2); i++) {
-            Campeon pInput = previousGeneration[i];
-            Campeon sInput = previousGeneration[i + 1];
+        for (int i = 0; i < batchSize; i++) {
+            GameResult pInput;
+            while (true) {
+                pInput = newGenerationDataKeys[random.nextInt(newGenerationDataKeys.length)];
+                if (newGenerationData.get(pInput) == 0) {
+                    newGenerationData.remove(pInput);
+                    newGenerationDataKeys = newGenerationData.keySet().toArray(new GameResult[0]);
+                } else {
+                    break;
+                }
+            }
 
-            newGeneration[i * 4] = pInput;
-            newGeneration[i * 4 + 1] = createStrainByParents(pInput, sInput);
-            newGeneration[i * 4 + 2] = sInput;
-            newGeneration[i * 4 + 3] = createStrainByParents(pInput, sInput);
+            GameResult sInput;
+            while (true) {
+                sInput = newGenerationDataKeys[random.nextInt(newGenerationDataKeys.length)];
+                if (newGenerationData.get(sInput) == 0) {
+                    newGenerationData.remove(sInput);
+                    newGenerationDataKeys = newGenerationData.keySet().toArray(new GameResult[0]);
+                } else {
+                    break;
+                }
+            }
 
-            System.out.println("  created " + (i + 1) + "-" + (i + 5) + "/" + batchSize);
+            int offspringCount = newGenerationData.get(pInput);
+            int offspringCount2 = newGenerationData.get(sInput);
+
+            newGeneration[i] = this.createStrainByParents(pInput.winner, sInput.winner);
+            newGenerationData.put(pInput, offspringCount - 1);
+            newGenerationData.put(sInput, offspringCount2 - 1);
+
+            System.out.println("  created " + (i + 1) + "/" + batchSize);
             System.out.flush();
         }
 
-       return newGeneration;
+        assert remainingSlots == 0;
+        assert !newGenerationData.containsValue(1);
+
+        return newGeneration;
     }
 
     public void writeToFile(NeuronData data) {

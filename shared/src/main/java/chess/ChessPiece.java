@@ -21,7 +21,7 @@ public class ChessPiece {
      */
     public enum PieceType {
         KING(0),
-        QUEEN(8),
+        QUEEN(9),
         BISHOP(3),
         KNIGHT(3),
         ROOK(5),

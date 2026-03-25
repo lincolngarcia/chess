@@ -5,6 +5,7 @@ import chess.movecalculators.SuperQueenMoveCalculator;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Objects;
 
 /**
@@ -18,6 +19,7 @@ public class ChessGame {
     private TeamColor activeTeam = TeamColor.WHITE;
     private ChessBoard board = new ChessBoard();
     private final Collection<ChessMove> history = new ArrayList<>();
+    private final HashMap<ChessBoard, Integer> boardStates = new HashMap<>();
 
     /**
      * Enum identifying the 2 possible teams in a chess game
@@ -185,6 +187,12 @@ public class ChessGame {
     public boolean isInStalemate(TeamColor teamColor) {
         if (this.isInCheck(teamColor)) {
             return false;
+        }
+
+        if (this.boardStates.containsKey(this.getBoard())) {
+            if (this.boardStates.get(this.getBoard()) == 3) {
+                return true;
+            }
         }
 
         Collection<ChessPosition> teamPieceLocations = this.getBoard().getTeamPositions(teamColor);
@@ -358,6 +366,11 @@ public class ChessGame {
 
         // Store move in history
         this.history.add(move);
+        if (this.boardStates.containsKey(this.getBoard())) {
+            this.boardStates.compute(this.getBoard(), (key, value) -> value == null ? 1 : value + 1);
+        }else{
+            this.boardStates.put(this.getBoard(), 1);
+        }
 
         this.toggleTeamTurn();
     }

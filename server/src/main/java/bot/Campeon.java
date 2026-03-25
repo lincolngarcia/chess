@@ -14,7 +14,8 @@ public class Campeon {
     public static final int INPUT_NODE_COUNT = 778;
     public static final int CUSTOM_INPUT_NODE_COUNT = 10;
 
-    // RAW_CONNECTION_COUNT_SIZE = 16, RAW_CONNECTION_COUNT_OFFSET = 0;
+    public static final int RAW_CONNECTION_COUNT_OFFSET = 0;
+    public static final int RAW_CONNECTION_COUNT_SIZE = 16;
     public static final int RAW_NEURON_COUNT_AMPLIFIER_SIZE = 4;
     public static final int RAW_NEURON_COUNT_AMPLIFIER_OFFSET = 16;
     public static final int RAW_NEURON_SPREAD_AMPLIFIER_SIZE = 4;
@@ -100,8 +101,14 @@ public class Campeon {
         this(brainData[0][0], brainData[1]);
     }
 
-    private static int createMetaData(int a, int b, int c) {
+    private static int createMetaData(int connectionCount, int a, int b, int c) {
         int metaData = 0;
+
+        metaData = Functions.insertBits(metaData,
+                RAW_CONNECTION_COUNT_OFFSET,
+                RAW_CONNECTION_COUNT_SIZE,
+                connectionCount
+        );
 
         metaData = Functions.insertBits(metaData,
                 RAW_NEURON_COUNT_AMPLIFIER_OFFSET,
@@ -461,28 +468,28 @@ public class Campeon {
         int b = random.nextBoolean() ? pInput.getRawNeuronSpreadAmplifier() : sInput.getRawNeuronSpreadAmplifier();
         int c = random.nextBoolean() ? pInput.getRawNeuronSlopeAmplifier() : sInput.getRawNeuronSlopeAmplifier();
 
-        int metaData = createMetaData(a, b, c);
+        int metaData = createMetaData(connectionCount, a, b, c);
 
         if (random.nextDouble() < mutationRate) {
             metaData = Functions.mutateInteger(metaData);
         }
 
+        connectionCount = parseConnectionCountFromMetaData(metaData);
+
         int[] connections = new int[connectionCount];
         for (int i = 0; i < connectionCount; i++) {
-            if (i >= pInput.getConnectionCount()) {
-                connections[i] = sInput.getConnections()[i].binaryData;
-            }
-            if (i >= sInput.getConnectionCount()) {
-                connections[i] = pInput.getConnections()[i].binaryData;
-            }
             if (i >= pInput.getConnectionCount() && i >= sInput.getConnectionCount()) {
                 connections[i] = random.nextInt();
-                continue;
             }
-
-            connections[i] = random.nextBoolean() ?
-                    pInput.getConnections()[i].binaryData :
-                    sInput.getConnections()[i].binaryData;
+            else if (i >= pInput.getConnectionCount()) {
+                connections[i] = sInput.getConnections()[i].binaryData;
+            } else if (i >= sInput.getConnectionCount()) {
+                connections[i] = pInput.getConnections()[i].binaryData;
+            } else {
+                connections[i] = random.nextBoolean() ?
+                        pInput.getConnections()[i].binaryData :
+                        sInput.getConnections()[i].binaryData;
+            }
 
             if (random.nextDouble() < mutationRate) {
                 connections[i] = Functions.mutateInteger(connections[i]);
