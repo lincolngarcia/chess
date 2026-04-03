@@ -7,15 +7,20 @@ import serverfunctions.ServerFunctions;
 import ui.EscapeSequences;
 
 import java.net.http.HttpResponse;
-import java.util.Arrays;
 
 import static serverfunctions.ServerFunctions.getValue;
 import static serverfunctions.ServerFunctions.makeRequest;
 
 public class ServerFacade {
-    boolean postLogin = false;
+    UiType UiStatus = UiType.PreLogin;
     String sessionToken = null;
     int portNumber;
+
+    enum UiType {
+        PreLogin,
+        PostLogin,
+        Gameplay
+    }
 
     String[] commandOptions = new String[]{
             "help",
@@ -41,24 +46,24 @@ public class ServerFacade {
             String command = TUI.prompt("please enter a command:", commandOptions);
             String commandType = command.split(" ")[0].toLowerCase();
 
-            if (!Arrays.asList(commandOptions).contains(commandType)) {
-                TUI.error("Invalid command: '" + commandType + "'");
-                continue;
-            }
-
-            if (this.postLogin) {
-                if (!handlePostLogin(command, commandType)) {
-                    return;
+            switch (this.UiStatus) {
+                case PreLogin -> {
+                    if (!handlePreLogin(command, commandType)) {
+                        return;
+                    }
                 }
-            } else {
-                if (!handlePreLogin(command, commandType)) {
-                    return;
+                case PostLogin -> {
+                    if (!handlePostLogin(command, commandType)) {
+                        return;
+                    }
+                }
+                case Gameplay -> {
+                    if (!handleGameCommand(command, commandType)) {
+                        return;
+                    }
                 }
             }
-
-            TUI.write("");
         }
-
     }
 
     private boolean handlePreLogin(String command, String commandType) {
@@ -142,7 +147,8 @@ public class ServerFacade {
                 });
                 TUI.write(formatted);
             default:
-                return false;
+                TUI.error("Invalid command: '" + commandType + "'");
+                break;
         }
 
         return true;
@@ -232,9 +238,40 @@ public class ServerFacade {
                 });
                 TUI.write(formatted);
             default:
-                return false;
+                TUI.error("Invalid command: '" + commandType + "'");
+                break;
         }
         return true;
+    }
+
+    private boolean handleGameCommand(String command, String commandType) {
+        String formatted;
+        String[] args = command.split(" ");
+
+        switch (commandType) {
+            case "help":
+                String helpText = """
+                        help - with possible commands
+                        start/end square - perform move
+                        redraw - the board
+                        leave - the game
+                        resign - the game
+                        list - all moves""";
+                formatted = EscapeSequences.format(helpText, new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE});
+                TUI.write(formatted);
+                break;
+            case "redraw":
+                break;
+            case "leave":
+                break;
+            case "resign":
+                break;
+            case "list":
+                break;
+            default:
+                // Validate a move
+                break;
+        }
     }
 
     private void handleJoinGame(String[] args) {
@@ -290,7 +327,7 @@ public class ServerFacade {
 
     private void enablePostLoginUI(String sessionToken) {
         this.sessionToken = sessionToken;
-        this.postLogin = true;
+        this.UiStatus = true;
 
         commandOptions = new String[]{
                 "help",
@@ -304,7 +341,7 @@ public class ServerFacade {
     }
 
     private void disablePostLoginUI() {
-        this.postLogin = false;
+        this.UiStatus = false;
         this.sessionToken = null;
         commandOptions = new String[]{
                 "help",
@@ -312,5 +349,19 @@ public class ServerFacade {
                 "login",
                 "register"
         };
+    }
+
+    private void enableGameplayUI() {
+        commandOptions = new String[] {
+                "help",
+                "redraw",
+                "leave",
+                "resign",
+                "moves"
+        };
+    }
+
+    private void disableGameplayUI() {
+        enablePostLoginUI(this.sessionToken);
     }
 }
