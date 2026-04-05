@@ -1,6 +1,6 @@
 package server.packages;
 
-import chess.ChessGame;
+import websocket.ChessGameData;
 
 import java.util.Map;
 

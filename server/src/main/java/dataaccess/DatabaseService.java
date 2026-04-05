@@ -2,7 +2,7 @@ package dataaccess;
 
 import chess.ChessGame;
 import com.google.gson.Gson;
-import server.packages.ChessGameData;
+import websocket.ChessGameData;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

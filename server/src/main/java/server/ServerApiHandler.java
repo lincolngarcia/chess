@@ -3,6 +3,7 @@ package server;
 import chess.ChessGame;
 import dataaccess.DatabaseService;
 import server.packages.*;
+import websocket.ChessGameData;
 
 import java.util.Objects;
 import java.util.UUID;
