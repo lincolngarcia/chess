@@ -1,5 +1,6 @@
 package client;
 
+import chess.ChessGame;
 import com.google.gson.Gson;
 import jakarta.websocket.ContainerProvider;
 import jakarta.websocket.Endpoint;
@@ -7,6 +8,7 @@ import jakarta.websocket.EndpointConfig;
 import jakarta.websocket.MessageHandler;
 import jakarta.websocket.Session;
 import jakarta.websocket.WebSocketContainer;
+import websocket.ChessGameData;
 import websocket.commands.UserGameCommand;
 import websocket.messages.ServerMessage;
 
@@ -19,7 +21,7 @@ public class WsEchoClient extends Endpoint {
     public static String authToken;
     public static int gameId;
 
-    public WsEchoClient(String authToken, int gameId) throws Exception {
+    public WsEchoClient(String authToken, int gameId, ChessGame.TeamColor perspective) throws Exception {
         WsEchoClient.authToken = authToken;
         WsEchoClient.gameId = gameId;
 
@@ -47,8 +49,8 @@ public class WsEchoClient extends Endpoint {
                 }
 
                 if (msg.getServerMessageType() == ServerMessage.ServerMessageType.LOAD_GAME) {
-                    TUI.write("received board, printing non unique");
-                    TUI.printBoard("WHITE");
+                    ChessGameData data = new Gson().fromJson(message, ChessGameData.class);
+                    TUI.printBoard(data, perspective);
                 }
             }
         });

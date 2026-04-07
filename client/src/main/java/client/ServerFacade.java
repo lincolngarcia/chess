@@ -6,11 +6,13 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import serverfunctions.ServerFunctions;
 import ui.EscapeSequences;
+import websocket.ChessGameData;
 import websocket.commands.UserGameCommand;
 
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static serverfunctions.ServerFunctions.getValue;
 import static serverfunctions.ServerFunctions.makeRequest;
@@ -241,7 +243,8 @@ public class ServerFacade {
                 } else {
                     TUI.error("Invalid Request");
                 }
-                TUI.printBoard(args[1]);
+                // TODO: implement function
+//                TUI.printBoard(args[1], ChessGame.TeamColor.WHITE);
                 break;
             case "quit":
                 formatted = EscapeSequences.format("Thanks for playing", new String[]{
@@ -289,17 +292,24 @@ public class ServerFacade {
 
                 String[] splitString = commandType.split("");
 
-                boolean validString = true;
+                boolean validString = splitString.length == 4;
 
-                if (splitString.length != 4) { validString = false;}
-                if (!validLetters.contains(splitString[0].toLowerCase())) {validString = false;}
-                if (!validNumbers.contains(splitString[1])) {validString = false;}
-                if (!validLetters.contains(splitString[2].toLowerCase())) {validString = false;}
-                if (!validNumbers.contains(splitString[3])) {validString = false;}
+                if (!validLetters.contains(splitString[0].toLowerCase())) {
+                    validString = false;
+                }
+                if (!validNumbers.contains(splitString[1])) {
+                    validString = false;
+                }
+                if (!validLetters.contains(splitString[2].toLowerCase())) {
+                    validString = false;
+                }
+                if (!validNumbers.contains(splitString[3])) {
+                    validString = false;
+                }
 
                 if (validString) {
                     TUI.write("Executing move " + commandType);
-                }else{
+                } else {
                     TUI.error("Invalid command");
                 }
 
@@ -307,33 +317,50 @@ public class ServerFacade {
                 break;
         }
 
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
         return true;
     }
 
     private boolean handleJoinGame(String[] args) {
-        String gameID = getGames().get(Integer.parseInt(args[1]) - 1).getAsJsonObject().get("gameID").getAsString();
-        String joinData = "{\"playerColor\": \"" + args[2] + "\", \"gameID\": " + gameID + "}";
-        HttpResponse<String> joinResponse = makeRequest("/game", "PUT", this.sessionToken, joinData);
-        if (joinResponse.statusCode() == 200) {
-            TUI.write(
-                    EscapeSequences.format(
-                            "You have joined the game",
-                            new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
-                    ));
+        try {
+            String gameID = getGames().get(Integer.parseInt(args[1]) - 1).getAsJsonObject().get("gameID").getAsString();
+            String joinData = "{\"playerColor\": \"" + args[2] + "\", \"gameID\": " + gameID + "}";
+            HttpResponse<String> joinResponse = makeRequest("/game", "PUT", this.sessionToken, joinData);
 
-            enableGameplayUI();
+            if (joinResponse.statusCode() == 200) {
+                TUI.write(
+                        EscapeSequences.format(
+                                "You have joined the game",
+                                new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
+                        ));
 
-            // Open the websocket
-            try {
-                this.session = new WsEchoClient(sessionToken, Integer.parseInt(gameID));
-            } catch (Exception _) {
-                TUI.error("Session Failed");
-                return false;
+                enableGameplayUI();
+
+                // Open the websocket
+                try {
+                    this.session = new WsEchoClient(
+                            sessionToken,
+                            Integer.parseInt(gameID),
+                            Objects.equals(args[2], "WHITE") ? ChessGame.TeamColor.WHITE : ChessGame.TeamColor.BLACK
+                    );
+                    // Buffer the board
+                    Thread.sleep(1000);
+                    System.out.flush();
+                } catch (Exception _) {
+                    TUI.error("Session Failed");
+                }
+
+            } else {
+                TUI.error("Invalid Request");
             }
 
-        } else {
-            TUI.error("Invalid Request");
-            return false;
+        } catch (NumberFormatException e) {
+            TUI.error("Invalid arguments, try command 'join'");
         }
 
         return true;
@@ -358,7 +385,7 @@ public class ServerFacade {
             if (!game.get("blackUsername").isJsonNull()) {
                 blackUsername = game.get("blackUsername").getAsString();
             }
-            builder.append(String.format("%d. %s W: %s, B: %s", i + 1, gameName,  whiteUsername, blackUsername));
+            builder.append(String.format("%d. %s W: %s, B: %s", i + 1, gameName, whiteUsername, blackUsername));
             if (i != games.size() - 1) {
                 builder.append("\n");
             }
@@ -402,7 +429,7 @@ public class ServerFacade {
 
     private void enableGameplayUI() {
         this.UiStatus = UiType.Gameplay;
-        commandOptions = new String[] {
+        commandOptions = new String[]{
                 "help",
                 "redraw",
                 "leave",
