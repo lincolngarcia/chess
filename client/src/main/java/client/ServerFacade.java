@@ -165,11 +165,7 @@ public class ServerFacade {
                 break;
 
             case "quit":
-                formatted = EscapeSequences.format("Thanks for playing", new String[]{
-                        EscapeSequences.SET_TEXT_COLOR_BLUE
-                });
-                TUI.write(formatted);
-                return false;
+                return quit();
             default:
                 TUI.error("Invalid command: '" + commandType + "'");
                 break;
@@ -241,11 +237,7 @@ public class ServerFacade {
                 handleObserveGame(args);
                 break;
             case "quit":
-                formatted = EscapeSequences.format("Thanks for playing", new String[]{
-                        EscapeSequences.SET_TEXT_COLOR_BLUE
-                });
-                TUI.write(formatted);
-                return false;
+                return quit();
             default:
                 TUI.error("Invalid command: '" + commandType + "'");
                 break;
@@ -306,11 +298,7 @@ public class ServerFacade {
                 TUI.write("list moves");
                 break;
             case "quit":
-                formatted = EscapeSequences.format("Thanks for playing", new String[]{
-                        EscapeSequences.SET_TEXT_COLOR_BLUE
-                });
-                TUI.write(formatted);
-                return false;
+                return quit();
             default:
                 ArrayList<Character> validLetters = new ArrayList<>(List.of('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'));
                 ArrayList<Character> validNumbers = new ArrayList<>(List.of('1', '2', '3', '4', '5', '6', '7', '8'));
@@ -675,5 +663,13 @@ public class ServerFacade {
                 "switch",
                 "quit"
         };
+    }
+
+    private static boolean quit() {
+        TUI.write(
+                EscapeSequences.format("Thanks for playing", new String[]{
+                EscapeSequences.SET_TEXT_COLOR_BLUE
+        }));
+        return false;
     }
 }
