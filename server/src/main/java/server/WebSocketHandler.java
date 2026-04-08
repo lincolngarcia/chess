@@ -11,6 +11,7 @@ import io.javalin.websocket.WsContext;
 import websocket.messages.ServerMessage;
 
 import java.util.HashMap;
+import java.util.Objects;
 
 
 public class WebSocketHandler {
@@ -106,12 +107,64 @@ public class WebSocketHandler {
 
             // leave a game
             case LEAVE -> {
+                // TODO: potential pitfall: repeated usernames may cause unexpected behavior
+                // easy fix? deny same username entering a game;
 
+                // Remove the player from the database
+                String username = DatabaseService.getUsernameByAuthToken(command.getAuthToken());
+
+                Integer teamColorIndex = null;
+                if (Objects.equals(gameData.playerUsernames[0], username)) {
+                    teamColorIndex = 0;
+                }
+                if (Objects.equals(gameData.playerUsernames[1], username)) {
+                    teamColorIndex = 1;
+                }
+                if (teamColorIndex != null) {
+                    gameData.playerUsernames[teamColorIndex] = null;
+                    DatabaseService.updateGame(gameData);
+                }
+
+                broadcastUniqueMessage(
+                        new ServerMessage(
+                                ServerMessage.ServerMessageType.NOTIFICATION,
+                                username + " has left"
+                        ),
+                        connections.get(ctx.sessionId()).gameId,
+                        ctx
+                );
+
+                // Remove the session from active connections
+                connections.remove(ctx.sessionId());
             }
 
             // end the game
             case RESIGN -> {
+                // Return the notification
+                String username = DatabaseService.getUsernameByAuthToken(command.getAuthToken());
 
+                Integer teamColorIndex = null;
+                if (Objects.equals(gameData.playerUsernames[0], username)) {
+                    teamColorIndex = 1;
+                }
+                if (Objects.equals(gameData.playerUsernames[1], username)) {
+                    teamColorIndex = 0;
+                }
+                if (teamColorIndex == null) {
+                    sendMessage(ctx, new ServerMessage(
+                            ServerMessage.ServerMessageType.ERROR,
+                            "resignation not accepted due to user not existing"
+                    ));
+                    return;
+                }
+
+                broadcastMessage(
+                        new ServerMessage(
+                                ServerMessage.ServerMessageType.NOTIFICATION,
+                                gameData.playerUsernames[teamColorIndex] + " has won by resignation"
+                        ),
+                        connections.get(ctx.sessionId()).gameId
+                );
             }
         }
     }

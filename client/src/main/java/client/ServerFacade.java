@@ -265,34 +265,17 @@ public class ServerFacade {
                 TUI.write("Redrawing board");
                 break;
             case "leave":
-                // Leave the game
-                TUI.write(
-                        EscapeSequences.format(
-                                "leaving game...",
-                                new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
-                        )
-                );
-
-                // Reset the UI
-                enablePostLoginUI(this.sessionToken);
-
-                // close the connection
-                // TODO: implement the leave game thing on all relevant functions
-                try {
-                    this.session.session.close();
-                } catch (IOException e) {
-                    TUI.error("Error while closing the session");
-                }
-
-                // Stop waiting on the thread
-                if (this.T != null) {
-                    this.T.interrupt();
-                    this.T = null;
-                }
-
-                return true;
+                this.leaveGame();
+                break;
             case "resign":
                 TUI.write("resigning game");
+                this.sendAndReceiveBlockingMessage(
+                        new UserGameCommand(
+                                UserGameCommand.CommandType.RESIGN,
+                                this.session.authToken,
+                                this.session.gameId
+                        )
+                );
                 break;
             case "list":
                 TUI.write("list moves");
@@ -327,20 +310,17 @@ public class ServerFacade {
 
                 // Subtract the Unicode values from the start
                 int startRow = formattedString.charAt(1) - '0';
-                int endRow   = formattedString.charAt(3) - '0';
+                int endRow = formattedString.charAt(3) - '0';
 
                 int startCol = (formattedString.charAt(0) - 'a') + 1;
-                int endCol   = (formattedString.charAt(2) - 'a') + 1;
+                int endCol = (formattedString.charAt(2) - 'a') + 1;
 
                 ChessMove move = new ChessMove(
                         new ChessPosition(startRow, startCol),
                         new ChessPosition(endRow, endCol)
                 );
 
-                // Temporarily lock the thread
-                WsClient.exclusiveReceiver = Thread.currentThread().getName();
-                // send the message
-                this.session.send(
+                this.sendAndReceiveBlockingMessage(
                         new UserGameCommand(
                                 UserGameCommand.CommandType.MAKE_MOVE,
                                 session.authToken,
@@ -348,12 +328,6 @@ public class ServerFacade {
                                 new Gson().toJson(move)
                         )
                 );
-                // Receive the response
-                this.session.awaitMessage(false);
-                // unlock the thread
-                WsClient.exclusiveReceiver = null;
-
-                break;
         }
 
         return true;
@@ -371,33 +345,10 @@ public class ServerFacade {
                         EscapeSequences.format(
                                 helpText,
                                 new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE})
-                        );
+                );
                 break;
             case "leave":
-                // Leave the game
-                TUI.write(
-                        EscapeSequences.format(
-                                "leaving game...",
-                                new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
-                        )
-                );
-
-                // Reset the UI
-                enablePostLoginUI(this.sessionToken);
-
-                // close the connection
-                try {
-                    this.session.session.close();
-                } catch (IOException e) {
-                    TUI.error("Error while closing the session");
-                }
-
-                // Stop waiting on the thread
-                if (this.T != null) {
-                    this.T.interrupt();
-                    this.T = null;
-                }
-
+                this.leaveGame();
                 break;
 
             case "switch":
@@ -463,13 +414,11 @@ public class ServerFacade {
 
         // Open the websocket
         try {
-            if (Objects.equals(args[2], "WHITE")) {
+            if (Objects.equals(args[2].toLowerCase(), "white")) {
                 teamColor = ChessGame.TeamColor.WHITE;
-            }
-            else if (Objects.equals(args[2], "BLACK")) {
+            } else if (Objects.equals(args[2].toLowerCase(), "black")) {
                 teamColor = ChessGame.TeamColor.BLACK;
-            }
-            else {
+            } else {
                 TUI.error("Invalid team color");
                 return;
             }
@@ -478,37 +427,20 @@ public class ServerFacade {
                     sessionToken,
                     gameId,
                     teamColor,
-                    portNumber
+                    portNumber,
+                    args[2]
             );
 
-        }catch (Exception e) {
+        } catch (Exception e) {
             TUI.error("Connection Error");
             return;
         }
-
-        // Send the connect message and expect a response
-        this.session.send(new UserGameCommand(
-                UserGameCommand.CommandType.CONNECT,
-                sessionToken,
-                gameId,
-                args[2]
-        ));
-        this.session.awaitMessage(false);
 
         // Transition to gameplayUI
         enableGameplayUI();
 
         // Enable the observational thread
-        this.T = new Thread(() -> {
-            while (!Thread.currentThread().isInterrupted()) {
-                this.session.awaitMessage(true);
-                TUI.prompt(
-                        "please enter a command:",
-                        commandOptions
-                );
-            }
-        });
-        this.T.start();
+        this.activateObservationalThread();
     }
 
     private void handleObserveGame(String[] args) {
@@ -551,36 +483,18 @@ public class ServerFacade {
                     sessionToken,
                     gameId,
                     teamColor,
-                    portNumber
+                    portNumber,
+                    "observer"
             );
-        }catch (Exception e) {
+        } catch (Exception e) {
             TUI.error("Connection Error");
         }
-
-        // Send the connect message and expect a response
-        this.session.send(new UserGameCommand(
-                UserGameCommand.CommandType.CONNECT,
-                sessionToken,
-                gameId,
-                "an observer"
-        ));
-        this.session.awaitMessage(false);
 
         // Transition to observationUI
         enableObservationUI();
 
         // Enable a second thread that awaits for messages
-        // TODO: create function that handles this (maybe a file)
-        this.T = new Thread(() -> {
-            while (!Thread.currentThread().isInterrupted()) {
-                this.session.awaitMessage(true);
-                TUI.prompt(
-                        "please enter a command:",
-                        commandOptions
-                );
-            }
-        });
-        this.T.start();
+        this.activateObservationalThread();
     }
 
     private String listGames() {
@@ -651,13 +565,14 @@ public class ServerFacade {
                 "redraw",
                 "leave",
                 "resign",
-                "[move]"
+                "[move]",
+                "quit"
         };
     }
 
     private void enableObservationUI() {
         this.UiStatus = UiType.Observe;
-        commandOptions = new String[]  {
+        commandOptions = new String[]{
                 "help",
                 "leave",
                 "switch",
@@ -665,11 +580,84 @@ public class ServerFacade {
         };
     }
 
-    private static boolean quit() {
+    private boolean quit() {
         TUI.write(
                 EscapeSequences.format("Thanks for playing", new String[]{
-                EscapeSequences.SET_TEXT_COLOR_BLUE
-        }));
+                        EscapeSequences.SET_TEXT_COLOR_BLUE
+                }));
+
+        if (this.session != null) {
+            this.leaveGame();
+        }
+
         return false;
+    }
+
+    private void leaveGame() {
+        // Leave the game
+        TUI.write(
+                EscapeSequences.format(
+                        "leaving game...",
+                        new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
+                )
+        );
+
+        // Reset the UI
+        enablePostLoginUI(this.sessionToken);
+
+        // close the connection
+        // TODO: implement the leave game thing on all relevant functions
+        try {
+            // Stop waiting on the thread
+            if (this.T != null) {
+                this.T.interrupt();
+                this.T = null;
+            }
+            System.out.flush();
+
+            this.session.send(
+                    new UserGameCommand(
+                            UserGameCommand.CommandType.LEAVE,
+                            this.session.authToken,
+                            this.session.gameId
+                    )
+            );
+            this.session.session.close();
+            this.session = null;
+        } catch (IOException e) {
+            TUI.error("Error while closing the session");
+        }
+    }
+
+    private void activateObservationalThread() {
+        this.T = new Thread(() -> {
+            try {
+                while (!Thread.currentThread().isInterrupted()) {
+                    this.session.awaitMessage(true);
+                    TUI.prompt(
+                            "please enter a command:",
+                            commandOptions
+                    );
+                }
+            }catch (InterruptedException e) {
+                return;
+            }
+        });
+        this.T.start();
+    }
+
+    private void sendAndReceiveBlockingMessage(UserGameCommand command) {
+        // Temporarily lock the thread
+        WsClient.exclusiveReceiver = Thread.currentThread().getName();
+        // send the message
+        this.session.send(command);
+        // Receive the response
+        try {
+            this.session.awaitMessage(false);
+        } catch (InterruptedException e) {
+            TUI.error("Thread interrupted unexpectedly");
+        }
+        // unlock the thread
+        WsClient.exclusiveReceiver = null;
     }
 }

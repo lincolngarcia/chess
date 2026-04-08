@@ -28,7 +28,7 @@ public class WsClient extends Endpoint {
 
     public static String exclusiveReceiver;
 
-    public WsClient(String authToken, int gameId, ChessGame.TeamColor teamColor, int portNumber) throws Exception {
+    public WsClient(String authToken, int gameId, ChessGame.TeamColor teamColor, int portNumber, String type) throws Exception {
         this.authToken = authToken;
         this.gameId = gameId;
         this.teamColor = teamColor;
@@ -44,6 +44,21 @@ public class WsClient extends Endpoint {
                 messageQueue.add(msg);
             }
         });
+
+        this.send(
+                new UserGameCommand(
+                        UserGameCommand.CommandType.CONNECT,
+                        authToken,
+                        gameId,
+                        type
+                )
+        );
+
+        try {
+            this.awaitMessage(false);
+        }catch (InterruptedException e) {
+            TUI.error("Thread was interrupted unexpectedly");
+        }
     }
 
     public void send(UserGameCommand message) {
@@ -55,7 +70,7 @@ public class WsClient extends Endpoint {
         }
     }
 
-    public void awaitMessage(boolean newLine) {
+    public void awaitMessage(boolean newLine) throws InterruptedException {
         while (true) {
             boolean queueEmpty = messageQueue.isEmpty();
             boolean isCurrentExclusiveThread = true;
@@ -70,11 +85,7 @@ public class WsClient extends Endpoint {
                 break;
             }
 
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                return;
-            }
+            Thread.sleep(10);
         }
 
         ServerMessage message = messageQueue.poll();
