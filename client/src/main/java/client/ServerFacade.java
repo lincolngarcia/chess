@@ -1,6 +1,7 @@
 package client;
 
 import chess.ChessGame;
+import chess.converter.ChessFunctions;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -27,7 +28,8 @@ public class ServerFacade {
     enum UiType {
         PreLogin,
         PostLogin,
-        Gameplay
+        Gameplay,
+        Observe
     }
 
     String[] commandOptions = new String[]{
@@ -67,6 +69,12 @@ public class ServerFacade {
                 }
                 case Gameplay -> {
                     if (!handleGameCommand(commandType)) {
+                        return;
+                    }
+                }
+
+                case Observe -> {
+                    if (!handleObservation(commandType)) {
                         return;
                     }
                 }
@@ -222,29 +230,15 @@ public class ServerFacade {
                 handleJoinGame(args);
                 break;
             case "observe":
-                if (args.length != 2) {
-                    TUI.error("Invalid arguments, try command 'help'");
-                    break;
-                }
-                HttpResponse<String> observeResponse = makeRequest("/game", "GET", this.sessionToken, null);
-                if (observeResponse.statusCode() == 200) {
-                    TUI.write(
-                            EscapeSequences.format(
-                                    "you are now observing this game:",
-                                    new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
-                            )
-                    );
-                } else {
-                    TUI.error("Invalid Request");
-                }
-                // TODO: implement function
-//                TUI.printBoard(args[1], ChessGame.TeamColor.WHITE);
+                // Transition to helper function
+                handleObserveGame(args);
                 break;
             case "quit":
                 formatted = EscapeSequences.format("Thanks for playing", new String[]{
                         EscapeSequences.SET_TEXT_COLOR_BLUE
                 });
                 TUI.write(formatted);
+                return false;
             default:
                 TUI.error("Invalid command: '" + commandType + "'");
                 break;
@@ -263,7 +257,8 @@ public class ServerFacade {
                         redraw - the board
                         leave - the game
                         resign - the game
-                        list - all moves""";
+                        list - all moves
+                        quit - playing chess""";
                 formatted = EscapeSequences.format(helpText, new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE});
                 TUI.write(formatted);
                 break;
@@ -272,7 +267,7 @@ public class ServerFacade {
                 break;
             case "leave":
                 TUI.write("Leaving game");
-                disableGameplayUI();
+                enablePostLoginUI(this.sessionToken);
                 return false;
             case "resign":
                 TUI.write("resigning game");
@@ -280,6 +275,12 @@ public class ServerFacade {
             case "list":
                 TUI.write("list moves");
                 break;
+            case "quit":
+                formatted = EscapeSequences.format("Thanks for playing", new String[]{
+                        EscapeSequences.SET_TEXT_COLOR_BLUE
+                });
+                TUI.write(formatted);
+                return false;
             default:
                 ArrayList<String> validLetters = new ArrayList<>(List.of("a", "b", "c", "d", "e", "f", "g", "h"));
                 ArrayList<String> validNumbers = new ArrayList<>(List.of("1", "2", "3", "4", "5", "6", "7", "8"));
@@ -311,10 +312,54 @@ public class ServerFacade {
                 break;
         }
 
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+        return true;
+    }
+
+    private boolean handleObservation(String commandType) {
+        switch (commandType) {
+            case "help":
+                String helpText = """
+                        help - with possible commands
+                        leave - the game
+                        switch - the game perspective
+                        quit - playing chess""";
+                TUI.write(
+                        EscapeSequences.format(
+                                helpText,
+                                new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE})
+                        );
+                break;
+            case "leave":
+                TUI.write(
+                        EscapeSequences.format(
+                                "leaving game...",
+                                new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
+                        )
+                );
+                this.enablePostLoginUI(this.sessionToken);
+                break;
+
+            case "switch":
+                TUI.write(
+                        EscapeSequences.format(
+                                "switching view angle...",
+                                new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
+                        )
+                );
+                this.session.teamColor = ChessFunctions.isWhite(teamColor) ? ChessGame.TeamColor.BLACK : ChessGame.TeamColor.WHITE;
+                // TODO: redraw the board
+                break;
+
+            case "quit":
+                TUI.write(
+                        EscapeSequences.format("Thanks for playing", new String[]{
+                                EscapeSequences.SET_TEXT_COLOR_BLUE
+                        })
+                );
+                return false;
+
+            default:
+                TUI.error("Invalid command: '" + commandType + "'");
         }
 
         return true;
@@ -380,7 +425,7 @@ public class ServerFacade {
             return;
         }
 
-        // Send the connect message
+        // Send the connect message and expect a response
         this.session.send(new UserGameCommand(
                 UserGameCommand.CommandType.CONNECT,
                 sessionToken,
@@ -390,6 +435,64 @@ public class ServerFacade {
 
         // Transition to gameplayUI
         enableGameplayUI();
+    }
+
+    private void handleObserveGame(String[] args) {
+        if (args.length != 2) {
+            TUI.error("Invalid arguments, try command 'help'");
+            return;
+        }
+
+        // Assert the gameIndex is an integer
+        int gameIndex;
+        try {
+            gameIndex = Integer.parseInt(args[1]) - 1;
+        } catch (NumberFormatException e) {
+            TUI.error("Invalid arguments, try command 'help'");
+            return;
+        }
+
+        JsonArray games = getGames();
+
+        // Assert the gameIndex is a valid index
+        if (gameIndex - 1 >= games.size()) {
+            TUI.error("Invalid game number");
+            return;
+        }
+
+        // Find the correct gameId
+        int gameId = games.get(gameIndex).getAsJsonObject().get("gameID").getAsInt();
+        TUI.write(
+                EscapeSequences.format(
+                        "You are now observing this game:",
+                        new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
+                )
+        );
+
+        // Open the websocket
+        try {
+            teamColor = ChessGame.TeamColor.WHITE;
+
+            this.session = new WsClient(
+                    sessionToken,
+                    gameId,
+                    teamColor,
+                    portNumber
+            );
+        }catch (Exception e) {
+            TUI.error("Connection Error");
+        }
+
+        // Send the connect message and expect a response
+        this.session.send(new UserGameCommand(
+                UserGameCommand.CommandType.CONNECT,
+                sessionToken,
+                gameId
+        ));
+        this.session.awaitMessage();
+
+        // Transition to observationUI
+        enableObservationUI();
     }
 
     private String listGames() {
@@ -460,11 +563,17 @@ public class ServerFacade {
                 "redraw",
                 "leave",
                 "resign",
-                "moves"
+                "[move]"
         };
     }
 
-    private void disableGameplayUI() {
-        enablePostLoginUI(this.sessionToken);
+    private void enableObservationUI() {
+        this.UiStatus = UiType.Observe;
+        commandOptions = new String[]  {
+                "help",
+                "leave",
+                "switch",
+                "quit"
+        };
     }
 }
