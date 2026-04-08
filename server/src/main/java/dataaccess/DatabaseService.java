@@ -19,6 +19,10 @@ public class DatabaseService {
     }
 
     static void createTables() throws DataAccessException {
+        String createChessDatabase = """
+                CREATE DATABASE IF NOT EXISTS chess;
+                """;
+
         String createPasswordTable = """
                 CREATE TABLE IF NOT EXISTS passwords (
                     username VARCHAR(50) PRIMARY KEY,
@@ -41,6 +45,7 @@ public class DatabaseService {
                 """;
 
         try (var conn = DatabaseManager.getConnection()) {
+            conn.prepareStatement(createChessDatabase).executeUpdate();
             conn.prepareStatement(createPasswordTable).executeUpdate();
             conn.prepareStatement(createGameDataTable).executeUpdate();
             conn.prepareStatement(createAuthTokenTable).executeUpdate();

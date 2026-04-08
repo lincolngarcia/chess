@@ -6,7 +6,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import serverfunctions.ServerFunctions;
 import ui.EscapeSequences;
-import websocket.ChessGameData;
 import websocket.commands.UserGameCommand;
 
 import java.net.http.HttpResponse;
@@ -23,7 +22,7 @@ public class ServerFacade {
     ChessGame game = null;
     ChessGame.TeamColor teamColor = null;
     int portNumber;
-    WsEchoClient session;
+    WsClient session;
 
     enum UiType {
         PreLogin,
@@ -219,13 +218,8 @@ public class ServerFacade {
                 TUI.write(listGames());
                 break;
             case "join":
-                if (args.length != 3) {
-                    TUI.error("Invalid arguments, try command 'help'");
-                    break;
-                }
-                if (!handleJoinGame(args)) {
-                    return false;
-                }
+                // Transition to the helper function
+                handleJoinGame(args);
                 break;
             case "observe":
                 if (args.length != 2) {
@@ -326,44 +320,76 @@ public class ServerFacade {
         return true;
     }
 
-    private boolean handleJoinGame(String[] args) {
-        try {
-            String gameID = getGames().get(Integer.parseInt(args[1]) - 1).getAsJsonObject().get("gameID").getAsString();
-            String joinData = "{\"playerColor\": \"" + args[2] + "\", \"gameID\": " + gameID + "}";
-            HttpResponse<String> joinResponse = makeRequest("/game", "PUT", this.sessionToken, joinData);
-
-            if (joinResponse.statusCode() == 200) {
-                TUI.write(
-                        EscapeSequences.format(
-                                "You have joined the game",
-                                new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
-                        ));
-
-                enableGameplayUI();
-
-                // Open the websocket
-                try {
-                    this.session = new WsEchoClient(
-                            sessionToken,
-                            Integer.parseInt(gameID),
-                            Objects.equals(args[2], "WHITE") ? ChessGame.TeamColor.WHITE : ChessGame.TeamColor.BLACK
-                    );
-                    // Buffer the board
-                    Thread.sleep(1000);
-                    System.out.flush();
-                } catch (Exception _) {
-                    TUI.error("Session Failed");
-                }
-
-            } else {
-                TUI.error("Invalid Request");
-            }
-
-        } catch (NumberFormatException e) {
-            TUI.error("Invalid arguments, try command 'join'");
+    private void handleJoinGame(String[] args) {
+        // Validate the request
+        if (args.length != 3) {
+            TUI.error("Invalid arguments, try command 'help'");
+            return;
         }
 
-        return true;
+        // Assert the gameIndex is an integer
+        int gameIndex;
+        try {
+            gameIndex = Integer.parseInt(args[1]) - 1;
+        } catch (NumberFormatException e) {
+            TUI.error("Invalid arguments, try command 'help'");
+            return;
+        }
+
+        // Find the correct gameId
+        int gameId = getGames().get(gameIndex).getAsJsonObject().get("gameID").getAsInt();
+        String joinData = "{\"playerColor\": \"" + args[2] + "\", \"gameID\": " + gameId + "}";
+
+        // Join the game
+        HttpResponse<String> joinResponse = makeRequest("/game", "PUT", this.sessionToken, joinData);
+
+        if (joinResponse.statusCode() != 200) {
+            TUI.error("Invalid Request");
+            return;
+        }
+
+        TUI.write(
+                EscapeSequences.format(
+                        "You have joined the game",
+                        new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
+                )
+        );
+
+        // Open the websocket
+        try {
+            if (Objects.equals(args[2], "WHITE")) {
+                teamColor = ChessGame.TeamColor.WHITE;
+            }
+            else if (Objects.equals(args[2], "BLACK")) {
+                teamColor = ChessGame.TeamColor.BLACK;
+            }
+            else {
+                TUI.error("Invalid team color");
+                return;
+            }
+
+            this.session = new WsClient(
+                    sessionToken,
+                    gameId,
+                    teamColor,
+                    portNumber
+            );
+
+        }catch (Exception e) {
+            TUI.error("Connection Error");
+            return;
+        }
+
+        // Send the connect message
+        this.session.send(new UserGameCommand(
+                UserGameCommand.CommandType.CONNECT,
+                sessionToken,
+                gameId
+        ));
+        this.session.awaitMessage();
+
+        // Transition to gameplayUI
+        enableGameplayUI();
     }
 
     private String listGames() {

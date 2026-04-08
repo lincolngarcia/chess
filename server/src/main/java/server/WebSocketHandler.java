@@ -29,9 +29,6 @@ public class WebSocketHandler {
     public static void addConnection(WsContext ctx) {
         ctx.enableAutomaticPings();
         connections.put(ctx.sessionId(), new connection(ctx, 0));
-
-        ServerMessage msg = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, "connection successful");
-        sendMessage(ctx, msg);
     }
 
     public static void removeConnection(WsContext ctx) {
@@ -55,7 +52,7 @@ public class WebSocketHandler {
                 // Store what game the session is in
                 connections.get(ctx.sessionId()).gameId = gameId;
 
-                // Show the game
+                // Send the game
                 ChessGameData gameData = DatabaseService.getGameById(gameId);
                 ServerMessage msg = new ServerMessage(
                         ServerMessage.ServerMessageType.LOAD_GAME, new Gson().toJson(gameData)
