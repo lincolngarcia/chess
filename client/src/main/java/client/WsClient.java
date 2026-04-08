@@ -49,10 +49,6 @@ public class WsClient extends Endpoint {
         }
     }
 
-    public boolean isActive() {
-        return session.isOpen();
-    }
-
     public void awaitMessage() {
         while (messageQueue.isEmpty()) {
             try {

@@ -47,22 +47,19 @@ public class TUI {
         System.out.println(text);
         System.out.print(EscapeSequences.RESET_TEXT_COLOR);
     }
-
+    
     public static void printBoard(ChessGameData data, ChessGame.TeamColor perspective) {
-        ChessBoard board = new ChessBoard();
-        board.resetBoard();
+        // Use the board from the provided game data
+        ChessBoard board = data.game.getBoard();
 
         String[] columnLabels = {"A", "B", "C", "D", "E", "F", "G", "H"};
 
-        // Direction Iterator
         int directionIterator = Objects.equals(perspective, ChessGame.TeamColor.WHITE) ? 1 : -1;
-
-        // Print the Header
         int headerStartIndex = Objects.equals(perspective, ChessGame.TeamColor.WHITE) ? 0 : 7;
 
         StringBuilder header = new StringBuilder();
         header.append("    ");
-        for (int i = headerStartIndex; i < 8 && i >= 0; i+= directionIterator) {
+        for (int i = headerStartIndex; i < 8 && i >= 0; i += directionIterator) {
             header.append(columnLabels[i]);
             header.append("  ");
         }
@@ -71,13 +68,13 @@ public class TUI {
 
         StringBuilder boardString = new StringBuilder();
         int startIndex = Objects.equals(perspective, ChessGame.TeamColor.WHITE) ? 0 : 63;
-        for (int index = startIndex; index < 64 && index >= 0; index+= directionIterator) {
+        for (int index = startIndex; index < 64 && index >= 0; index += directionIterator) {
             int row, col;
 
             if (perspective.equals(ChessGame.TeamColor.WHITE)) {
                 row = 7 - index / 8;
                 col = index % 8;
-            }else{
+            } else {
                 row = 7 - (index) / 8;
                 col = (index) % 8;
             }
@@ -145,7 +142,7 @@ public class TUI {
         int footerStartIndex = Objects.equals(perspective, ChessGame.TeamColor.WHITE) ? 0 : 7;
         StringBuilder footer = new StringBuilder();
         footer.append("    ");
-        for (int i = footerStartIndex; i < 8 && i >= 0; i+= directionIterator) {
+        for (int i = footerStartIndex; i < 8 && i >= 0; i += directionIterator) {
             footer.append(columnLabels[i]);
             footer.append("  ");
         }

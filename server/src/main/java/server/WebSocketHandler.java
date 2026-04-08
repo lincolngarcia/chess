@@ -1,5 +1,7 @@
 package server;
 
+import chess.ChessMove;
+import chess.InvalidMoveException;
 import com.google.gson.Gson;
 import dataaccess.DataAccessException;
 import dataaccess.DatabaseService;
@@ -46,6 +48,8 @@ public class WebSocketHandler {
             throw new DataAccessException("Invalid AuthToken");
         }
 
+        ChessGameData gameData = DatabaseService.getGameById(gameId);
+
         switch (command.getCommandType()) {
             // Connect to a game
             case CONNECT -> {
@@ -53,7 +57,6 @@ public class WebSocketHandler {
                 connections.get(ctx.sessionId()).gameId = gameId;
 
                 // Send the game
-                ChessGameData gameData = DatabaseService.getGameById(gameId);
                 ServerMessage msg = new ServerMessage(
                         ServerMessage.ServerMessageType.LOAD_GAME, new Gson().toJson(gameData)
                 );
@@ -62,7 +65,27 @@ public class WebSocketHandler {
 
             // Execute a move
             case MAKE_MOVE -> {
+                // get the move
+                if (command.getData() == null) {
+                    throw new AssertionError("Invalid Data");
+                }
 
+                // Assert the correct teams turn is to play
+
+                // Assert correct player is making the move
+
+                // Assert the move is valid
+
+                System.out.println("received move");
+
+                ChessMove move = GSON.fromJson(command.getData(), ChessMove.class);
+
+                try {
+                    gameData.game.makeMove(move);
+                    DatabaseService.updateGame(gameData);
+                } catch (InvalidMoveException e) {
+                    System.out.println("Invalid Move");
+                }
             }
 
             // leave a game

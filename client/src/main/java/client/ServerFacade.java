@@ -1,6 +1,8 @@
 package client;
 
 import chess.ChessGame;
+import chess.ChessMove;
+import chess.ChessPosition;
 import chess.converter.ChessFunctions;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -18,12 +20,13 @@ import static serverfunctions.ServerFunctions.getValue;
 import static serverfunctions.ServerFunctions.makeRequest;
 
 public class ServerFacade {
-    UiType UiStatus = UiType.PreLogin;
-    String sessionToken = null;
-    ChessGame game = null;
-    ChessGame.TeamColor teamColor = null;
     int portNumber;
     WsClient session;
+    String sessionToken = null;
+    UiType UiStatus = UiType.PreLogin;
+
+    ChessGame game = null;
+    ChessGame.TeamColor teamColor = null;
 
     enum UiType {
         PreLogin,
@@ -282,31 +285,50 @@ public class ServerFacade {
                 TUI.write(formatted);
                 return false;
             default:
-                ArrayList<String> validLetters = new ArrayList<>(List.of("a", "b", "c", "d", "e", "f", "g", "h"));
-                ArrayList<String> validNumbers = new ArrayList<>(List.of("1", "2", "3", "4", "5", "6", "7", "8"));
+                ArrayList<Character> validLetters = new ArrayList<>(List.of('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'));
+                ArrayList<Character> validNumbers = new ArrayList<>(List.of('1', '2', '3', '4', '5', '6', '7', '8'));
 
-                String[] splitString = commandType.split("");
+                String formattedString = commandType.toLowerCase();
 
-                boolean validString = splitString.length == 4;
+                boolean validString = formattedString.length() == 4;
 
-                if (!validLetters.contains(splitString[0].toLowerCase())) {
+                if (!validLetters.contains(formattedString.charAt(0))) {
                     validString = false;
                 }
-                if (!validNumbers.contains(splitString[1])) {
+                if (!validNumbers.contains(formattedString.charAt(1))) {
                     validString = false;
                 }
-                if (!validLetters.contains(splitString[2].toLowerCase())) {
+                if (!validLetters.contains(formattedString.charAt(2))) {
                     validString = false;
                 }
-                if (!validNumbers.contains(splitString[3])) {
+                if (!validNumbers.contains(formattedString.charAt(3))) {
                     validString = false;
                 }
 
-                if (validString) {
-                    TUI.write("Executing move " + commandType);
-                } else {
-                    TUI.error("Invalid command");
+                if (!validString) {
+                    TUI.error("Invalid command: '" + commandType + "'");
+                    return true;
                 }
+
+                int startRow = formattedString.charAt(1) - '0';   // 0 for ‘0’, 1 for ‘1’, …, 8 for ‘8’
+                int endRow   = formattedString.charAt(3) - '0';
+
+                int startCol = formattedString.charAt(0) - 'a';   // 0 for ‘a’, 1 for ‘b’, …, 7 for ‘h’
+                int endCol   = formattedString.charAt(2) - 'a';
+
+                ChessMove move = new ChessMove(
+                        new ChessPosition(startRow, startCol),
+                        new ChessPosition(endRow, endCol)
+                );
+
+                this.session.send(
+                        new UserGameCommand(
+                                UserGameCommand.CommandType.MAKE_MOVE,
+                                session.authToken,
+                                session.gameId,
+                                new Gson().toJson(move)
+                        )
+                );
 
                 // Validate a move
                 break;
