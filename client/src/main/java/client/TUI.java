@@ -18,11 +18,12 @@ public class TUI {
         System.out.print(EscapeSequences.ERASE_SCREEN);
     }
 
-    public static String prompt(String prompt, String[] commands) {
+    public static void prompt(String prompt, String[] commands){
         System.out.println(prompt);
 
         if (commands == null) {
-            return "Invalid help text";
+            TUI.error("Invalid help text");
+            return;
         }
 
         String helpText = EscapeSequences.format(
@@ -33,6 +34,11 @@ public class TUI {
 
         System.out.println(helpText);
         System.out.print(prePrompt);
+    }
+
+    public static String awaitPrompt(String prompt, String[] commands) {
+        TUI.prompt(prompt, commands);
+
         Scanner scanner = new Scanner(System.in);
 
         return scanner.nextLine();

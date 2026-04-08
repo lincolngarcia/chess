@@ -58,9 +58,18 @@ public class WebSocketHandler {
 
                 // Send the game
                 ServerMessage msg = new ServerMessage(
-                        ServerMessage.ServerMessageType.LOAD_GAME, new Gson().toJson(gameData)
+                        ServerMessage.ServerMessageType.LOAD_GAME, GSON.toJson(gameData)
                 );
                 sendMessage(ctx, msg);
+
+                // broadcast to others that they have joined
+                String username = DatabaseService.getUsernameByAuthToken(command.getAuthToken());
+                String teamColor = command.getData();
+                ServerMessage alert = new ServerMessage(
+                        ServerMessage.ServerMessageType.NOTIFICATION,
+                        username + " has joined the game as " + teamColor
+                );
+                broadcastUniqueMessage(alert, connections.get(ctx.sessionId()).gameId, ctx);
             }
 
             // Execute a move
@@ -74,18 +83,25 @@ public class WebSocketHandler {
 
                 // Assert correct player is making the move
 
-                // Assert the move is valid
-
-                System.out.println("received move");
-
                 ChessMove move = GSON.fromJson(command.getData(), ChessMove.class);
 
                 try {
                     gameData.game.makeMove(move);
                     DatabaseService.updateGame(gameData);
                 } catch (InvalidMoveException e) {
-                    System.out.println("Invalid Move");
+                    sendMessage(ctx, new ServerMessage(
+                            ServerMessage.ServerMessageType.ERROR,
+                            "Invalid move"
+                    ));
+                    return;
                 }
+
+                broadcastMessage(
+                        new ServerMessage(
+                                ServerMessage.ServerMessageType.LOAD_GAME,
+                                GSON.toJson(gameData)),
+                        connections.get(ctx.sessionId()).gameId
+                );
             }
 
             // leave a game
@@ -105,13 +121,25 @@ public class WebSocketHandler {
         ctx.send(json);
     }
 
-    private static void broadcastMessage(UserGameCommand command, int GameId) {
-        // Serialize the command to JSON using Gson
-        String json = GSON.toJson(command);
-        // Send the JSON to every connected client
+    private static void broadcastMessage(ServerMessage message, int GameId) {
+        String json = GSON.toJson(message);
+        // Send the JSON to every connected client matching gameId
         for (connection ctx : connections.values()) {
             if (GameId == ctx.gameId) {
                 ctx.client.send(json);
+            }
+        }
+    }
+
+    private static void broadcastUniqueMessage(ServerMessage message, int GameId, WsContext sender) {
+        String json = GSON.toJson(message);
+
+        // Send the JSON to every client matching gameId except the caller
+        for (connection ctx : connections.values()) {
+            if (GameId == ctx.gameId) {
+                if (!ctx.client.sessionId().equals(sender.sessionId())) {
+                    ctx.client.send(json);
+                }
             }
         }
     }

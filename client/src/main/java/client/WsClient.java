@@ -1,6 +1,7 @@
 package client;
 
 import chess.ChessGame;
+import chess.converter.ChessFunctions;
 import com.google.gson.Gson;
 import jakarta.websocket.ContainerProvider;
 import jakarta.websocket.Endpoint;
@@ -8,12 +9,14 @@ import jakarta.websocket.EndpointConfig;
 import jakarta.websocket.MessageHandler;
 import jakarta.websocket.Session;
 import jakarta.websocket.WebSocketContainer;
+import ui.EscapeSequences;
 import websocket.ChessGameData;
 import websocket.commands.UserGameCommand;
 import websocket.messages.ServerMessage;
 
 import java.net.URI;
 import java.util.LinkedList;
+import java.util.Objects;
 import java.util.Queue;
 
 public class WsClient extends Endpoint {
@@ -22,6 +25,8 @@ public class WsClient extends Endpoint {
     public int gameId;
     public ChessGame.TeamColor teamColor;
     private final static Queue<ServerMessage> messageQueue = new LinkedList<>();
+
+    public static String exclusiveReceiver;
 
     public WsClient(String authToken, int gameId, ChessGame.TeamColor teamColor, int portNumber) throws Exception {
         this.authToken = authToken;
@@ -35,6 +40,7 @@ public class WsClient extends Endpoint {
         session.addMessageHandler(new MessageHandler.Whole<String>() {
             public void onMessage(String message) {
                 ServerMessage msg = new Gson().fromJson(message, ServerMessage.class);
+
                 messageQueue.add(msg);
             }
         });
@@ -44,17 +50,30 @@ public class WsClient extends Endpoint {
         try {
             String msg = new Gson().toJson(message);
             session.getBasicRemote().sendText(msg);
-        }catch(Exception e) {
+        } catch (Exception e) {
             TUI.error("Error sending message");
         }
     }
 
-    public void awaitMessage() {
-        while (messageQueue.isEmpty()) {
+    public void awaitMessage(boolean newLine) {
+        while (true) {
+            boolean queueEmpty = messageQueue.isEmpty();
+            boolean isCurrentExclusiveThread = true;
+
+            if (exclusiveReceiver != null) {
+                if (!Objects.equals(Thread.currentThread().getName(), exclusiveReceiver)) {
+                    isCurrentExclusiveThread = false;
+                }
+            }
+
+            if (!queueEmpty && isCurrentExclusiveThread) {
+                break;
+            }
+
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
-                TUI.error("Interrupted Thread...");
+                return;
             }
         }
 
@@ -71,21 +90,27 @@ public class WsClient extends Endpoint {
         switch (message.getServerMessageType()) {
             case LOAD_GAME -> {
                 handleLoadGame(message);
-                break;
             }
             case ERROR -> {
                 handleError(message);
-                break;
             }
             case NOTIFICATION -> {
                 handleNotification(message);
-                break;
             }
         }
     }
 
     private void handleLoadGame(ServerMessage message) {
         ChessGameData data = new Gson().fromJson(message.getContent(), ChessGameData.class);
+        // Print team to move
+        String teamColorString = ChessFunctions.isWhite(data.game.getTeamTurn()) ? "White" : "Black";
+        TUI.write(
+                EscapeSequences.format(
+                        "\n" + teamColorString + " to move",
+                        new String[]{EscapeSequences.SET_TEXT_COLOR_MAGENTA}
+                )
+        );
+        // Print board
         TUI.printBoard(data, teamColor);
     }
 
@@ -94,7 +119,12 @@ public class WsClient extends Endpoint {
     }
 
     private void handleNotification(ServerMessage message) {
-        TUI.write("\n" + message.getContent());
+        TUI.write(
+                "\n" + EscapeSequences.format(
+                        message.getContent(),
+                        new String[]{EscapeSequences.SET_TEXT_COLOR_GREEN}
+                )
+        );
     }
 
     // This method must be overridden, but we don't have to do anything with it
