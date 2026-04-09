@@ -1,13 +1,11 @@
 package client;
 
-import chess.ChessBoard;
-import chess.ChessGame;
-import chess.ChessPiece;
-import chess.ChessPosition;
+import chess.*;
 import chess.converter.ChessFunctions;
 import ui.EscapeSequences;
 import websocket.ChessGameData;
 
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Scanner;
 
@@ -54,7 +52,7 @@ public class TUI {
         System.out.print(EscapeSequences.RESET_TEXT_COLOR);
     }
     
-    public static void printBoard(ChessGameData data, ChessGame.TeamColor perspective) {
+    public static void printBoard(ChessGameData data, ChessGame.TeamColor perspective, Collection<ChessPosition> highlights) {
         // Use the board from the provided game data
         ChessBoard board = data.game.getBoard();
 
@@ -94,12 +92,24 @@ public class TUI {
                 boardString.append(EscapeSequences.RESET_BG_COLOR);
             }
 
+            ChessPosition currentPosition = new ChessPosition(row + 1, col + 1);
+            String lightSquare = EscapeSequences.SET_BG_COLOR_WHITE;
+
+            String darkSquare = EscapeSequences.SET_BG_COLOR_DARK_GREY;
+
+            if (highlights != null) {
+                if (highlights.contains(currentPosition)) {
+                    lightSquare = EscapeSequences.SET_BG_COLOR_YELLOW;
+                    darkSquare = EscapeSequences.SET_BG_COLOR_GREEN;
+                }
+            }
+
             if ((row + col) % 2 == 0) {
                 boardString.append(EscapeSequences.SET_TEXT_COLOR_WHITE);
-                boardString.append(EscapeSequences.SET_BG_COLOR_DARK_GREY);
+                boardString.append(darkSquare);
             } else {
                 boardString.append(EscapeSequences.SET_TEXT_COLOR_DARK_GREY);
-                boardString.append(EscapeSequences.SET_BG_COLOR_WHITE);
+                boardString.append(lightSquare);
             }
 
             String charCode = "   ";

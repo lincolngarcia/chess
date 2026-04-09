@@ -1,5 +1,6 @@
 package client;
 
+import chess.ChessBoard;
 import chess.ChessGame;
 import chess.converter.ChessFunctions;
 import com.google.gson.Gson;
@@ -26,6 +27,8 @@ public class WsClient extends Endpoint {
     public UserGameCommand.UserGameState userGameState;
     public ChessGame.TeamColor teamColor;
     private final static Queue<ServerMessage> messageQueue = new LinkedList<>();
+
+    public static ChessGameData lastReceivedData;
 
     public static String exclusiveReceiver;
 
@@ -115,6 +118,7 @@ public class WsClient extends Endpoint {
 
     private void handleLoadGame(ServerMessage message) {
         ChessGameData data = new Gson().fromJson(message.getContent(), ChessGameData.class);
+        this.lastReceivedData = data;
         // Print team to move
         String teamColorString = ChessFunctions.isWhite(data.game.getTeamTurn()) ? "White" : "Black";
         TUI.write(
@@ -124,7 +128,7 @@ public class WsClient extends Endpoint {
                 )
         );
         // Print board
-        TUI.printBoard(data, teamColor);
+        TUI.printBoard(data, teamColor, null);
     }
 
     private void handleError(ServerMessage message) {

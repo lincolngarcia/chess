@@ -9,13 +9,13 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import serverfunctions.ServerFunctions;
 import ui.EscapeSequences;
+import websocket.ChessGameData;
 import websocket.commands.UserGameCommand;
 
 import java.io.IOException;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static serverfunctions.ServerFunctions.getValue;
 import static serverfunctions.ServerFunctions.makeRequest;
@@ -26,7 +26,6 @@ public class ServerFacade {
     String sessionToken = null;
     UiType UiStatus = UiType.PreLogin;
 
-    ChessGame game = null;
     ChessGame.TeamColor teamColor = null;
 
     // An extra thread for waiting on messages
@@ -75,7 +74,7 @@ public class ServerFacade {
                     }
                 }
                 case Gameplay -> {
-                    if (!handleGameCommand(commandType)) {
+                    if (!handleGameCommand(command, commandType)) {
                         return;
                     }
                 }
@@ -245,24 +244,30 @@ public class ServerFacade {
         return true;
     }
 
-    private boolean handleGameCommand(String commandType) {
+    private boolean handleGameCommand(String command, String commandType) {
         String formatted;
+
+        ChessGameData data = WsClient.lastReceivedData;
+        if (data == null) {
+            TUI.error("No received chess data to display");
+            return true;
+        }
 
         switch (commandType) {
             case "help":
                 String helpText = """
                         help - with possible commands
-                        start/end square - perform move
+                        [start/end square] - perform move
                         redraw - the board
                         leave - the game
                         resign - the game
-                        list - all moves
+                        list [start square] - all moves for position
                         quit - playing chess""";
                 formatted = EscapeSequences.format(helpText, new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE});
                 TUI.write(formatted);
                 break;
             case "redraw":
-                TUI.write("Redrawing board");
+                TUI.printBoard(data, teamColor, null);
                 break;
             case "leave":
                 this.leaveGame();
@@ -278,46 +283,67 @@ public class ServerFacade {
                 );
                 break;
             case "list":
-                TUI.write("list moves");
+                String[] args = command.split(" ");
+
+                // Assert argument count is 2
+                if (args.length != 2) {
+                    TUI.error("Invalid arguments, try command 'help'");
+                    return true;
+                }
+
+                // Assert string length is 2
+                if (args[1].length() != 2) {
+                    TUI.error("Invalid arguments, try command 'help'");
+                    return true;
+                }
+
+                // Assert the cords are valid
+                int[] cords = ChessFunctions.parseLocationString(args[1]);
+
+                if (Arrays.equals(cords, new int[]{-1, -1})) {
+                    TUI.error("Invalid arguments, try command 'help'");
+                    return true;
+                }
+
+                ChessPosition position = new ChessPosition(cords[0], cords[1]);
+                Collection<ChessMove> validMoves = WsClient.lastReceivedData.game.validMoves(position);
+                List<ChessPosition> highlights = null;
+                if (!validMoves.isEmpty()) {
+                    highlights = validMoves.stream()
+                            .map(ChessMove::getEndPosition)
+                            .collect(Collectors.toList());
+                }
+
+                TUI.printBoard(data, teamColor, highlights);
                 break;
             case "quit":
                 return quit();
             default:
-                ArrayList<Character> validLetters = new ArrayList<>(List.of('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'));
-                ArrayList<Character> validNumbers = new ArrayList<>(List.of('1', '2', '3', '4', '5', '6', '7', '8'));
-
-                String formattedString = commandType.toLowerCase();
-
-                boolean validString = formattedString.length() == 4;
-
-                if (!validLetters.contains(formattedString.charAt(0))) {
-                    validString = false;
-                }
-                if (!validNumbers.contains(formattedString.charAt(1))) {
-                    validString = false;
-                }
-                if (!validLetters.contains(formattedString.charAt(2))) {
-                    validString = false;
-                }
-                if (!validNumbers.contains(formattedString.charAt(3))) {
-                    validString = false;
-                }
-
-                if (!validString) {
+                if (commandType.length() != 4) {
                     TUI.error("Invalid command: '" + commandType + "'");
                     return true;
                 }
 
-                // Subtract the Unicode values from the start
-                int startRow = formattedString.charAt(1) - '0';
-                int endRow = formattedString.charAt(3) - '0';
+                String startingSquare = commandType.substring(0, 2);
+                String endingSquare = commandType.substring(2);
 
-                int startCol = (formattedString.charAt(0) - 'a') + 1;
-                int endCol = (formattedString.charAt(2) - 'a') + 1;
+                int[] startingCords = ChessFunctions.parseLocationString(startingSquare);
+                int[] endingCords = ChessFunctions.parseLocationString(endingSquare);
+
+                if (Arrays.equals(startingCords, new int[]{-1, -1})) {
+                    TUI.error("Invalid command: '" + commandType + "'");
+                    return true;
+                }
+
+                if (Arrays.equals(endingCords, new int[]{-1, -1})) {
+                    TUI.error("Invalid command: '" + commandType + "'");
+                    return true;
+
+                }
 
                 ChessMove move = new ChessMove(
-                        new ChessPosition(startRow, startCol),
-                        new ChessPosition(endRow, endCol)
+                        new ChessPosition(startingCords[0], startingCords[1]),
+                        new ChessPosition(endingCords[0], endingCords[1])
                 );
 
                 this.sendAndReceiveBlockingMessage(
@@ -576,6 +602,7 @@ public class ServerFacade {
                 "redraw",
                 "leave",
                 "resign",
+                "list",
                 "[move]",
                 "quit"
         };
@@ -649,7 +676,7 @@ public class ServerFacade {
                             commandOptions
                     );
                 }
-            }catch (InterruptedException e) {
+            } catch (InterruptedException e) {
                 return;
             }
         });
