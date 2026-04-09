@@ -1,5 +1,6 @@
 package server;
 
+import bot.Connection;
 import chess.ChessGame;
 import chess.ChessMove;
 import chess.InvalidMoveException;
@@ -7,6 +8,7 @@ import chess.converter.ChessFunctions;
 import com.google.gson.Gson;
 import dataaccess.DataAccessException;
 import dataaccess.DatabaseService;
+import org.xml.sax.ErrorHandler;
 import websocket.ChessGameData;
 import websocket.commands.UserGameCommand;
 import io.javalin.websocket.WsContext;
@@ -25,6 +27,7 @@ public class WebSocketHandler {
         public final WsContext client;
         public int gameId;
         public UserGameCommand.UserGameState userGameState;
+        public String authToken;
 
         connection(WsContext client, int GameId) {
             this.client = client;
@@ -60,15 +63,30 @@ public class WebSocketHandler {
                 // Store what game the session is in
                 connections.get(ctx.sessionId()).gameId = gameId;
 
+                // Store the user auth token
+                connections.get(ctx.sessionId()).authToken = command.getAuthToken();
+
                 // Get the user type
                 UserGameCommand.UserGameState teamColor = GSON.fromJson(command.getData(), UserGameCommand.UserGameState.class);
                 connections.get(ctx.sessionId()).userGameState = teamColor;
 
                 // Send the game
-                ServerMessage msg = new ServerMessage(
-                        ServerMessage.ServerMessageType.LOAD_GAME, GSON.toJson(gameData)
+                sendMessage(
+                        ctx,
+                        new ServerMessage(
+                                ServerMessage.ServerMessageType.LOAD_GAME,
+                                GSON.toJson(gameData)
+                        )
                 );
-                sendMessage(ctx, msg);
+
+                // Send the "you have joined" message
+                sendMessage(
+                        ctx,
+                        new ServerMessage(
+                                ServerMessage.ServerMessageType.NOTIFICATION,
+                                "You have joined the game"
+                        )
+                );
 
                 // broadcast to others that they have joined
                 String username = DatabaseService.getUsernameByAuthToken(command.getAuthToken());
@@ -92,6 +110,18 @@ public class WebSocketHandler {
                         UserGameCommand.UserGameState.WHITE : UserGameCommand.UserGameState.BLACK;
                 UserGameCommand.UserGameState actualGameState = connections.get(ctx.sessionId()).userGameState;
 
+                // Assert game isn't finished
+                if (isGameOver(gameData)) {
+                    sendMessage(
+                            ctx,
+                            new ServerMessage(
+                                    ServerMessage.ServerMessageType.ERROR,
+                                    "Game is already finished"
+                            )
+                    );
+                    return;
+                }
+
                 if (expectedGameState != actualGameState) {
                     sendMessage(
                             ctx,
@@ -106,38 +136,20 @@ public class WebSocketHandler {
                 // Parse and execute the move
                 ChessMove move = GSON.fromJson(command.getData(), ChessMove.class);
 
-                try {
-                    gameData.game.makeMove(move);
-                    DatabaseService.updateGame(gameData);
-                } catch (InvalidMoveException e) {
-                    sendMessage(ctx, new ServerMessage(
-                            ServerMessage.ServerMessageType.ERROR,
-                            "Invalid move"
-                    ));
-                    return;
-                }
-
-                broadcastMessage(
-                        new ServerMessage(
-                                ServerMessage.ServerMessageType.LOAD_GAME,
-                                GSON.toJson(gameData)),
-                        connections.get(ctx.sessionId()).gameId
-                );
+                handleMoveRequest(command, ctx, gameData, move);
             }
 
             // leave a game
             case LEAVE -> {
-                // TODO: potential pitfall: repeated usernames may cause unexpected behavior
-                // easy fix? deny same username entering a game;
-
                 // Remove the player from the database
                 String username = DatabaseService.getUsernameByAuthToken(command.getAuthToken());
+                UserGameCommand.UserGameState userGameState = connections.get(ctx.sessionId()).userGameState;
 
                 Integer teamColorIndex = null;
-                if (Objects.equals(gameData.playerUsernames[0], username)) {
+                if (userGameState == UserGameCommand.UserGameState.WHITE) {
                     teamColorIndex = 0;
                 }
-                if (Objects.equals(gameData.playerUsernames[1], username)) {
+                if (userGameState == UserGameCommand.UserGameState.BLACK) {
                     teamColorIndex = 1;
                 }
                 if (teamColorIndex != null) {
@@ -178,6 +190,17 @@ public class WebSocketHandler {
                     return;
                 }
 
+                if (isGameOver(gameData)) {
+                    sendMessage(
+                            ctx,
+                            new ServerMessage(
+                                    ServerMessage.ServerMessageType.ERROR,
+                                    "Game is already finished"
+                            )
+                    );
+                    return;
+                }
+
                 broadcastMessage(
                         new ServerMessage(
                                 ServerMessage.ServerMessageType.NOTIFICATION,
@@ -215,5 +238,53 @@ public class WebSocketHandler {
                 }
             }
         }
+    }
+
+    private static void handleMoveRequest(UserGameCommand command, WsContext ctx, ChessGameData gameData, ChessMove move) {
+        try {
+            gameData.game.makeMove(move);
+            DatabaseService.updateGame(gameData);
+        } catch (InvalidMoveException e) {
+            sendMessage(ctx, new ServerMessage(
+                    ServerMessage.ServerMessageType.ERROR,
+                    "Invalid move"
+            ));
+            return;
+        }
+
+        broadcastMessage(
+                new ServerMessage(
+                        ServerMessage.ServerMessageType.LOAD_GAME,
+                        GSON.toJson(gameData)
+                ),
+                connections.get(ctx.sessionId()).gameId
+        );
+
+        String username = DatabaseService.getUsernameByAuthToken(command.getAuthToken());
+
+        if (gameData.game.isInCheckmate(gameData.game.getTeamTurn())) {
+            broadcastMessage(
+                    new ServerMessage(
+                            ServerMessage.ServerMessageType.NOTIFICATION,
+                            username + " has won by checkmate."
+                    ),
+                    connections.get(ctx.sessionId()).gameId
+            );
+        }
+
+        if (gameData.game.isInStalemate(gameData.game.getTeamTurn())) {
+            broadcastMessage(
+                    new ServerMessage(
+                            ServerMessage.ServerMessageType.NOTIFICATION,
+                            "Draw by stalemate."
+                    ),
+                    connections.get(ctx.sessionId()).gameId
+            );
+        }
+    }
+
+    private static boolean isGameOver(ChessGameData gameData) {
+        ChessGame.TeamColor activeTeam = gameData.game.getTeamTurn();
+        return gameData.game.isInCheckmate(activeTeam) || gameData.game.isInStalemate(activeTeam);
     }
 }
