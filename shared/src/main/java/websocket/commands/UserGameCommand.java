@@ -18,6 +18,12 @@ public class UserGameCommand {
 
     private final String data;
 
+    public enum UserGameState {
+        WHITE,
+        BLACK,
+        OBSERVER
+    }
+
     public UserGameCommand(CommandType commandType, String authToken, Integer gameID) {
         this.commandType = commandType;
         this.authToken = authToken;

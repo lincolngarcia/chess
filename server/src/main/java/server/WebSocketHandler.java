@@ -1,7 +1,9 @@
 package server;
 
+import chess.ChessGame;
 import chess.ChessMove;
 import chess.InvalidMoveException;
+import chess.converter.ChessFunctions;
 import com.google.gson.Gson;
 import dataaccess.DataAccessException;
 import dataaccess.DatabaseService;
@@ -22,6 +24,7 @@ public class WebSocketHandler {
     private static class connection {
         public final WsContext client;
         public int gameId;
+        public UserGameCommand.UserGameState userGameState;
 
         connection(WsContext client, int GameId) {
             this.client = client;
@@ -57,6 +60,10 @@ public class WebSocketHandler {
                 // Store what game the session is in
                 connections.get(ctx.sessionId()).gameId = gameId;
 
+                // Get the user type
+                UserGameCommand.UserGameState teamColor = GSON.fromJson(command.getData(), UserGameCommand.UserGameState.class);
+                connections.get(ctx.sessionId()).userGameState = teamColor;
+
                 // Send the game
                 ServerMessage msg = new ServerMessage(
                         ServerMessage.ServerMessageType.LOAD_GAME, GSON.toJson(gameData)
@@ -65,7 +72,6 @@ public class WebSocketHandler {
 
                 // broadcast to others that they have joined
                 String username = DatabaseService.getUsernameByAuthToken(command.getAuthToken());
-                String teamColor = command.getData();
                 ServerMessage alert = new ServerMessage(
                         ServerMessage.ServerMessageType.NOTIFICATION,
                         username + " has joined the game as " + teamColor
@@ -80,10 +86,24 @@ public class WebSocketHandler {
                     throw new AssertionError("Invalid Data");
                 }
 
-                // Assert the correct teams turn is to play
-
                 // Assert correct player is making the move
+                ChessGame.TeamColor activeTeam = gameData.game.getTeamTurn();
+                UserGameCommand.UserGameState expectedGameState = ChessFunctions.isWhite(activeTeam) ?
+                        UserGameCommand.UserGameState.WHITE : UserGameCommand.UserGameState.BLACK;
+                UserGameCommand.UserGameState actualGameState = connections.get(ctx.sessionId()).userGameState;
 
+                if (expectedGameState != actualGameState) {
+                    sendMessage(
+                            ctx,
+                            new ServerMessage(
+                                    ServerMessage.ServerMessageType.ERROR,
+                                    "Not your move..."
+                            )
+                    );
+                    return;
+                }
+
+                // Parse and execute the move
                 ChessMove move = GSON.fromJson(command.getData(), ChessMove.class);
 
                 try {

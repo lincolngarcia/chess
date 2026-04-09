@@ -423,12 +423,23 @@ public class ServerFacade {
                 return;
             }
 
+            UserGameCommand.UserGameState userGameState;
+
+            if (Objects.equals(args[2], "WHITE")) {
+                userGameState = UserGameCommand.UserGameState.WHITE;
+            } else if (Objects.equals(args[2], "BLACK")) {
+                userGameState = UserGameCommand.UserGameState.BLACK;
+            } else {
+                TUI.error("Invalid team color");
+                return;
+            }
+
             this.session = new WsClient(
                     sessionToken,
                     gameId,
                     teamColor,
                     portNumber,
-                    args[2]
+                    userGameState
             );
 
         } catch (Exception e) {
@@ -484,7 +495,7 @@ public class ServerFacade {
                     gameId,
                     teamColor,
                     portNumber,
-                    "observer"
+                    UserGameCommand.UserGameState.OBSERVER
             );
         } catch (Exception e) {
             TUI.error("Connection Error");

@@ -23,15 +23,17 @@ public class WsClient extends Endpoint {
     public Session session;
     public String authToken;
     public int gameId;
+    public UserGameCommand.UserGameState userGameState;
     public ChessGame.TeamColor teamColor;
     private final static Queue<ServerMessage> messageQueue = new LinkedList<>();
 
     public static String exclusiveReceiver;
 
-    public WsClient(String authToken, int gameId, ChessGame.TeamColor teamColor, int portNumber, String type) throws Exception {
+    public WsClient(String authToken, int gameId, ChessGame.TeamColor teamColor, int portNumber, UserGameCommand.UserGameState userGameState) throws Exception {
         this.authToken = authToken;
         this.gameId = gameId;
         this.teamColor = teamColor;
+        this.userGameState = userGameState;
 
         URI uri = new URI("ws://localhost:" + portNumber + "/ws");
         WebSocketContainer container = ContainerProvider.getWebSocketContainer();
@@ -50,7 +52,7 @@ public class WsClient extends Endpoint {
                         UserGameCommand.CommandType.CONNECT,
                         authToken,
                         gameId,
-                        type
+                        new Gson().toJson(userGameState)
                 )
         );
 
