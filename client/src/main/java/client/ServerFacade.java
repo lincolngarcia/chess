@@ -617,7 +617,6 @@ public class ServerFacade {
         enablePostLoginUI(this.sessionToken);
 
         // close the connection
-        // TODO: implement the leave game thing on all relevant functions
         try {
             // Stop waiting on the thread
             if (this.T != null) {
