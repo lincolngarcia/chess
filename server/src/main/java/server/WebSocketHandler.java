@@ -1,6 +1,5 @@
 package server;
 
-import bot.Connection;
 import chess.ChessGame;
 import chess.ChessMove;
 import chess.InvalidMoveException;
@@ -8,7 +7,6 @@ import chess.converter.ChessFunctions;
 import com.google.gson.Gson;
 import dataaccess.DataAccessException;
 import dataaccess.DatabaseService;
-import org.xml.sax.ErrorHandler;
 import websocket.ChessGameData;
 import websocket.commands.UserGameCommand;
 import io.javalin.websocket.WsContext;
@@ -79,15 +77,6 @@ public class WebSocketHandler {
                         )
                 );
 
-                // Send the "you have joined" message
-                sendMessage(
-                        ctx,
-                        new ServerMessage(
-                                ServerMessage.ServerMessageType.NOTIFICATION,
-                                "You have joined the game"
-                        )
-                );
-
                 // broadcast to others that they have joined
                 String username = DatabaseService.getUsernameByAuthToken(command.getAuthToken());
                 ServerMessage alert = new ServerMessage(
@@ -101,7 +90,7 @@ public class WebSocketHandler {
             case MAKE_MOVE -> {
                 // get the move
                 if (command.getData() == null) {
-                    throw new AssertionError("Invalid Data");
+                    throw new AssertionError("Error: Invalid Data");
                 }
 
                 // Assert correct player is making the move
@@ -116,7 +105,7 @@ public class WebSocketHandler {
                             ctx,
                             new ServerMessage(
                                     ServerMessage.ServerMessageType.ERROR,
-                                    "Game is already finished"
+                                    "Error: Game is already finished"
                             )
                     );
                     return;
@@ -127,7 +116,7 @@ public class WebSocketHandler {
                             ctx,
                             new ServerMessage(
                                     ServerMessage.ServerMessageType.ERROR,
-                                    "Not your move..."
+                                    "Error: Not your move..."
                             )
                     );
                     return;
@@ -172,6 +161,17 @@ public class WebSocketHandler {
 
             // end the game
             case RESIGN -> {
+                if (isGameOver(gameData)) {
+                    sendMessage(
+                            ctx,
+                            new ServerMessage(
+                                    ServerMessage.ServerMessageType.ERROR,
+                                    "Error: game already over"
+                            )
+                    );
+                    return;
+                }
+
                 // Return the notification
                 String username = DatabaseService.getUsernameByAuthToken(command.getAuthToken());
 
@@ -185,7 +185,7 @@ public class WebSocketHandler {
                 if (teamColorIndex == null) {
                     sendMessage(ctx, new ServerMessage(
                             ServerMessage.ServerMessageType.ERROR,
-                            "resignation not accepted due to user not existing"
+                            "Error: resignation not accepted due to user not existing"
                     ));
                     return;
                 }
@@ -195,11 +195,14 @@ public class WebSocketHandler {
                             ctx,
                             new ServerMessage(
                                     ServerMessage.ServerMessageType.ERROR,
-                                    "Game is already finished"
+                                    "Error: Game is already finished"
                             )
                     );
                     return;
                 }
+
+                gameData.gameState = ChessGameData.gameStates.INACTIVE;
+                DatabaseService.updateGame(gameData);
 
                 broadcastMessage(
                         new ServerMessage(
@@ -241,13 +244,22 @@ public class WebSocketHandler {
     }
 
     private static void handleMoveRequest(UserGameCommand command, WsContext ctx, ChessGameData gameData, ChessMove move) {
+        if (isGameOver(gameData)) {
+            sendMessage(
+                    ctx,
+                    new ServerMessage(
+                            ServerMessage.ServerMessageType.ERROR,
+                            "Error: Game is already finished"
+                    )
+            );
+        }
+
         try {
             gameData.game.makeMove(move);
-            DatabaseService.updateGame(gameData);
         } catch (InvalidMoveException e) {
             sendMessage(ctx, new ServerMessage(
                     ServerMessage.ServerMessageType.ERROR,
-                    "Invalid move"
+                    "Error: Invalid move"
             ));
             return;
         }
@@ -270,6 +282,7 @@ public class WebSocketHandler {
                     ),
                     connections.get(ctx.sessionId()).gameId
             );
+            gameData.gameState = ChessGameData.gameStates.INACTIVE;
         }
 
         if (gameData.game.isInStalemate(gameData.game.getTeamTurn())) {
@@ -280,11 +293,13 @@ public class WebSocketHandler {
                     ),
                     connections.get(ctx.sessionId()).gameId
             );
+            gameData.gameState = ChessGameData.gameStates.INACTIVE;
         }
+
+        DatabaseService.updateGame(gameData);
     }
 
     private static boolean isGameOver(ChessGameData gameData) {
-        ChessGame.TeamColor activeTeam = gameData.game.getTeamTurn();
-        return gameData.game.isInCheckmate(activeTeam) || gameData.game.isInStalemate(activeTeam);
+        return gameData.gameState == ChessGameData.gameStates.INACTIVE;
     }
 }

@@ -61,7 +61,7 @@ public class WsClient extends Endpoint {
 
         try {
             this.awaitMessage(false);
-        }catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             TUI.error("Thread was interrupted unexpectedly");
         }
     }
@@ -118,7 +118,8 @@ public class WsClient extends Endpoint {
 
     private void handleLoadGame(ServerMessage message) {
         ChessGameData data = new Gson().fromJson(message.getContent(), ChessGameData.class);
-        this.lastReceivedData = data;
+        lastReceivedData = data;
+
         // Print team to move
         String teamColorString = ChessFunctions.isWhite(data.game.getTeamTurn()) ? "White" : "Black";
         TUI.write(
@@ -127,6 +128,30 @@ public class WsClient extends Endpoint {
                         new String[]{EscapeSequences.SET_TEXT_COLOR_MAGENTA}
                 )
         );
+
+        int lastPlayerMovedIndex = ChessFunctions.isWhite(data.game.getOffTeamColor()) ? 0 : 1;
+        String lastMovedUsername = data.playerUsernames[lastPlayerMovedIndex];
+        if (lastMovedUsername != null) {
+            TUI.write(
+                    EscapeSequences.format(
+                            lastMovedUsername + " moved",
+                            new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
+                    )
+            );
+        }
+
+        int usernameIndex = ChessFunctions.isWhite(data.game.getTeamTurn()) ? 0 : 1;
+        String username = data.playerUsernames[usernameIndex];
+
+        if (data.game.isInCheck(data.game.getTeamTurn())) {
+            TUI.write(
+                    EscapeSequences.format(
+                            username + " is in check",
+                            new String[]{EscapeSequences.SET_TEXT_COLOR_YELLOW}
+                    )
+            );
+        }
+
         // Print board
         TUI.printBoard(data, teamColor, null);
     }

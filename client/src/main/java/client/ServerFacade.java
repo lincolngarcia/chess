@@ -80,7 +80,7 @@ public class ServerFacade {
                 }
 
                 case Observe -> {
-                    if (!handleObservation(commandType)) {
+                    if (!handleObservation(command, commandType)) {
                         return;
                     }
                 }
@@ -273,6 +273,17 @@ public class ServerFacade {
                 this.leaveGame();
                 break;
             case "resign":
+                boolean confirmation = false;
+                while (!confirmation) {
+                    String resign = TUI.awaitPrompt("Are you sure?", new String[]{"yes", "no"});
+                    if (resign.equals("yes")) {
+                        confirmation = true;
+                    }
+                    if (resign.equals("no")) {
+
+                        return true;
+                    }
+                }
                 TUI.write("resigning game");
                 this.sendAndReceiveBlockingMessage(
                         new UserGameCommand(
@@ -283,38 +294,7 @@ public class ServerFacade {
                 );
                 break;
             case "list":
-                String[] args = command.split(" ");
-
-                // Assert argument count is 2
-                if (args.length != 2) {
-                    TUI.error("Invalid arguments, try command 'help'");
-                    return true;
-                }
-
-                // Assert string length is 2
-                if (args[1].length() != 2) {
-                    TUI.error("Invalid arguments, try command 'help'");
-                    return true;
-                }
-
-                // Assert the cords are valid
-                int[] cords = ChessFunctions.parseLocationString(args[1]);
-
-                if (Arrays.equals(cords, new int[]{-1, -1})) {
-                    TUI.error("Invalid arguments, try command 'help'");
-                    return true;
-                }
-
-                ChessPosition position = new ChessPosition(cords[0], cords[1]);
-                Collection<ChessMove> validMoves = WsClient.lastReceivedData.game.validMoves(position);
-                List<ChessPosition> highlights = null;
-                if (!validMoves.isEmpty()) {
-                    highlights = validMoves.stream()
-                            .map(ChessMove::getEndPosition)
-                            .collect(Collectors.toList());
-                }
-
-                TUI.printBoard(data, teamColor, highlights);
+                this.listMoves(command, data);
                 break;
             case "quit":
                 return quit();
@@ -359,13 +339,17 @@ public class ServerFacade {
         return true;
     }
 
-    private boolean handleObservation(String commandType) {
+    private boolean handleObservation(String command, String commandType) {
+        ChessGameData data = WsClient.lastReceivedData;
+
         switch (commandType) {
             case "help":
                 String helpText = """
                         help - with possible commands
                         leave - the game
                         switch - the game perspective
+                        redraw - the board
+                        list [start square] - all moves for position
                         quit - playing chess""";
                 TUI.write(
                         EscapeSequences.format(
@@ -386,6 +370,14 @@ public class ServerFacade {
                 );
                 this.teamColor = ChessFunctions.isWhite(this.session.teamColor) ? ChessGame.TeamColor.BLACK : ChessGame.TeamColor.WHITE;
                 this.session.teamColor = this.teamColor;
+                break;
+
+            case "redraw":
+                TUI.printBoard(data, teamColor, null);
+                break;
+
+            case "list":
+                this.listMoves(command, data);
                 break;
 
             case "quit":
@@ -614,6 +606,8 @@ public class ServerFacade {
                 "help",
                 "leave",
                 "switch",
+                "list",
+                "redraw",
                 "quit"
         };
     }
@@ -696,5 +690,49 @@ public class ServerFacade {
         }
         // unlock the thread
         WsClient.exclusiveReceiver = null;
+    }
+
+    private void listMoves(String command, ChessGameData data) {
+        String[] args = command.split(" ");
+
+        // Assert argument count is 2
+        if (args.length != 2) {
+            TUI.error("Invalid arguments, try command 'help'");
+            return;
+        }
+
+        // Assert string length is 2
+        if (args[1].length() != 2) {
+            TUI.error("Invalid arguments, try command 'help'");
+            return;
+        }
+
+        // Assert the cords are valid
+        int[] cords = ChessFunctions.parseLocationString(args[1]);
+
+        if (Arrays.equals(cords, new int[]{-1, -1})) {
+            TUI.error("Invalid arguments, try command 'help'");
+            return;
+        }
+
+        ChessPosition position = new ChessPosition(cords[0], cords[1]);
+
+        // Assert there is a piece in that position
+        if (data.game.getBoard().getPiece(position) == null) {
+            TUI.error("No piece found for given position");
+            return;
+        }
+
+
+        Collection<ChessMove> validMoves = WsClient.lastReceivedData.game.validMoves(position);
+        List<ChessPosition> highlights = null;
+        if (!validMoves.isEmpty()) {
+            highlights = validMoves.stream()
+                    .map(ChessMove::getEndPosition)
+                    .collect(Collectors.toList());
+            highlights.add(position);
+        }
+
+        TUI.printBoard(data, teamColor, highlights);
     }
 }
