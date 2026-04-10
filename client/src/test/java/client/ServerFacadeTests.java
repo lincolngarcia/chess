@@ -36,7 +36,8 @@ public class ServerFacadeTests {
     @Order(2)
     @DisplayName("ServerFacade Negative")
     void serverFacadeNegative() {
-        assert facade.commandOptions == null;
+        assert facade.UiStatus == ServerFacade.UiType.PreLogin;
+
     }
 
     @Test

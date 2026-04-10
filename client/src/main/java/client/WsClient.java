@@ -31,9 +31,8 @@ public class WsClient extends Endpoint {
             public void onMessage(String message) {
                 ServerMessage msg = new Gson().fromJson(message, ServerMessage.class);
 
-                // TODO: roll this back
                 if (msg.getServerMessageType() == ServerMessage.ServerMessageType.NOTIFICATION
-                        && Objects.equals("msg.getContent()", "connection successful")) {
+                        && Objects.equals(msg.getContent(), "connection successful")) {
                     try {
                         WsClient.send(
                                 new UserGameCommand(
