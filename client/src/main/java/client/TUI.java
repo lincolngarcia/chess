@@ -1,12 +1,11 @@
 package client;
 
-import chess.ChessBoard;
-import chess.ChessGame;
-import chess.ChessPiece;
-import chess.ChessPosition;
+import chess.*;
 import chess.converter.ChessFunctions;
 import ui.EscapeSequences;
+import websocket.ChessGameData;
 
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Scanner;
 
@@ -17,11 +16,12 @@ public class TUI {
         System.out.print(EscapeSequences.ERASE_SCREEN);
     }
 
-    public static String prompt(String prompt, String[] commands) {
+    public static void prompt(String prompt, String[] commands){
         System.out.println(prompt);
 
         if (commands == null) {
-            return "Invalid help text";
+            TUI.error("Invalid help text");
+            return;
         }
 
         String helpText = EscapeSequences.format(
@@ -32,6 +32,11 @@ public class TUI {
 
         System.out.println(helpText);
         System.out.print(prePrompt);
+    }
+
+    public static String awaitPrompt(String prompt, String[] commands) {
+        TUI.prompt(prompt, commands);
+
         Scanner scanner = new Scanner(System.in);
 
         return scanner.nextLine();
@@ -47,19 +52,18 @@ public class TUI {
         System.out.print(EscapeSequences.RESET_TEXT_COLOR);
     }
 
-    public static void printBoard(String perspective) {
-        ChessBoard board = new ChessBoard();
-        board.resetBoard();
+    public static void printBoard(ChessGameData data, ChessGame.TeamColor perspective, Collection<ChessPosition> highlights) {
+        // Use the board from the provided game data
+        ChessBoard board = data.game.getBoard();
 
         String[] columnLabels = {"A", "B", "C", "D", "E", "F", "G", "H"};
 
-        int directionIterator = Objects.equals(perspective, "WHITE") ? 1 : -1;
+        int directionIterator = Objects.equals(perspective, ChessGame.TeamColor.WHITE) ? 1 : -1;
+        int headerStartIndex = Objects.equals(perspective, ChessGame.TeamColor.WHITE) ? 0 : 7;
 
-        // Print the Header
-        int headerStartIndex = Objects.equals(perspective, "WHITE") ? 0 : 7;
         StringBuilder header = new StringBuilder();
         header.append("    ");
-        for (int i = headerStartIndex; i < 8 && i >= 0; i+= directionIterator) {
+        for (int i = headerStartIndex; i < 8 && i >= 0; i += directionIterator) {
             header.append(columnLabels[i]);
             header.append("  ");
         }
@@ -67,19 +71,19 @@ public class TUI {
         write(EscapeSequences.format(header.toString(), new String[]{EscapeSequences.SET_BG_COLOR_LIGHT_GREY}));
 
         StringBuilder boardString = new StringBuilder();
-        int startIndex = Objects.equals(perspective, "WHITE") ? 0 : 63;
-        for (int index = startIndex; index < 64 && index >= 0; index+= directionIterator) {
+        int startIndex = Objects.equals(perspective, ChessGame.TeamColor.WHITE) ? 0 : 63;
+        for (int index = startIndex; index < 64 && index >= 0; index += directionIterator) {
             int row, col;
 
-            if (perspective.equals("WHITE")) {
+            if (perspective.equals(ChessGame.TeamColor.WHITE)) {
                 row = 7 - index / 8;
                 col = index % 8;
-            }else{
+            } else {
                 row = 7 - (index) / 8;
                 col = (index) % 8;
             }
 
-            int startLineColumn = perspective.equals("WHITE") ? 0 : 7;
+            int startLineColumn = perspective.equals(ChessGame.TeamColor.WHITE) ? 0 : 7;
             if (col == startLineColumn) {
                 boardString.append(EscapeSequences.SET_BG_COLOR_LIGHT_GREY);
                 boardString.append(" ");
@@ -88,12 +92,24 @@ public class TUI {
                 boardString.append(EscapeSequences.RESET_BG_COLOR);
             }
 
+            ChessPosition currentPosition = new ChessPosition(row + 1, col + 1);
+            String lightSquare = EscapeSequences.SET_BG_COLOR_WHITE;
+
+            String darkSquare = EscapeSequences.SET_BG_COLOR_DARK_GREY;
+
+            if (highlights != null) {
+                if (highlights.contains(currentPosition)) {
+                    lightSquare = EscapeSequences.SET_BG_COLOR_YELLOW;
+                    darkSquare = EscapeSequences.SET_BG_COLOR_GREEN;
+                }
+            }
+
             if ((row + col) % 2 == 0) {
                 boardString.append(EscapeSequences.SET_TEXT_COLOR_WHITE);
-                boardString.append(EscapeSequences.SET_BG_COLOR_DARK_GREY);
+                boardString.append(darkSquare);
             } else {
                 boardString.append(EscapeSequences.SET_TEXT_COLOR_DARK_GREY);
-                boardString.append(EscapeSequences.SET_BG_COLOR_WHITE);
+                boardString.append(lightSquare);
             }
 
             String charCode = "   ";
@@ -125,7 +141,7 @@ public class TUI {
 
             boardString.append(charCode);
 
-            int endLineColumn = perspective.equals("WHITE") ? 7 : 0;
+            int endLineColumn = perspective == ChessGame.TeamColor.WHITE ? 7 : 0;
             if (col == endLineColumn) {
                 boardString.append(EscapeSequences.RESET_TEXT_COLOR);
                 boardString.append(EscapeSequences.SET_BG_COLOR_LIGHT_GREY);
@@ -139,10 +155,10 @@ public class TUI {
 
         System.out.print(boardString);
 
-        int footerStartIndex = Objects.equals(perspective, "WHITE") ? 0 : 7;
+        int footerStartIndex = Objects.equals(perspective, ChessGame.TeamColor.WHITE) ? 0 : 7;
         StringBuilder footer = new StringBuilder();
         footer.append("    ");
-        for (int i = footerStartIndex; i < 8 && i >= 0; i+= directionIterator) {
+        for (int i = footerStartIndex; i < 8 && i >= 0; i += directionIterator) {
             footer.append(columnLabels[i]);
             footer.append("  ");
         }
