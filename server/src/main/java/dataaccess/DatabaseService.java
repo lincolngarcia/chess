@@ -12,6 +12,7 @@ import java.util.*;
 public class DatabaseService {
     static {
         try {
+            DatabaseService.dumpDatabase();
             DatabaseService.createTables();
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
