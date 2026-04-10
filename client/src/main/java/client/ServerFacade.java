@@ -21,15 +21,15 @@ import static serverfunctions.ServerFunctions.getValue;
 import static serverfunctions.ServerFunctions.makeRequest;
 
 public class ServerFacade {
-    int portNumber;
-    WsClient session;
-    String sessionToken = null;
-    UiType uiStatus = UiType.PreLogin;
+    static int portNumber;
+    static WsClient session;
+    static String sessionToken = null;
+    static UiType uiStatus = UiType.PreLogin;
 
-    ChessGame.TeamColor teamColor = null;
+    static ChessGame.TeamColor teamColor = null;
 
     // An extra thread for waiting on messages
-    Thread t;
+    static Thread t;
 
     enum UiType {
         PreLogin,
@@ -38,7 +38,7 @@ public class ServerFacade {
         Observe
     }
 
-    String[] commandOptions = new String[]{
+    static String[] commandOptions = new String[]{
             "help",
             "quit",
             "login",
@@ -47,8 +47,8 @@ public class ServerFacade {
 
     public ServerFacade(int port) {
         // Initialize the pre-login
-        this.portNumber = port;
-        ServerFunctions.portNumber = this.portNumber;
+        ServerFacade.portNumber = port;
+        ServerFunctions.portNumber = ServerFacade.portNumber;
 
 
         TUI.clear();
@@ -62,25 +62,25 @@ public class ServerFacade {
             String command = TUI.awaitPrompt("please enter a command:", commandOptions);
             String commandType = command.split(" ")[0].toLowerCase();
 
-            switch (this.uiStatus) {
+            switch (ServerFacade.uiStatus) {
                 case PreLogin -> {
-                    if (!handlePreLogin(command, commandType)) {
+                    if (!ServerFacadeHelpers.handlePreLogin(command, commandType)) {
                         return;
                     }
                 }
                 case PostLogin -> {
-                    if (!handlePostLogin(command, commandType)) {
+                    if (!ServerFacadeHelpers.handlePostLogin(command, commandType)) {
                         return;
                     }
                 }
                 case Gameplay -> {
-                    if (!handleGameCommand(command, commandType)) {
+                    if (!ServerFacadeHelpers.handleGameCommand(command, commandType)) {
                         return;
                     }
                 }
 
                 case Observe -> {
-                    if (!handleObservation(command, commandType)) {
+                    if (!ServerFacadeHelpers.handleObservation(command, commandType)) {
                         return;
                     }
                 }
@@ -88,314 +88,7 @@ public class ServerFacade {
         }
     }
 
-    private boolean handlePreLogin(String command, String commandType) {
-        String formatted;
-        String[] args = command.split(" ");
-
-        switch (commandType) {
-            case "help":
-                String helpText = """
-                        register <USERNAME> <PASSWORD> <EMAIL> - to create an account
-                        login <USERNAME> <PASSWORD> - to play chess
-                        quit - playing chess
-                        help - with possible commands""";
-
-                formatted = EscapeSequences.format(helpText, new String[]{
-                        EscapeSequences.SET_TEXT_COLOR_BLUE
-                });
-                TUI.write(formatted);
-                break;
-
-            case "register":
-                if (args.length != 4) {
-                    TUI.error("Invalid arguments, try command 'help'");
-                    break;
-                }
-
-                formatted = EscapeSequences.format("I have a passionate dislike for paperwork...", new String[]{
-                        EscapeSequences.SET_TEXT_COLOR_BLUE
-                });
-                TUI.write(formatted);
-
-                String registerData = "{\"username\": \"" + args[1] + "\", \"password\": \"" + args[2] + "\", \"email\": \"" + args[3] + "\"}";
-                HttpResponse<String> registerResponse = makeRequest("/user", "POST", null, registerData);
-
-                if (registerResponse.statusCode() == 200) {
-                    String registerResponseBody = registerResponse.body();
-                    enablePostLoginUI(getValue(registerResponseBody, "authToken"));
-                    TUI.write(
-                            EscapeSequences.format(
-                                    "ok fine... you're registered now.",
-                                    new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
-                            )
-                    );
-                } else {
-                    TUI.write("Invalid Request");
-                }
-                break;
-
-            case "login":
-                if (args.length != 3) {
-                    TUI.error("Invalid arguments, try command 'help'");
-                    break;
-                }
-
-                formatted = EscapeSequences.format("not more auth... ugggghhh", new String[]{
-                        EscapeSequences.SET_TEXT_COLOR_BLUE
-                });
-                TUI.write(formatted);
-
-                String loginData = "{\"username\": \"" + args[1] + "\", \"password\": \"" + args[2] + "\"}";
-                HttpResponse<String> loginResponse = makeRequest("/session", "POST", null, loginData);
-
-                if (loginResponse.statusCode() == 200) {
-                    String loginResponseBody = loginResponse.body();
-                    enablePostLoginUI(getValue(loginResponseBody, "authToken"));
-                    TUI.write(
-                            EscapeSequences.format(
-                                    "ok fine... you're logged in now.",
-                                    new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
-                            )
-                    );
-                } else {
-                    TUI.write("Invalid Request");
-                }
-
-                break;
-
-            case "quit":
-                return quit();
-            default:
-                TUI.error("Invalid command: '" + commandType + "'");
-                break;
-        }
-
-        return true;
-    }
-
-    private boolean handlePostLogin(String command, String commandType) {
-        String formatted;
-        String[] args = command.split(" ");
-        switch (commandType) {
-            case "help":
-                String helpText = """
-                        create <NAME> - a game
-                        list - games
-                        join <ID> [WHITE|BLACK] - a game
-                        logout - when you are done
-                        quit - playing chess
-                        observe - a game
-                        help - with possible commands""";
-                formatted = EscapeSequences.format(helpText, new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE});
-                TUI.write(formatted);
-                break;
-
-            case "logout":
-                if (args.length != 1) {
-                    TUI.error("Invalid arguments, try command 'help'");
-                    break;
-                }
-                HttpResponse<String> logoutResponse = makeRequest("/session", "DELETE", this.sessionToken, null);
-                if (logoutResponse.statusCode() == 200) {
-                    TUI.write(EscapeSequences.format(
-                            "you're logged out now",
-                            new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
-                    ));
-                    disablePostLoginUI();
-                } else {
-                    TUI.error("Invalid Request");
-                }
-                break;
-
-            case "create":
-                if (args.length != 2) {
-                    TUI.error("Invalid arguments, try command 'help'");
-                    break;
-                }
-                String createData = "{\"gameName\": \"" + args[1] + "\"}";
-                HttpResponse<String> createResponse = makeRequest("/game", "POST", this.sessionToken, createData);
-                if (createResponse.statusCode() == 200) {
-                    TUI.write(EscapeSequences.format("game created.", new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}));
-                } else {
-                    TUI.error("Invalid Request");
-                }
-                break;
-            case "list":
-                if (args.length != 1) {
-                    TUI.error("Invalid arguments, try command 'help'");
-                    break;
-                }
-                TUI.write(listGames());
-                break;
-            case "join":
-                // Transition to the helper function
-                handleJoinGame(args);
-                break;
-            case "observe":
-                // Transition to helper function
-                handleObserveGame(args);
-                break;
-            case "quit":
-                return quit();
-            default:
-                TUI.error("Invalid command: '" + commandType + "'");
-                break;
-        }
-        return true;
-    }
-
-    private boolean handleGameCommand(String command, String commandType) {
-        String formatted;
-
-        ChessGameData data = WsClient.lastReceivedData;
-        if (data == null) {
-            TUI.error("No received chess data to display");
-            return true;
-        }
-
-        switch (commandType) {
-            case "help":
-                String helpText = """
-                        help - with possible commands
-                        [start/end square] - perform move
-                        redraw - the board
-                        leave - the game
-                        resign - the game
-                        list [start square] - all moves for position
-                        quit - playing chess""";
-                formatted = EscapeSequences.format(helpText, new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE});
-                TUI.write(formatted);
-                break;
-            case "redraw":
-                TUI.printBoard(data, teamColor, null);
-                break;
-            case "leave":
-                this.leaveGame();
-                break;
-            case "resign":
-                boolean confirmation = false;
-                while (!confirmation) {
-                    String resign = TUI.awaitPrompt("Are you sure?", new String[]{"yes", "no"});
-                    if (resign.equals("yes")) {
-                        confirmation = true;
-                    }
-                    if (resign.equals("no")) {
-
-                        return true;
-                    }
-                }
-                TUI.write("resigning game");
-                this.sendAndReceiveBlockingMessage(
-                        new UserGameCommand(
-                                UserGameCommand.CommandType.RESIGN,
-                                this.session.authToken,
-                                this.session.gameId
-                        )
-                );
-                break;
-            case "list":
-                this.listMoves(command, data);
-                break;
-            case "quit":
-                return quit();
-            default:
-                if (commandType.length() != 4) {
-                    TUI.error("Invalid command: '" + commandType + "'");
-                    return true;
-                }
-
-                String startingSquare = commandType.substring(0, 2);
-                String endingSquare = commandType.substring(2);
-
-                int[] startingCords = ChessFunctions.parseLocationString(startingSquare);
-                int[] endingCords = ChessFunctions.parseLocationString(endingSquare);
-
-                if (Arrays.equals(startingCords, new int[]{-1, -1})) {
-                    TUI.error("Invalid command: '" + commandType + "'");
-                    return true;
-                }
-
-                if (Arrays.equals(endingCords, new int[]{-1, -1})) {
-                    TUI.error("Invalid command: '" + commandType + "'");
-                    return true;
-
-                }
-
-                ChessMove move = new ChessMove(
-                        new ChessPosition(startingCords[0], startingCords[1]),
-                        new ChessPosition(endingCords[0], endingCords[1])
-                );
-
-                this.sendAndReceiveBlockingMessage(
-                        new UserGameCommand(
-                                UserGameCommand.CommandType.MAKE_MOVE,
-                                session.authToken,
-                                session.gameId,
-                                new Gson().toJson(move)
-                        )
-                );
-        }
-
-        return true;
-    }
-
-    private boolean handleObservation(String command, String commandType) {
-        ChessGameData data = WsClient.lastReceivedData;
-
-        switch (commandType) {
-            case "help":
-                String helpText = """
-                        help - with possible commands
-                        leave - the game
-                        switch - the game perspective
-                        redraw - the board
-                        list [start square] - all moves for position
-                        quit - playing chess""";
-                TUI.write(
-                        EscapeSequences.format(
-                                helpText,
-                                new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE})
-                );
-                break;
-            case "leave":
-                this.leaveGame();
-                break;
-
-            case "switch":
-                TUI.write(
-                        EscapeSequences.format(
-                                "switching view angle...",
-                                new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
-                        )
-                );
-                this.teamColor = ChessFunctions.isWhite(this.session.teamColor) ? ChessGame.TeamColor.BLACK : ChessGame.TeamColor.WHITE;
-                this.session.teamColor = this.teamColor;
-                break;
-
-            case "redraw":
-                TUI.printBoard(data, teamColor, null);
-                break;
-
-            case "list":
-                this.listMoves(command, data);
-                break;
-
-            case "quit":
-                TUI.write(
-                        EscapeSequences.format("Thanks for playing", new String[]{
-                                EscapeSequences.SET_TEXT_COLOR_BLUE
-                        })
-                );
-                return false;
-
-            default:
-                TUI.error("Invalid command: '" + commandType + "'");
-        }
-
-        return true;
-    }
-
-    private void handleJoinGame(String[] args) {
+    public static void handleJoinGame(String[] args) {
         // Validate the request
         if (args.length != 3) {
             TUI.error("Invalid arguments, try command 'help'");
@@ -416,7 +109,7 @@ public class ServerFacade {
         String joinData = "{\"playerColor\": \"" + args[2] + "\", \"gameID\": " + gameId + "}";
 
         // Join the game
-        HttpResponse<String> joinResponse = makeRequest("/game", "PUT", this.sessionToken, joinData);
+        HttpResponse<String> joinResponse = makeRequest("/game", "PUT", ServerFacade.sessionToken, joinData);
 
         if (joinResponse.statusCode() != 200) {
             TUI.error("Invalid Request");
@@ -452,7 +145,7 @@ public class ServerFacade {
                 return;
             }
 
-            this.session = new WsClient(
+            ServerFacade.session = new WsClient(
                     sessionToken,
                     gameId,
                     teamColor,
@@ -469,10 +162,10 @@ public class ServerFacade {
         enableGameplayUI();
 
         // Enable the observational thread
-        this.activateObservationalThread();
+        ServerFacade.activateObservationalThread();
     }
 
-    private void handleObserveGame(String[] args) {
+    public static void handleObserveGame(String[] args) {
         if (args.length != 2) {
             TUI.error("Invalid arguments, try command 'help'");
             return;
@@ -508,7 +201,7 @@ public class ServerFacade {
         try {
             teamColor = ChessGame.TeamColor.WHITE;
 
-            this.session = new WsClient(
+            ServerFacade.session = new WsClient(
                     sessionToken,
                     gameId,
                     teamColor,
@@ -523,10 +216,10 @@ public class ServerFacade {
         enableObservationUI();
 
         // Enable a second thread that awaits for messages
-        this.activateObservationalThread();
+        ServerFacade.activateObservationalThread();
     }
 
-    private String listGames() {
+    public static String listGames() {
         JsonArray games = getGames();
 
         StringBuilder builder = new StringBuilder();
@@ -553,17 +246,17 @@ public class ServerFacade {
         return builder.toString();
     }
 
-    private JsonArray getGames() {
-        HttpResponse<String> listResponse = makeRequest("/game", "GET", this.sessionToken, null);
+    public static JsonArray getGames() {
+        HttpResponse<String> listResponse = makeRequest("/game", "GET", ServerFacade.sessionToken, null);
 
         Gson gson = new Gson();
         JsonObject json = gson.fromJson(listResponse.body(), JsonObject.class);
         return json.getAsJsonArray("games");
     }
 
-    private void enablePostLoginUI(String sessionToken) {
-        this.sessionToken = sessionToken;
-        this.uiStatus = UiType.PostLogin;
+    public static void enablePostLoginUI(String sessionToken) {
+        ServerFacade.sessionToken = sessionToken;
+        ServerFacade.uiStatus = UiType.PostLogin;
 
         commandOptions = new String[]{
                 "help",
@@ -576,9 +269,9 @@ public class ServerFacade {
 
     }
 
-    private void disablePostLoginUI() {
-        this.uiStatus = UiType.PreLogin;
-        this.sessionToken = null;
+    public static void disablePostLoginUI() {
+        ServerFacade.uiStatus = UiType.PreLogin;
+        ServerFacade.sessionToken = null;
         commandOptions = new String[]{
                 "help",
                 "quit",
@@ -587,8 +280,8 @@ public class ServerFacade {
         };
     }
 
-    private void enableGameplayUI() {
-        this.uiStatus = UiType.Gameplay;
+    public static void enableGameplayUI() {
+        ServerFacade.uiStatus = UiType.Gameplay;
         commandOptions = new String[]{
                 "help",
                 "redraw",
@@ -600,8 +293,8 @@ public class ServerFacade {
         };
     }
 
-    private void enableObservationUI() {
-        this.uiStatus = UiType.Observe;
+    public static void enableObservationUI() {
+        ServerFacade.uiStatus = UiType.Observe;
         commandOptions = new String[]{
                 "help",
                 "leave",
@@ -612,20 +305,20 @@ public class ServerFacade {
         };
     }
 
-    private boolean quit() {
+    public static boolean quit() {
         TUI.write(
                 EscapeSequences.format("Thanks for playing", new String[]{
                         EscapeSequences.SET_TEXT_COLOR_BLUE
                 }));
 
-        if (this.session != null) {
-            this.leaveGame();
+        if (ServerFacade.session != null) {
+            ServerFacade.leaveGame();
         }
 
         return false;
     }
 
-    private void leaveGame() {
+    public static void leaveGame() {
         // Leave the game
         TUI.write(
                 EscapeSequences.format(
@@ -635,36 +328,36 @@ public class ServerFacade {
         );
 
         // Reset the UI
-        enablePostLoginUI(this.sessionToken);
+        enablePostLoginUI(ServerFacade.sessionToken);
 
         // close the connection
         try {
             // Stop waiting on the thread
-            if (this.t != null) {
-                this.t.interrupt();
-                this.t = null;
+            if (ServerFacade.t != null) {
+                ServerFacade.t.interrupt();
+                ServerFacade.t = null;
             }
             System.out.flush();
 
-            this.session.send(
+            ServerFacade.session.send(
                     new UserGameCommand(
                             UserGameCommand.CommandType.LEAVE,
-                            this.session.authToken,
-                            this.session.gameId
+                            ServerFacade.session.authToken,
+                            ServerFacade.session.gameId
                     )
             );
-            this.session.session.close();
-            this.session = null;
+            ServerFacade.session.session.close();
+            ServerFacade.session = null;
         } catch (IOException e) {
             TUI.error("Error while closing the session");
         }
     }
 
-    private void activateObservationalThread() {
-        this.t = new Thread(() -> {
+    public static void activateObservationalThread() {
+        ServerFacade.t = new Thread(() -> {
             try {
                 while (!Thread.currentThread().isInterrupted()) {
-                    this.session.awaitMessage(true);
+                    ServerFacade.session.awaitMessage(true);
                     TUI.prompt(
                             "please enter a command:",
                             commandOptions
@@ -674,17 +367,17 @@ public class ServerFacade {
                 return;
             }
         });
-        this.t.start();
+        ServerFacade.t.start();
     }
 
-    private void sendAndReceiveBlockingMessage(UserGameCommand command) {
+    public static void sendAndReceiveBlockingMessage(UserGameCommand command) {
         // Temporarily lock the thread
         WsClient.exclusiveReceiver = Thread.currentThread().getName();
         // send the message
-        this.session.send(command);
+        ServerFacade.session.send(command);
         // Receive the response
         try {
-            this.session.awaitMessage(false);
+            ServerFacade.session.awaitMessage(false);
         } catch (InterruptedException e) {
             TUI.error("Thread interrupted unexpectedly");
         }
@@ -692,7 +385,7 @@ public class ServerFacade {
         WsClient.exclusiveReceiver = null;
     }
 
-    private void listMoves(String command, ChessGameData data) {
+    public static void listMoves(String command, ChessGameData data) {
         String[] args = command.split(" ");
 
         // Assert argument count is 2
