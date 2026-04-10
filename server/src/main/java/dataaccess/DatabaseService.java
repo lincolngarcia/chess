@@ -12,7 +12,6 @@ import java.util.*;
 public class DatabaseService {
     static {
         try {
-            DatabaseService.dumpDatabase();
             DatabaseService.createTables();
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
@@ -58,11 +57,20 @@ public class DatabaseService {
     }
 
     public static void dumpDatabase() {
-        String dropDatabase = """
-                DROP DATABASE IF EXISTS chess;""";
+        String dropPasswordTable = """
+                TRUNCATE TABLE passwords;
+                """;
+        String dropGameDataTable = """
+                TRUNCATE TABLE game_data;
+                """;
+        String dropAuthTokenTable = """
+                TRUNCATE TABLE auth_tokens;
+                """;
 
         try (var conn = DatabaseManager.getConnection()) {
-            conn.prepareStatement(dropDatabase).executeUpdate();
+            conn.prepareStatement(dropPasswordTable).executeUpdate();
+            conn.prepareStatement(dropGameDataTable).executeUpdate();
+            conn.prepareStatement(dropAuthTokenTable).executeUpdate();
         } catch (SQLException | DataAccessException e) {
             throw new RuntimeException(e);
         }
