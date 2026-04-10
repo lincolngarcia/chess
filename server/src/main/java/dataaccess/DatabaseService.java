@@ -30,7 +30,8 @@ public class DatabaseService {
                     gameName VARCHAR(50) NOT NULL,
                     whiteUsername VARCHAR(50),
                     blackUsername VARCHAR(50),
-                    game TEXT NOT NULL
+                    game TEXT NOT NULL,
+                    gameState TEXT
                 )
                 """;
         String createAuthTokenTable = """
