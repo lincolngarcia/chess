@@ -25,7 +25,6 @@ public class WebSocketHandler {
     private static class connection {
         public final WsContext client;
         public int gameId;
-        public UserGameCommand.UserGameState userGameState;
         public String authToken;
 
         connection(WsContext client, int GameId) {
