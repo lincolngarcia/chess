@@ -97,8 +97,8 @@ public class DatabaseService {
         String blackPlayer = data.playerUsernames.length > 1 ? data.playerUsernames[1] : "";
 
         String sql = """
-        INSERT INTO game_data (gameId, gameName, whiteUsername, blackUsername, game)
-        VALUES (?, ?, ?, ?, ?);
+        INSERT INTO game_data (gameId, gameName, whiteUsername, blackUsername, game, gameState)
+        VALUES (?, ?, ?, ?, ?, ?);
         """;
 
         try (var conn = DatabaseManager.getConnection();
@@ -109,6 +109,8 @@ public class DatabaseService {
             ps.setString(3, whitePlayer);
             ps.setString(4, blackPlayer);
             ps.setString(5, gameJson);
+            ps.setString(6, "ACTIVE");
+
             ps.executeUpdate();
         } catch (SQLException | DataAccessException e) {
             throw new RuntimeException("Error inserting game data", e);
@@ -133,13 +135,16 @@ public class DatabaseService {
                 String blackUsername = !Objects.equals(rs.getString("blackUsername"), "null") ?
                         rs.getString("blackUsername") : null;
 
-                return new ChessGameData(
+                ChessGameData data = new ChessGameData(
                         rs.getInt("gameId"),
                         rs.getString("gameName"),
                         whiteUsername,
                         blackUsername,
                         gson.fromJson(rs.getString("game"), ChessGame.class)
                 );
+                data.gameState = Objects.equals(rs.getString("gameState"), "ACTIVE") ? ChessGameData.gameStates.ACTIVE : ChessGameData.gameStates.INACTIVE;
+
+                return data;
             } else {
                 throw new DataAccessException("gameId returned no results");
             }
@@ -159,7 +164,8 @@ public class DatabaseService {
                     gameName = ?,
                     whiteUsername = ?,
                     blackUsername = ?,
-                    game = ?
+                    game = ?,
+                    gameState = ?
                 WHERE gameId = ?
                 """;
 
@@ -170,7 +176,8 @@ public class DatabaseService {
             ps.setString(3, data.playerUsernames[0]);
             ps.setString(4, data.playerUsernames[1]);
             ps.setString(5, game);
-            ps.setInt(6, data.gameID);
+            ps.setString(6, data.gameState.name());
+            ps.setInt(7, data.gameID);
             ps.executeUpdate();
         } catch (SQLException | DataAccessException e) {
             throw new RuntimeException(e);
