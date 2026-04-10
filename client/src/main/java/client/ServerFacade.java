@@ -272,6 +272,8 @@ public class ServerFacade {
                 // Validate a move
                 break;
         }
+
+        return true;
     }
 
     private void handleJoinGame(String[] args) {
@@ -327,7 +329,7 @@ public class ServerFacade {
 
     private void enablePostLoginUI(String sessionToken) {
         this.sessionToken = sessionToken;
-        this.UiStatus = true;
+        this.UiStatus = UiType.PreLogin;
 
         commandOptions = new String[]{
                 "help",
@@ -341,7 +343,7 @@ public class ServerFacade {
     }
 
     private void disablePostLoginUI() {
-        this.UiStatus = false;
+        this.UiStatus = null;
         this.sessionToken = null;
         commandOptions = new String[]{
                 "help",
