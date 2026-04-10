@@ -53,6 +53,12 @@ public class UserGameCommand {
         this.gameID = gameID;
     }
 
+    public UserGameCommand(CommandType commandType, String authToken, Integer gameID, String data) {
+        this.commandType = commandType;
+        this.authToken = authToken;
+        this.gameID = gameID;
+    }
+
     public enum CommandType {
         CONNECT,
         MAKE_MOVE,
@@ -88,5 +94,14 @@ public class UserGameCommand {
     @Override
     public int hashCode() {
         return Objects.hash(getCommandType(), getAuthToken(), getGameID());
+    }
+
+    @Override
+    public String toString() {
+        return "UserGameCommand{" +
+                "commandType=" + commandType +
+                ", authToken='" + authToken + '\'' +
+                ", gameID=" + gameID +
+                '}';
     }
 }

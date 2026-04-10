@@ -1,5 +1,8 @@
 package client;
 
+import chess.ChessBoard;
+import chess.ChessGame;
+import chess.converter.ChessFunctions;
 import com.google.gson.Gson;
 import jakarta.websocket.ContainerProvider;
 import jakarta.websocket.Endpoint;
@@ -7,23 +10,35 @@ import jakarta.websocket.EndpointConfig;
 import jakarta.websocket.MessageHandler;
 import jakarta.websocket.Session;
 import jakarta.websocket.WebSocketContainer;
+import ui.EscapeSequences;
+import websocket.ChessGameData;
 import websocket.commands.UserGameCommand;
 import websocket.messages.ServerMessage;
 
-import java.io.IOException;
 import java.net.URI;
+import java.util.LinkedList;
 import java.util.Objects;
+import java.util.Queue;
 
 public class WsClient extends Endpoint {
-    public static Session session;
-    public static String authToken;
-    public static int gameId;
+    public Session session;
+    public String authToken;
+    public int gameId;
+    public UserGameCommand.UserGameState userGameState;
+    public ChessGame.TeamColor teamColor;
+    private final static Queue<ServerMessage> messageQueue = new LinkedList<>();
 
-    public WsClient(String authToken, int gameId) throws Exception {
-        WsClient.authToken = authToken;
-        WsClient.gameId = gameId;
+    public static ChessGameData lastReceivedData;
 
-        URI uri = new URI("ws://localhost:8080/ws");
+    public static String exclusiveReceiver;
+
+    public WsClient(String authToken, int gameId, ChessGame.TeamColor teamColor, int portNumber, UserGameCommand.UserGameState userGameState) throws Exception {
+        this.authToken = authToken;
+        this.gameId = gameId;
+        this.teamColor = teamColor;
+        this.userGameState = userGameState;
+
+        URI uri = new URI("ws://localhost:" + portNumber + "/ws");
         WebSocketContainer container = ContainerProvider.getWebSocketContainer();
         session = container.connectToServer(this, uri);
 
@@ -31,36 +46,127 @@ public class WsClient extends Endpoint {
             public void onMessage(String message) {
                 ServerMessage msg = new Gson().fromJson(message, ServerMessage.class);
 
-                if (msg.getServerMessageType() == ServerMessage.ServerMessageType.NOTIFICATION
-                        && Objects.equals(msg.getContent(), "connection successful")) {
-                    try {
-                        WsClient.send(
-                                new UserGameCommand(
-                                        UserGameCommand.CommandType.CONNECT,
-                                        authToken,
-                                        gameId
-                                )
-                        );
-                    } catch (IOException e) {
-                        TUI.error("Websocket send message error");
-                    }
-                }
-
-                if (msg.getServerMessageType() == ServerMessage.ServerMessageType.LOAD_GAME) {
-                    TUI.write("received board, printing non unique");
-                    TUI.printBoard("WHITE");
-                }
+                messageQueue.add(msg);
             }
         });
+
+        this.send(
+                new UserGameCommand(
+                        UserGameCommand.CommandType.CONNECT,
+                        authToken,
+                        gameId,
+                        new Gson().toJson(userGameState)
+                )
+        );
+
+        try {
+            this.awaitMessage(false);
+        } catch (InterruptedException e) {
+            TUI.error("Thread was interrupted unexpectedly");
+        }
     }
 
-    public static void send(UserGameCommand message) throws IOException {
-        String msg = new Gson().toJson(message);
-        session.getBasicRemote().sendText(msg);
+    public void send(UserGameCommand message) {
+        try {
+            String msg = new Gson().toJson(message);
+            session.getBasicRemote().sendText(msg);
+        } catch (Exception e) {
+            TUI.error("Error sending message");
+        }
     }
 
-    public boolean isActive() {
-        return session.isOpen();
+    public void awaitMessage(boolean newLine) throws InterruptedException {
+        while (true) {
+            boolean queueEmpty = messageQueue.isEmpty();
+            boolean isCurrentExclusiveThread = true;
+
+            if (exclusiveReceiver != null) {
+                if (!Objects.equals(Thread.currentThread().getName(), exclusiveReceiver)) {
+                    isCurrentExclusiveThread = false;
+                }
+            }
+
+            if (!queueEmpty && isCurrentExclusiveThread) {
+                break;
+            }
+
+            Thread.sleep(10);
+        }
+
+        ServerMessage message = messageQueue.poll();
+        if (message == null) {
+            TUI.error("Invalid message received from queue");
+            return;
+        }
+
+        this.handleMessage(message);
+    }
+
+    public void handleMessage(ServerMessage message) {
+        switch (message.getServerMessageType()) {
+            case LOAD_GAME -> {
+                handleLoadGame(message);
+            }
+            case ERROR -> {
+                handleError(message);
+            }
+            case NOTIFICATION -> {
+                handleNotification(message);
+            }
+        }
+    }
+
+    private void handleLoadGame(ServerMessage message) {
+        ChessGameData data = new Gson().fromJson(message.getContent(), ChessGameData.class);
+        lastReceivedData = data;
+
+        // Print team to move
+        String teamColorString = ChessFunctions.isWhite(data.game.getTeamTurn()) ? "White" : "Black";
+        TUI.write(
+                EscapeSequences.format(
+                        "\n" + teamColorString + " to move",
+                        new String[]{EscapeSequences.SET_TEXT_COLOR_MAGENTA}
+                )
+        );
+
+        int lastPlayerMovedIndex = ChessFunctions.isWhite(data.game.getOffTeamColor()) ? 0 : 1;
+        String lastMovedUsername = data.playerUsernames[lastPlayerMovedIndex];
+        if (lastMovedUsername != null) {
+            TUI.write(
+                    EscapeSequences.format(
+                            lastMovedUsername + " moved",
+                            new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
+                    )
+            );
+        }
+
+        int usernameIndex = ChessFunctions.isWhite(data.game.getTeamTurn()) ? 0 : 1;
+        String username = data.playerUsernames[usernameIndex];
+
+        if (data.game.isInCheck(data.game.getTeamTurn())) {
+            TUI.write(
+                    EscapeSequences.format(
+                            username + " is in check",
+                            new String[]{EscapeSequences.SET_TEXT_COLOR_YELLOW}
+                    )
+            );
+        }
+
+        // Print board
+        TUI.printBoard(data, teamColor, null);
+    }
+
+    private void handleError(ServerMessage message) {
+        TUI.error(message.getContent());
+    }
+
+    private void handleNotification(ServerMessage message) {
+        TUI.write(
+                "\n" + EscapeSequences.format(
+                        message.getContent(),
+                        new String[]{EscapeSequences.SET_TEXT_COLOR_GREEN}
+                )
+        );
     }
 
     // This method must be overridden, but we don't have to do anything with it
