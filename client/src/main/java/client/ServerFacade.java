@@ -1,5 +1,6 @@
 package client;
 
+import chess.ChessGame;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -7,6 +8,8 @@ import serverfunctions.ServerFunctions;
 import ui.EscapeSequences;
 
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
+import java.util.List;
 
 import static serverfunctions.ServerFunctions.getValue;
 import static serverfunctions.ServerFunctions.makeRequest;
@@ -14,7 +17,9 @@ import static serverfunctions.ServerFunctions.makeRequest;
 public class ServerFacade {
     UiType UiStatus = UiType.PreLogin;
     String sessionToken = null;
+    ChessGame.TeamColor teamColor = null;
     int portNumber;
+    WsClient session;
 
     enum UiType {
         PreLogin,
@@ -58,7 +63,7 @@ public class ServerFacade {
                     }
                 }
                 case Gameplay -> {
-                    if (!handleGameCommand(command, commandType)) {
+                    if (!handleGameCommand(commandType)) {
                         return;
                     }
                 }
@@ -146,6 +151,7 @@ public class ServerFacade {
                         EscapeSequences.SET_TEXT_COLOR_BLUE
                 });
                 TUI.write(formatted);
+                return false;
             default:
                 TUI.error("Invalid command: '" + commandType + "'");
                 break;
@@ -187,6 +193,7 @@ public class ServerFacade {
                     TUI.error("Invalid Request");
                 }
                 break;
+
             case "create":
                 if (args.length != 2) {
                     TUI.error("Invalid arguments, try command 'help'");
@@ -212,7 +219,9 @@ public class ServerFacade {
                     TUI.error("Invalid arguments, try command 'help'");
                     break;
                 }
-                handleJoinGame(args);
+                if (!handleJoinGame(args)) {
+                    return false;
+                }
                 break;
             case "observe":
                 if (args.length != 2) {
@@ -244,9 +253,8 @@ public class ServerFacade {
         return true;
     }
 
-    private boolean handleGameCommand(String command, String commandType) {
+    private boolean handleGameCommand(String commandType) {
         String formatted;
-        String[] args = command.split(" ");
 
         switch (commandType) {
             case "help":
@@ -261,14 +269,38 @@ public class ServerFacade {
                 TUI.write(formatted);
                 break;
             case "redraw":
+                TUI.write("Redrawing board");
                 break;
             case "leave":
-                break;
+                TUI.write("Leaving game");
+                disableGameplayUI();
+                return false;
             case "resign":
+                TUI.write("resigning game");
                 break;
             case "list":
+                TUI.write("list moves");
                 break;
             default:
+                ArrayList<String> validLetters = new ArrayList<>(List.of("a", "b", "c", "d", "e", "f", "g", "h"));
+                ArrayList<String> validNumbers = new ArrayList<>(List.of("1", "2", "3", "4", "5", "6", "7", "8"));
+
+                String[] splitString = commandType.split("");
+
+                boolean validString = true;
+
+                if (splitString.length != 4) { validString = false;}
+                if (!validLetters.contains(splitString[0].toLowerCase())) {validString = false;}
+                if (!validNumbers.contains(splitString[1])) {validString = false;}
+                if (!validLetters.contains(splitString[2].toLowerCase())) {validString = false;}
+                if (!validNumbers.contains(splitString[3])) {validString = false;}
+
+                if (validString) {
+                    TUI.write("Executing move " + commandType);
+                }else{
+                    TUI.error("Invalid command");
+                }
+
                 // Validate a move
                 break;
         }
@@ -276,7 +308,7 @@ public class ServerFacade {
         return true;
     }
 
-    private void handleJoinGame(String[] args) {
+    private boolean handleJoinGame(String[] args) {
         String gameID = getGames().get(Integer.parseInt(args[1]) - 1).getAsJsonObject().get("gameID").getAsString();
         String joinData = "{\"playerColor\": \"" + args[2] + "\", \"gameID\": " + gameID + "}";
         HttpResponse<String> joinResponse = makeRequest("/game", "PUT", this.sessionToken, joinData);
@@ -286,10 +318,23 @@ public class ServerFacade {
                             "You have joined the game",
                             new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
                     ));
-            TUI.printBoard(args[2]);
+
+            enableGameplayUI();
+
+            // Open the websocket
+            try {
+                this.session = new WsClient(sessionToken, Integer.parseInt(gameID));
+            } catch (Exception _) {
+                TUI.error("Session Failed");
+                return false;
+            }
+
         } else {
             TUI.error("Invalid Request");
+            return false;
         }
+
+        return true;
     }
 
     private String listGames() {
@@ -311,7 +356,7 @@ public class ServerFacade {
             if (!game.get("blackUsername").isJsonNull()) {
                 blackUsername = game.get("blackUsername").getAsString();
             }
-            builder.append(String.format("%d. %s (%s) W: %s, B: %s", i + 1, gameName, gameID, whiteUsername, blackUsername));
+            builder.append(String.format("%d. %s W: %s, B: %s", i + 1, gameName,  whiteUsername, blackUsername));
             if (i != games.size() - 1) {
                 builder.append("\n");
             }
@@ -329,7 +374,7 @@ public class ServerFacade {
 
     private void enablePostLoginUI(String sessionToken) {
         this.sessionToken = sessionToken;
-        this.UiStatus = UiType.PreLogin;
+        this.UiStatus = UiType.PostLogin;
 
         commandOptions = new String[]{
                 "help",
@@ -343,7 +388,7 @@ public class ServerFacade {
     }
 
     private void disablePostLoginUI() {
-        this.UiStatus = null;
+        this.UiStatus = UiType.PreLogin;
         this.sessionToken = null;
         commandOptions = new String[]{
                 "help",
@@ -354,6 +399,7 @@ public class ServerFacade {
     }
 
     private void enableGameplayUI() {
+        this.UiStatus = UiType.Gameplay;
         commandOptions = new String[] {
                 "help",
                 "redraw",
