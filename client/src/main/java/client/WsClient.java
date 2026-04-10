@@ -14,14 +14,14 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Objects;
 
-public class WsEchoClient extends Endpoint {
+public class WsClient extends Endpoint {
     public static Session session;
     public static String authToken;
     public static int gameId;
 
-    public WsEchoClient(String authToken, int gameId) throws Exception {
-        WsEchoClient.authToken = authToken;
-        WsEchoClient.gameId = gameId;
+    public WsClient(String authToken, int gameId) throws Exception {
+        WsClient.authToken = authToken;
+        WsClient.gameId = gameId;
 
         URI uri = new URI("ws://localhost:8080/ws");
         WebSocketContainer container = ContainerProvider.getWebSocketContainer();
@@ -35,7 +35,7 @@ public class WsEchoClient extends Endpoint {
                 if (msg.getServerMessageType() == ServerMessage.ServerMessageType.NOTIFICATION
                         && Objects.equals("msg.getContent()", "connection successful")) {
                     try {
-                        WsEchoClient.send(
+                        WsClient.send(
                                 new UserGameCommand(
                                         UserGameCommand.CommandType.CONNECT,
                                         authToken,
