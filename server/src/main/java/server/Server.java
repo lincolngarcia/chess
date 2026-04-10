@@ -103,6 +103,7 @@ public class Server {
         javalin.ws("/ws", ws -> {
             ws.onConnect(WebSocketHandler::addConnection);
             ws.onMessage(ctx -> {
+                System.out.println("received request" + ctx.message());
                 UserGameCommand command = new Gson().fromJson(ctx.message(), UserGameCommand.class);
                 WebSocketHandler.handleWebSocketRequest(ctx, command);
             });

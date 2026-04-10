@@ -134,6 +134,8 @@ public class ServerApiHandler {
                 currentData.game
         );
 
+        gameData.gameState = currentData.gameState;
+
         DatabaseService.updateGame(gameData);
 
         return new JoinGameResponse(200);

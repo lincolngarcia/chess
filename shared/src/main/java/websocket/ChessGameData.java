@@ -7,7 +7,7 @@ public class ChessGameData {
     public String gameName;
     public String[] playerUsernames = new String[] {null, null};
     public ChessGame game;
-    public gameStates gameState = gameStates.ACTIVE;
+    public gameStates gameState;
 
     public enum gameStates {
         ACTIVE,
