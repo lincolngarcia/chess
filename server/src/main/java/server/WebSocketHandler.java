@@ -89,7 +89,7 @@ public class WebSocketHandler {
             }
             // Execute a move
             case MAKE_MOVE -> {
-                handleMakeMove(ctx, command, gameData, userState);
+                handleMakeMove(ctx, command, game, userState);
             }
 
             // leave a game
@@ -244,14 +244,14 @@ public class WebSocketHandler {
             broadcastUniqueMessage(alert, CONNECTIONS.get(ctx.sessionId()).gameId, ctx);
         }
 
-    private static void handleMakeMove(WsContext ctx, UserGameCommand command, ChessGameData gameData, UserGameCommand.UserGameState userState) {
+    private static void handleMakeMove(WsContext ctx, UserGameCommand command, ChessGame game, UserGameCommand.UserGameState userState) {
         // get the move
         if (command.move == null) {
             throw new AssertionError("Error: Invalid Data");
         }
 
         // Assert game isn't finished
-        if (WebSocketHandler.isGameOver(gameData)) {
+        if (WebSocketHandler.isGameOver(game.gameData)) {
             WebSocketHandler.sendMessage(
                     ctx,
                     new ServerMessage(
@@ -264,7 +264,7 @@ public class WebSocketHandler {
         }
 
         // Assert correct player is making the move
-        ChessGame.TeamColor activeTeam = gameData.game.getTeamTurn();
+        ChessGame.TeamColor activeTeam = game.getTeamTurn();
         UserGameCommand.UserGameState expectedGameState = ChessFunctions.isWhite(activeTeam) ?
                 UserGameCommand.UserGameState.WHITE : UserGameCommand.UserGameState.BLACK;
 
@@ -291,6 +291,8 @@ public class WebSocketHandler {
                         command.move.endPosition.column
                 )
         );
+
+        handleMoveRequest(command, ctx, game,  move);
     }
 
     private static void handleLeave(WsContext ctx, UserGameCommand command, ChessGameData gameData, UserGameCommand.UserGameState userState) {
