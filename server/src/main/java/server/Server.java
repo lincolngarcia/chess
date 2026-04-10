@@ -100,11 +100,13 @@ public class Server {
             }
         });
         // Websocket Route
-        javalin.post("/ws", ctx -> {
-            UserGameCommand command = new Gson().fromJson(ctx.body(), UserGameCommand.class);
-            WebSocketHandler.handleWebSocketRequest(command);
-            ctx.status(200);
-            ctx.result(" ");
+        javalin.ws("/ws", ws -> {
+            ws.onConnect(WebSocketHandler::addConnection);
+            ws.onMessage(ctx -> {
+                UserGameCommand command = new Gson().fromJson(ctx.message(), UserGameCommand.class);
+                WebSocketHandler.handleWebSocketRequest(ctx, command);
+            });
+            ws.onClose(WebSocketHandler::removeConnection);
         });
     }
 
