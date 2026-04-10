@@ -7,9 +7,9 @@ public class ChessGameData {
     public String gameName;
     public String[] playerUsernames = new String[] {null, null};
     public ChessGame game;
-    public gameStates gameState;
+    public GameStates gameState;
 
-    public enum gameStates {
+    public enum GameStates {
         ACTIVE,
         INACTIVE
     }

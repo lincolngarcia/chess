@@ -1,6 +1,5 @@
 package client;
 
-import chess.ChessBoard;
 import chess.ChessGame;
 import chess.converter.ChessFunctions;
 import com.google.gson.Gson;
@@ -26,7 +25,7 @@ public class WsClient extends Endpoint {
     public int gameId;
     public UserGameCommand.UserGameState userGameState;
     public ChessGame.TeamColor teamColor;
-    private final static Queue<ServerMessage> messageQueue = new LinkedList<>();
+    private final static Queue<ServerMessage> MESSAGE_QUEUE = new LinkedList<>();
 
     public static ChessGameData lastReceivedData;
 
@@ -46,7 +45,7 @@ public class WsClient extends Endpoint {
             public void onMessage(String message) {
                 ServerMessage msg = new Gson().fromJson(message, ServerMessage.class);
 
-                messageQueue.add(msg);
+                MESSAGE_QUEUE.add(msg);
             }
         });
 
@@ -77,7 +76,7 @@ public class WsClient extends Endpoint {
 
     public void awaitMessage(boolean newLine) throws InterruptedException {
         while (true) {
-            boolean queueEmpty = messageQueue.isEmpty();
+            boolean queueEmpty = MESSAGE_QUEUE.isEmpty();
             boolean isCurrentExclusiveThread = true;
 
             if (exclusiveReceiver != null) {
@@ -93,7 +92,7 @@ public class WsClient extends Endpoint {
             Thread.sleep(10);
         }
 
-        ServerMessage message = messageQueue.poll();
+        ServerMessage message = MESSAGE_QUEUE.poll();
         if (message == null) {
             TUI.error("Invalid message received from queue");
             return;

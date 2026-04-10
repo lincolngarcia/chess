@@ -75,24 +75,24 @@ public class ChessBoard {
             if (targetCell != null) {
                 ChessGame.TeamColor teamColor = targetCell.getTeamColor();
                 charCode = switch (targetCell.getPieceType()) {
+                    case ROOK -> ChessFunctions.isWhite(teamColor) ?
+                            EscapeSequences.WHITE_ROOK :
+                            EscapeSequences.BLACK_ROOK;
                     case KING -> ChessFunctions.isWhite(teamColor) ?
                             EscapeSequences.WHITE_KING :
                             EscapeSequences.BLACK_KING;
-                    case QUEEN -> ChessFunctions.isWhite(teamColor) ?
-                            EscapeSequences.WHITE_QUEEN :
-                            EscapeSequences.BLACK_QUEEN;
                     case BISHOP -> ChessFunctions.isWhite(teamColor) ?
                             EscapeSequences.WHITE_BISHOP :
                             EscapeSequences.BLACK_BISHOP;
                     case KNIGHT -> ChessFunctions.isWhite(teamColor) ?
                             EscapeSequences.WHITE_KNIGHT :
                             EscapeSequences.BLACK_KNIGHT;
-                    case ROOK -> ChessFunctions.isWhite(teamColor) ?
-                            EscapeSequences.WHITE_ROOK :
-                            EscapeSequences.BLACK_ROOK;
                     case PAWN -> ChessFunctions.isWhite(teamColor) ?
                             EscapeSequences.WHITE_PAWN :
                             EscapeSequences.BLACK_PAWN;
+                    case QUEEN -> ChessFunctions.isWhite(teamColor) ?
+                            EscapeSequences.WHITE_QUEEN :
+                            EscapeSequences.BLACK_QUEEN;
                 };
             }
 

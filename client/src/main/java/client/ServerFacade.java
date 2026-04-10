@@ -24,12 +24,12 @@ public class ServerFacade {
     int portNumber;
     WsClient session;
     String sessionToken = null;
-    UiType UiStatus = UiType.PreLogin;
+    UiType uiStatus = UiType.PreLogin;
 
     ChessGame.TeamColor teamColor = null;
 
     // An extra thread for waiting on messages
-    Thread T;
+    Thread t;
 
     enum UiType {
         PreLogin,
@@ -62,7 +62,7 @@ public class ServerFacade {
             String command = TUI.awaitPrompt("please enter a command:", commandOptions);
             String commandType = command.split(" ")[0].toLowerCase();
 
-            switch (this.UiStatus) {
+            switch (this.uiStatus) {
                 case PreLogin -> {
                     if (!handlePreLogin(command, commandType)) {
                         return;
@@ -563,7 +563,7 @@ public class ServerFacade {
 
     private void enablePostLoginUI(String sessionToken) {
         this.sessionToken = sessionToken;
-        this.UiStatus = UiType.PostLogin;
+        this.uiStatus = UiType.PostLogin;
 
         commandOptions = new String[]{
                 "help",
@@ -577,7 +577,7 @@ public class ServerFacade {
     }
 
     private void disablePostLoginUI() {
-        this.UiStatus = UiType.PreLogin;
+        this.uiStatus = UiType.PreLogin;
         this.sessionToken = null;
         commandOptions = new String[]{
                 "help",
@@ -588,7 +588,7 @@ public class ServerFacade {
     }
 
     private void enableGameplayUI() {
-        this.UiStatus = UiType.Gameplay;
+        this.uiStatus = UiType.Gameplay;
         commandOptions = new String[]{
                 "help",
                 "redraw",
@@ -601,7 +601,7 @@ public class ServerFacade {
     }
 
     private void enableObservationUI() {
-        this.UiStatus = UiType.Observe;
+        this.uiStatus = UiType.Observe;
         commandOptions = new String[]{
                 "help",
                 "leave",
@@ -640,9 +640,9 @@ public class ServerFacade {
         // close the connection
         try {
             // Stop waiting on the thread
-            if (this.T != null) {
-                this.T.interrupt();
-                this.T = null;
+            if (this.t != null) {
+                this.t.interrupt();
+                this.t = null;
             }
             System.out.flush();
 
@@ -661,7 +661,7 @@ public class ServerFacade {
     }
 
     private void activateObservationalThread() {
-        this.T = new Thread(() -> {
+        this.t = new Thread(() -> {
             try {
                 while (!Thread.currentThread().isInterrupted()) {
                     this.session.awaitMessage(true);
@@ -674,7 +674,7 @@ public class ServerFacade {
                 return;
             }
         });
-        this.T.start();
+        this.t.start();
     }
 
     private void sendAndReceiveBlockingMessage(UserGameCommand command) {
