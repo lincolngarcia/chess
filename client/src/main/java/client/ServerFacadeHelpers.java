@@ -297,7 +297,8 @@ public class ServerFacadeHelpers {
                                 new String[]{EscapeSequences.SET_TEXT_COLOR_BLUE}
                         )
                 );
-                ServerFacade.teamColor = ChessFunctions.isWhite(ServerFacade.session.teamColor) ? ChessGame.TeamColor.BLACK : ChessGame.TeamColor.WHITE;
+                ServerFacade.teamColor = ChessFunctions.isWhite(ServerFacade.session.teamColor) ?
+                        ChessGame.TeamColor.BLACK : ChessGame.TeamColor.WHITE;
                 ServerFacade.session.teamColor = ServerFacade.teamColor;
                 break;
 

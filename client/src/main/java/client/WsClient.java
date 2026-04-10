@@ -31,7 +31,8 @@ public class WsClient extends Endpoint {
 
     public static String exclusiveReceiver;
 
-    public WsClient(String authToken, int gameId, ChessGame.TeamColor teamColor, int portNumber, UserGameCommand.UserGameState userGameState) throws Exception {
+    public WsClient(String authToken, int gameId, ChessGame.TeamColor teamColor, int portNumber,
+                    UserGameCommand.UserGameState userGameState) throws Exception {
         this.authToken = authToken;
         this.gameId = gameId;
         this.teamColor = teamColor;

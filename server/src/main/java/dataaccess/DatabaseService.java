@@ -143,7 +143,8 @@ public class DatabaseService {
                         blackUsername,
                         gson.fromJson(rs.getString("game"), ChessGame.class)
                 );
-                data.gameState = Objects.equals(rs.getString("gameState"), "ACTIVE") ? ChessGameData.GameStates.ACTIVE : ChessGameData.GameStates.INACTIVE;
+                data.gameState = Objects.equals(rs.getString("gameState"), "ACTIVE") ?
+                        ChessGameData.GameStates.ACTIVE : ChessGameData.GameStates.INACTIVE;
 
                 return data;
             } else {
