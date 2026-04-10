@@ -58,20 +58,11 @@ public class DatabaseService {
     }
 
     public static void dumpDatabase() {
-        String dropPasswordTable = """
-                TRUNCATE TABLE passwords;
-                """;
-        String dropGameDataTable = """
-                TRUNCATE TABLE game_data;
-                """;
-        String dropAuthTokenTable = """
-                TRUNCATE TABLE auth_tokens;
-                """;
+        String dropDatabase = """
+                DROP DATABASE IF EXISTS chess;""";
 
         try (var conn = DatabaseManager.getConnection()) {
-            conn.prepareStatement(dropPasswordTable).executeUpdate();
-            conn.prepareStatement(dropGameDataTable).executeUpdate();
-            conn.prepareStatement(dropAuthTokenTable).executeUpdate();
+            conn.prepareStatement(dropDatabase).executeUpdate();
         } catch (SQLException | DataAccessException e) {
             throw new RuntimeException(e);
         }
