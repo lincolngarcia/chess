@@ -84,7 +84,6 @@ public class EscapeSequences {
         return UNICODE_ESCAPE + "[" + y + ";" + x + "H";
     }
 
-
     public static String format(String string, String[] commands) {
         StringBuilder builder = new StringBuilder();
         for (String command : commands) {

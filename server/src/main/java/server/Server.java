@@ -3,6 +3,7 @@ package server;
 import com.google.gson.Gson;
 import io.javalin.Javalin;
 import server.packages.*;
+import websocket.commands.UserGameCommand;
 
 public class Server {
 
@@ -11,7 +12,6 @@ public class Server {
     public Server() {
         // Register your endpoints and exception handlers here.
         javalin = Javalin.create(config -> config.staticFiles.add("web"));
-
         // Register user
         javalin.post("/user", ctx -> {
             try {
@@ -20,90 +20,94 @@ public class Server {
                 LoginResponse response = ServerApiHandler.handleRegister(registerRequest);
                 ctx.status(response.statusCode);
                 ctx.result(response.toString());
-            }catch (Exception e){
+            } catch (Exception e) {
                 ctx.status(500);
                 ctx.result("{\"message\":\"" + "Error: " + e.getMessage() + "\"}");
             }
         });
-
         // Log in User
         javalin.post("/session", ctx -> {
             try {
-            String body = ctx.body();
-            LoginRequest loginRequest = new Gson().fromJson(body, LoginRequest.class);
-            LoginResponse response = ServerApiHandler.handleLogin(loginRequest);
-            ctx.status(response.statusCode);
-            ctx.result(response.toString());
-            }catch (Exception e){
+                String body = ctx.body();
+                LoginRequest loginRequest = new Gson().fromJson(body, LoginRequest.class);
+                LoginResponse response = ServerApiHandler.handleLogin(loginRequest);
+                ctx.status(response.statusCode);
+                ctx.result(response.toString());
+            } catch (Exception e) {
                 ctx.status(500);
                 ctx.result("{\"message\":\"" + "Error: " + e.getMessage() + "\"}");
             }
         });
-
         // Log out User
         javalin.delete("/session", ctx -> {
             try {
-            AuthData authData = new AuthData(ctx.header("authorization"));
-            LogoutResponse response = ServerApiHandler.handleLogout(authData);
-            ctx.status(response.statusCode);
-            ctx.result(response.toString());
-            }catch (Exception e){
+                AuthData authData = new AuthData(ctx.header("authorization"));
+                LogoutResponse response = ServerApiHandler.handleLogout(authData);
+                ctx.status(response.statusCode);
+                ctx.result(response.toString());
+            } catch (Exception e) {
                 ctx.status(500);
                 ctx.result("{\"message\":\"" + "Error: " + e.getMessage() + "\"}");
             }
         });
-
         // List game data
         javalin.get("/game", ctx -> {
             try {
-            AuthData authData = new AuthData(ctx.header("authorization"));
-            GetAllGamesResponse games = ServerApiHandler.handleGetAllGames(authData);
-            ctx.status(games.statusCode);
-            ctx.result(games.toString());
-            }catch (Exception e){
+                AuthData authData = new AuthData(ctx.header("authorization"));
+                GetAllGamesResponse games = ServerApiHandler.handleGetAllGames(authData);
+                ctx.status(games.statusCode);
+                ctx.result(games.toString());
+            } catch (Exception e) {
                 ctx.status(500);
                 ctx.result("{\"message\":\"" + "Error: " + e.getMessage() + "\"}");
             }
         });
-
         // New game
         javalin.post("/game", ctx -> {
             try {
-            AuthData authData = new AuthData(ctx.header("authorization"));
-            CreateGameRequest request = new Gson().fromJson(ctx.body(), CreateGameRequest.class);
-            CreateGameResponse response = ServerApiHandler.handleCreateGame(authData, request);
-            ctx.status(response.statusCode);
-            ctx.result(response.toString());
-            }catch (Exception e){
+                AuthData authData = new AuthData(ctx.header("authorization"));
+                CreateGameRequest request = new Gson().fromJson(ctx.body(), CreateGameRequest.class);
+                CreateGameResponse response = ServerApiHandler.handleCreateGame(authData, request);
+                ctx.status(response.statusCode);
+                ctx.result(response.toString());
+            } catch (Exception e) {
                 ctx.status(500);
                 ctx.result("{\"message\":\"" + "Error: " + e.getMessage() + "\"}");
             }
         });
-
         // Join Game
         javalin.put("/game", ctx -> {
             try {
-            AuthData authData = new AuthData(ctx.header("authorization"));
-            JoinGameRequest joinChesGameRequest = new Gson().fromJson(ctx.body(), JoinGameRequest.class);
-            JoinGameResponse response = ServerApiHandler.handleJoinGame(joinChesGameRequest, authData);
-            ctx.status(response.statusCode);
-            ctx.result(response.toString());
-            }catch (Exception e){
+                AuthData authData = new AuthData(ctx.header("authorization"));
+                JoinGameRequest joinChesGameRequest = new Gson().fromJson(ctx.body(), JoinGameRequest.class);
+                JoinGameResponse response = ServerApiHandler.handleJoinGame(joinChesGameRequest, authData);
+                ctx.status(response.statusCode);
+                ctx.result(response.toString());
+            } catch (Exception e) {
                 ctx.status(500);
                 ctx.result("{\"message\":\"" + "Error: " + e.getMessage() + "\"}");
             }
         });
-
         // Clear all db data
         javalin.delete("/db", ctx -> {
             try {
-            DbDumpResponse response = ServerApiHandler.handleDump();
-            ctx.status(response.statusCode);
-            ctx.result(" ");
-            }catch (Exception e){
+                DbDumpResponse response = ServerApiHandler.handleDump();
+                ctx.status(response.statusCode);
+                ctx.result(" ");
+            } catch (Exception e) {
                 ctx.status(500);
                 ctx.result("{\"message\":\"" + "Error: " + e.getMessage() + "\"}");
             }
+        });
+        // Websocket Route
+        javalin.ws("/ws", ws -> {
+            ws.onConnect(WebSocketHandler::addConnection);
+            ws.onMessage(ctx -> {
+                System.out.println("received request" + ctx.message());
+                UserGameCommand command = new Gson().fromJson(ctx.message(), UserGameCommand.class);
+                WebSocketHandler.handleWebSocketRequest(ctx, command);
+            });
+            ws.onClose(WebSocketHandler::removeConnection);
         });
     }
 

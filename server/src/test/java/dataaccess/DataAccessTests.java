@@ -3,7 +3,7 @@ package dataaccess;
 import chess.ChessGame;
 import org.junit.jupiter.api.*;
 import server.Server;
-import server.packages.ChessGameData;
+import websocket.ChessGameData;
 
 import java.util.Map;
 import java.util.Objects;

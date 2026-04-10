@@ -1,8 +1,9 @@
-package passoff.server;
+package passoff.server.server;
 
 import chess.*;
 import org.junit.jupiter.api.*;
 import passoff.model.*;
+import passoff.server.TestServerFacade;
 import passoff.websocket.*;
 import server.Server;
 import websocket.commands.UserGameCommand;

@@ -122,4 +122,29 @@ public class ChessFunctions {
             throw new RuntimeException(e);
         }
     }
+
+    static public int[] parseLocationString(String locationString) {
+        ArrayList<Character> validLetters = new ArrayList<>(List.of('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'));
+        ArrayList<Character> validNumbers = new ArrayList<>(List.of('1', '2', '3', '4', '5', '6', '7', '8'));
+
+        String formattedString = locationString.toLowerCase();
+
+        boolean validString = formattedString.length() == 2;
+
+        if (!validLetters.contains(formattedString.charAt(0))) {
+            validString = false;
+        }
+        if (!validNumbers.contains(formattedString.charAt(1))) {
+            validString = false;
+        }
+
+        if (!validString) {
+            return new int[] {-1, -1};
+        }
+
+        return new int[] {
+                formattedString.charAt(1) - '0',
+                formattedString.charAt(0) - 'a' + 1,
+        };
+    }
 }
