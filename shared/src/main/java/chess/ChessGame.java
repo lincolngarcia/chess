@@ -2,6 +2,7 @@ package chess;
 
 import chess.converter.ChessFunctions;
 import chess.movecalculators.SuperQueenMoveCalculator;
+import websocket.ChessGameData;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,6 +19,8 @@ public class ChessGame {
     private TeamColor activeTeam = TeamColor.WHITE;
     private ChessBoard board = new ChessBoard();
     private final Collection<ChessMove> history = new ArrayList<>();
+
+    public ChessGameData gameData;
 
     /**
      * Enum identifying the 2 possible teams in a chess game

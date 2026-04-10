@@ -7,6 +7,12 @@ public class ChessGameData {
     public String gameName;
     public String[] playerUsernames = new String[] {null, null};
     public ChessGame game;
+    public gameStates gameState;
+
+    public enum gameStates {
+        ACTIVE,
+        INACTIVE
+    }
 
     public ChessGameData(Integer gameID, String gameName, String whiteUsername, String blackUsername, ChessGame game) {
         this.gameID = gameID;

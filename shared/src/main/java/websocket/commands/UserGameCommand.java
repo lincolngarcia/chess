@@ -16,6 +16,37 @@ public class UserGameCommand {
 
     private final Integer gameID;
 
+    public MoveData move;
+
+    public static class MoveData {
+        public static class PosData {
+            public String[] columnLabels;
+            public int row;
+            public int column;
+
+            PosData(String[] columnLabels, int row, int column) {
+                this.columnLabels = columnLabels;
+                this.row = row;
+                this.column = column;
+            }
+        }
+
+        public PosData startPosition;
+        public PosData endPosition;
+
+        MoveData(PosData startPosition, PosData endPosition) {
+            this.startPosition = startPosition;
+            this.endPosition = endPosition;
+        }
+
+    }
+
+    public enum UserGameState {
+        WHITE,
+        BLACK,
+        OBSERVER
+    }
+
     public UserGameCommand(CommandType commandType, String authToken, Integer gameID) {
         this.commandType = commandType;
         this.authToken = authToken;
