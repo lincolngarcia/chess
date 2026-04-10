@@ -324,8 +324,8 @@ public class ServerFacade {
             // Open the websocket
             try {
                 this.session = new WsClient(sessionToken, Integer.parseInt(gameID));
-            } catch (Exception _) {
-                TUI.error("Session Failed");
+            } catch (Exception e) {
+                TUI.error("Session Failed" + e.getMessage());
                 return false;
             }
 
